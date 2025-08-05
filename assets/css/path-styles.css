@@ -1,0 +1,94 @@
+/**
+ * Psych Complete System - Path Engine Styles
+ *
+ * This file contains the styles for the different path visualizations.
+ *
+ * @version 1.0.0
+ */
+
+/* --- Base Path Styles --- */
+.psych-path {
+    position: relative;
+    padding: 20px 0;
+}
+
+.psych-station {
+    position: relative;
+    margin-bottom: 20px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+}
+
+/* --- Subway Map Style --- */
+.psych-path-style-subway {
+    padding-left: 50px;
+}
+
+.psych-path-style-subway::before {
+    content: '';
+    position: absolute;
+    left: 25px;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: #e0e0e0;
+}
+
+.psych-path-style-subway .psych-station::before {
+    content: '';
+    position: absolute;
+    left: -33px; /* (50px padding - 25px line offset) - (16px circle / 2) */
+    top: 25px;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border: 4px solid #e0e0e0;
+    border-radius: 50%;
+}
+
+.psych-path-style-subway .psych-station.completed::before {
+    background: #28a745;
+    border-color: #28a745;
+}
+
+.psych-path-style-subway .psych-station.unlocked::before {
+    background: #007bff;
+    border-color: #007bff;
+}
+
+/* --- Game Board Style --- */
+.psych-path-style-game_board {
+    background-image: url('data:image/svg+xml,...'); /* Placeholder for a game board background */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.psych-path-style-game_board .psych-station {
+    flex-basis: 150px;
+    height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f0f0f0;
+    border: 5px solid #ccc;
+}
+
+/* --- Constellation Style --- */
+.psych-path-style-constellation {
+    position: relative;
+    height: 500px; /* Example height */
+    background: #2c3e50;
+}
+
+.psych-path-style-constellation .psych-station {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #fff;
+}

@@ -33,6 +33,8 @@ final class PsychoCourse_Path_Engine_Ultimate {
         add_shortcode('psych_personalize', [$this, 'render_personalize_shortcode']);
         add_shortcode('psych_path', [$this, 'render_path_shortcode']);
         add_shortcode('psych_station', [$this, 'render_station_shortcode']);
+        add_shortcode('psych_mission', [$this, 'render_mission_shortcode']);
+        add_action('wp_enqueue_scripts', [$this, 'enqueue_path_styles']);
         // ... other hooks
     }
 
@@ -134,32 +136,79 @@ final class PsychoCourse_Path_Engine_Ultimate {
     public function render_path_shortcode($atts, $content = null) {
         $atts = shortcode_atts([
             'id' => 'default_path',
-            'product_id' => '', // New attribute for the main product
+            'product_id' => '',
+            'path_style' => 'subway', // 'subway', 'game_board', 'constellation'
         ], $atts, 'psych_path');
 
         // Store the product ID associated with this path
-        // This would typically be stored in a more persistent way, but for this example, we'll use a property
-        $this->paths[$atts['id']] = ['product_id' => $atts['product_id'], 'stations' => []];
+        $this->paths[$atts['id']] = [
+            'product_id' => $atts['product_id'],
+            'stations' => [],
+            'path_style' => $atts['path_style'],
+        ];
 
         $stations_content = do_shortcode($content);
 
-        // Render the path...
-        return '<div class="psych-path" data-path-id="' . esc_attr($atts['id']) . '">' . $stations_content . '</div>';
+        // Add a class to the container to control the styling
+        $path_class = 'psych-path psych-path-style-' . esc_attr($atts['path_style']);
+
+        return '<div class="' . $path_class . '" data-path-id="' . esc_attr($atts['id']) . '">' . $stations_content . '</div>';
     }
 
     public function render_station_shortcode($atts, $content = null) {
         $atts = shortcode_atts([
             'id' => '',
-            'path_id' => 'default_path', // Associate with a path
-            'product_id' => '', // The individual product for this station
+            'path_id' => 'default_path',
+            'product_id' => '',
+            'display_mode' => 'checklist', // 'checklist' or 'sequential'
+            'mission_content' => 'modal', // 'modal' or 'inline'
         ], $atts, 'psych_station');
 
         if (empty($atts['id'])) return '';
 
-        // Store station info
-        $this->paths[$atts['path_id']]['stations'][$atts['id']] = ['product_id' => $atts['product_id']];
+        // Store station info, including new attributes
+        $this->paths[$atts['path_id']]['stations'][$atts['id']] = [
+            'product_id' => $atts['product_id'],
+            'display_mode' => $atts['display_mode'],
+            'mission_content' => $atts['mission_content'],
+            'missions' => [],
+        ];
 
-        return '<div class="psych-station" data-station-id="' . esc_attr($atts['id']) . '">' . do_shortcode($content) . '</div>';
+        $missions_content = do_shortcode($content);
+
+        return '<div class="psych-station" data-station-id="' . esc_attr($atts['id']) . '" data-display-mode="' . esc_attr($atts['display_mode']) . '" data-mission-content="' . esc_attr($atts['mission_content']) . '">' . $missions_content . '</div>';
+    }
+
+    public function render_mission_shortcode($atts, $content = null) {
+        $atts = shortcode_atts([
+            'id' => '',
+            'title' => 'Mission',
+        ], $atts, 'psych_mission');
+
+        if (empty($atts['id'])) {
+            return '';
+        }
+
+        // The actual rendering logic will be more complex, involving checking completion status,
+        // and applying styles for modal/inline display. This is the basic structure.
+        return '
+            <div class="psych-mission" data-mission-id="' . esc_attr($atts['id']) . '">
+                <h4 class="mission-title">' . esc_html($atts['title']) . '</h4>
+                <div class="mission-content" style="display:none;">' . do_shortcode($content) . '</div>
+            </div>
+        ';
+    }
+
+    public function enqueue_path_styles() {
+        global $post;
+        if (is_a($post, 'WP_Post') && has_shortcode($post->post_content, 'psych_path')) {
+            wp_enqueue_style(
+                'psych-path-styles',
+                plugin_dir_url(__FILE__) . '../assets/css/path-styles.css',
+                [],
+                PSYCH_SYSTEM_VERSION
+            );
+        }
     }
 }
 
