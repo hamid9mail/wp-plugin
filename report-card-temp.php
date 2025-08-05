@@ -474,4 +474,78 @@ final class Psych_Unified_Report_Card_Enhanced {
 
 // Initialize the module
 Psych_Unified_Report_Card_Enhanced::get_instance();
+
+// New functions for the two-tiered report system
+function render_free_report($user_id, $assessment_id, $product_id) {
+    $product = wc_get_product($product_id);
+    $results = get_user_meta($user_id, '_psych_assessment_results_' . $assessment_id, true);
+
+    ob_start();
+    ?>
+    <div class="psych-report-card free-tier">
+        <h3>نتایج اولیه آزمون شما</h3>
+        <p>در اینجا یک نمای کلی از نتایج شما آورده شده است:</p>
+
+        <div class="psych-summary-grid">
+            <div class="psych-summary-item">
+                <div class="value"><?php echo esc_html($results['main_score'] ?? 'N/A'); ?></div>
+                <div class="label">امتیاز کلی</div>
+            </div>
+            <div class="psych-summary-item">
+                <div class="value"><?php echo esc_html($results['key_trait'] ?? 'N/A'); ?></div>
+                <div class="label">ویژگی کلیدی</div>
+            </div>
+        </div>
+
+        <div class="psych-nudge-section">
+            <h4>قفل تحلیل کامل را باز کنید!</h4>
+            <p>برای مشاهده تحلیل عمیق هر خرده‌مقیاس، گزارش PDF قابل چاپ و توصیه‌های شخصی‌سازی‌شده، گزارش پیشرفته را خریداری کنید.</p>
+            <a href="<?php echo esc_url($product->get_permalink()); ?>" class="psych-button psych-btn-success">خرید گزارش پیشرفته به قیمت <?php echo $product->get_price_html(); ?></a>
+        </div>
+
+        <div class="psych-teaser-section">
+             <h5>[بخش پیش‌نمایش] تحلیل خرده‌مقیاس اضطراب:</h5>
+             <p>نمره شما در این بخش متوسط رو به بالا است. برای درک اینکه این نمره چگونه بر روابط شما... [برای ادامه خرید کنید]</p>
+        </div>
+    </div>
+    <?php
+    return ob_get_clean();
+}
+
+function render_premium_report($user_id, $assessment_id) {
+    $results = get_user_meta($user_id, '_psych_assessment_results_' . $assessment_id, true);
+
+    ob_start();
+    ?>
+    <div class="psych-report-card premium-tier">
+        <h3>تحلیل کامل و پیشرفته آزمون</h3>
+
+        <div class="psych-summary-grid">
+             <div class="psych-summary-item">
+                <div class="value"><?php echo esc_html($results['main_score'] ?? 'N/A'); ?></div>
+                <div class="label">امتیاز کلی</div>
+            </div>
+             <div class="psych-summary-item">
+                <div class="value"><?php echo esc_html($results['key_trait'] ?? 'N/A'); ?></div>
+                <div class="label">ویژگی کلیدی</div>
+            </div>
+        </div>
+
+        <h4>تحلیل خرده‌مقیاس‌ها:</h4>
+        <ul>
+            <?php foreach($results['subscales'] as $key => $value): ?>
+                <li><strong><?php echo esc_html(ucfirst($key)); ?>:</strong> <?php echo esc_html($value); ?> - تحلیل کامل این بخش...</li>
+            <?php endforeach; ?>
+        </ul>
+
+        <div class="psych-recommendations">
+             <h4>توصیه‌های شخصی‌سازی‌شده:</h4>
+             <p>بر اساس نتایج شما، توصیه می‌شود روی... تمرکز کنید.</p>
+        </div>
+
+        <a href="#" class="psych-button download-pdf-btn">دانلود گزارش PDF</a>
+    </div>
+    <?php
+    return ob_get_clean();
+}
 ?>

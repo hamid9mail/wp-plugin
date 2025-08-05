@@ -35,6 +35,7 @@ require_once PSYCH_SYSTEM_PATH . 'modules/report-card-temp.php'; // Use the fixe
 require_once PSYCH_SYSTEM_PATH . 'advanced-quiz-module.php'; // نام فایل جدید quiz module
 require_once PSYCH_SYSTEM_PATH . 'modules/spot-player-integration.php'; // New Spot Player Module
 require_once PSYCH_SYSTEM_PATH . 'modules/secure-audio.php'; // New Secure Audio Module
+require_once PSYCH_SYSTEM_PATH . 'modules/assessment-product.php'; // New Assessment Product Module
 
 // Global API Functions are now primarily handled by their respective modules (e.g., gamification-center.php)
 // to ensure a single source of truth and prevent conflicts.

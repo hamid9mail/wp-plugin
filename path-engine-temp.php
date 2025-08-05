@@ -31,6 +31,8 @@ final class PsychoCourse_Path_Engine_Ultimate {
 
     private function add_hooks() {
         add_shortcode('psych_personalize', [$this, 'render_personalize_shortcode']);
+        add_shortcode('psych_path', [$this, 'render_path_shortcode']);
+        add_shortcode('psych_station', [$this, 'render_station_shortcode']);
         // ... other hooks
     }
 
@@ -128,6 +130,37 @@ final class PsychoCourse_Path_Engine_Ultimate {
     }
 
     // ... other class methods from the previous version of path-engine-temp.php
+
+    public function render_path_shortcode($atts, $content = null) {
+        $atts = shortcode_atts([
+            'id' => 'default_path',
+            'product_id' => '', // New attribute for the main product
+        ], $atts, 'psych_path');
+
+        // Store the product ID associated with this path
+        // This would typically be stored in a more persistent way, but for this example, we'll use a property
+        $this->paths[$atts['id']] = ['product_id' => $atts['product_id'], 'stations' => []];
+
+        $stations_content = do_shortcode($content);
+
+        // Render the path...
+        return '<div class="psych-path" data-path-id="' . esc_attr($atts['id']) . '">' . $stations_content . '</div>';
+    }
+
+    public function render_station_shortcode($atts, $content = null) {
+        $atts = shortcode_atts([
+            'id' => '',
+            'path_id' => 'default_path', // Associate with a path
+            'product_id' => '', // The individual product for this station
+        ], $atts, 'psych_station');
+
+        if (empty($atts['id'])) return '';
+
+        // Store station info
+        $this->paths[$atts['path_id']]['stations'][$atts['id']] = ['product_id' => $atts['product_id']];
+
+        return '<div class="psych-station" data-station-id="' . esc_attr($atts['id']) . '">' . do_shortcode($content) . '</div>';
+    }
 }
 
 PsychoCourse_Path_Engine_Ultimate::get_instance();
