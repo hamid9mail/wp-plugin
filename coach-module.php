@@ -700,14 +700,13 @@ final class Psych_Coach_Module_Ultimate {
     // =====================================================================
 
     public function add_coach_management_page() {
-        add_menu_page(
-            'مدیریت مربیان',
-            'مربیگری',
-            'manage_options',
-            'psych-coach-management',
-            [$this, 'render_coach_management_page'],
-            'dashicons-groups',
-            58
+        add_submenu_page(
+            'psych-settings', // Parent slug
+            'مدیریت مربیان', // Page title
+            'مربیگری', // Menu title
+            'manage_options', // Capability
+            'psych-coach-management', // Menu slug
+            [$this, 'render_coach_management_page'] // Function
         );
     }
 

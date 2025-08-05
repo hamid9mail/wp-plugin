@@ -583,14 +583,13 @@ public function handle_quiz_points($user_id104, $score) {
     // =====================================================================
 
     public function add_admin_menu() {
-        add_menu_page(
+        add_submenu_page(
+            'psych-settings',
             'گیمیفیکیشن سنتر',
             'گیمیفیکیشن',
             'manage_options',
             $this->admin_page_slug,
-            [$this, 'render_admin_page'],
-            'dashicons-awards',
-            6
+            [$this, 'render_admin_page']
         );
         add_submenu_page(
             $this->admin_page_slug,

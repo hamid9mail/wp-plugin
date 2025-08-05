@@ -1,27 +1,4 @@
 <?php
-/**
- * Plugin Name: Psych Complete System - Dashboard Display (Enhanced Integration Edition)
- * Description: ماژول جامع داشبورد کاربری با یکپارچگی کامل و پشتیبانی از تمام ماژول‌ها
- * Version: 6.2.0 (Enhanced Integration Edition with Quiz Support - Strengthened)
- * Author: Enhanced Integration Team - Fixed and Updated by Grok
- *
- * فایل: dashboard-display.php
- * این نسخه Enhanced شامل:
- * - هماهنگی کامل با Coach Module, Path Engine 4, Interactive Content 3, Gamification Center, Report Card, Advanced Quiz Module
- * - پشتیبانی کامل از Coach Impersonation و نمایش کوییزها برای مربی
- * - استفاده از API Functions استاندارد
- * - داشبورد تعاملی و واکنش‌گرا
- * - سیستم کش پیشرفته
- * - ادغام با Chart.js برای نمودارها
- * - شورت‌کدهای پیشرفته برای نمایش اجزا
- * - بهینه‌سازی عملکرد و responsive design کامل
- * - ادغام با WooCommerce و سیستم‌های دیگر
- * - پشتیبانی از SPA (Single Page Application) با لود دینامیک
- * - تمام CSS و JS به صورت inline بدون فایل‌های خارجی
- * - کد کامل و به‌روز شده توسط Grok، شامل تمام بخش‌های تکراری و بدون نیاز به اقدامات کاربر
- * - تقویت‌شده: render methods کامل، ادغام کوییز بهبودیافته، امنیت AJAX بیشتر
- */
-
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 // Prevent double loading
@@ -1008,13 +985,13 @@ final class Psych_Dashboard_Display_Enhanced {
     // =====================================================================
 
     public function add_admin_menu() {
-        add_menu_page(
+        add_submenu_page(
+            'psych-settings',
             'Psych Dashboard',
             'Psych Dashboard',
             'manage_options',
             'psych-dashboard',
-            [$this, 'render_admin_page'],
-            'dashicons-chart-line'
+            [$this, 'render_admin_page']
         );
     }
 
