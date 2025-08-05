@@ -26,7 +26,7 @@ define('PSYCH_GAMIFICATION_TABLE', $wpdb->prefix . 'psych_gamification'); // For
 define('PSYCH_PATHS_TABLE', $wpdb->prefix . 'psych_paths'); // For path progress
 
 // Load all modules
-require_once PSYCH_SYSTEM_PATH . 'coach-module.php';
+require_once PSYCH_SYSTEM_PATH . 'coach-module.php'; // Load this first as other modules depend on it
 require_once PSYCH_SYSTEM_PATH . 'dashboard-display.php';
 require_once PSYCH_SYSTEM_PATH . 'gamification-center.php';
 require_once PSYCH_SYSTEM_PATH . 'interactive-content.php';
