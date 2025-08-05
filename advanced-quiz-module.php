@@ -1,12 +1,4 @@
 <?php
-/**
- * Plugin Name: Psych Advanced Quiz Module
- * Plugin URI: https://example.com/psych-quiz
- * Description: Advanced Quiz Module for Psych System with various question types.
- * Version: 1.4.0
- * Author: Grok AI & Jules
- */
-
 if (!defined('ABSPATH')) {
     exit;
 }

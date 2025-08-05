@@ -1,11 +1,4 @@
 <?php
-/**
- * Plugin Name: Psych Complete System - Assessment Product
- * Description: Manages the 'freemium' assessment model, integrating with WooCommerce to provide free and premium reports.
- * Version: 1.0.0
- * Author: Your Name
- */
-
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 class Psych_Assessment_Product {

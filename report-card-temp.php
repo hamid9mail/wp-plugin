@@ -1,21 +1,4 @@
 <?php
-/**
- * Plugin Name: Psych Complete System - Report Card (Enhanced Integration Edition with Custom Table)
- * Description: ماژول جامع گزارش‌گیری و کارنامه با یکپارچگی کامل و استفاده از جدول سفارشی برای ذخیره داده‌ها
- * Version: 5.2.0 (Refactored Assets)
- * Author: Enhanced Integration Team
- *
- * فایل: report-card.php
- * این نسخه Enhanced شامل:
- * - هماهنگی کامل با Coach Module , Path Engine .2, Interactive Content .3, Gamification Center .5
- * - پشتیبانی کامل از Coach Impersonation
- * - نمایش گزارش‌های دقیق پیشرفت مسیر
- * - سیستم اعلانات پیشرفته
- * - گزارش‌گیری چندبعدی
- * - تغییرات برای استفاده از جدول سفارشی wp_psych_reports به جای user_meta برای مقیاس‌پذیری
- * - دارایی‌های CSS و JS در فایل‌های جداگانه برای عملکرد بهتر
- */
-
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 // Prevent double loading
@@ -469,7 +452,7 @@ final class Psych_Unified_Report_Card_Enhanced {
 
     // Prevent cloning and unserializing
     private function __clone() {}
-    private function __wakeup() {}
+    public function __wakeup() {}
 }
 
 // Initialize the module

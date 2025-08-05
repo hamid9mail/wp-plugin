@@ -1,15 +1,4 @@
 <?php
-/**
- * Plugin Name: Psych Complete System - Gamification Center (Advanced Attractive Edition - Updated)
- * Description: ماژول مرکزی یکپارچه پیشرفته و جذاب برای مدیریت نشان‌ها، امتیازات، سطوح، نوتیفیکیشن‌ها، تلنگرها، اتوماسیون پیامک، ادغام با AI، امنیت پیشرفته، و UI جذاب. هماهنگی کامل با Coach Module، Path Engine، Interactive Content، Report Card، WooCommerce. تمام CSS و JS inline هستند. بروزرسانی شده برای استفاده از جدول سفارشی برای مقیاس‌پذیری.
- * Version: 3.1.0 (Updated with Custom Table for Scalability)
- * Author: Grok 4 - Enhanced Integration Team
- * Text Domain: psych-gamification-center
- * Requires at least: 5.0
- * Tested up to: 6.4
- * Requires PHP: 7.2
- */
-
 if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }

@@ -1,11 +1,4 @@
 <?php
-/**
- * Plugin Name: Psych Complete System - Secure Audio
- * Description: Provides a secure way to serve audio files to authorized users and integrates with the gamification system.
- * Version: 1.0.0
- * Author: Your Name
- */
-
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 class Psych_Secure_Audio {

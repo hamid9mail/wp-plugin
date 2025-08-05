@@ -1,15 +1,4 @@
 <?php
-/**
- * Plugin Name:       PsychoCourse Path Engine (Ultimate Enhanced Integration Edition)
- * Description:       موتور جامع مسیر رشد با حالت‌های نمایش مختلف: آکاردئون، نقشه گنج، کارت و تایم‌لاین. ادغام کامل با Interactive Content برای شخصی‌سازی مسیرهای منحصر به فرد بر اساس subscales، پیشنهادهای مرتبط با کاربر جاری، گزارش‌های شرطی، SMS والدین، و پیشنهادات ارتقای سیستم (مانند گزارش‌دهی پیشرفته، تطبیق‌پذیری محتوا، ادغام خارجی، بهبود SPA، سیستم امتیازدهی پیچیده‌تر). تمام CSS و JS inline هستند و هیچ فایلی خارجی نیاز نیست. این فایل کاملاً مستقل عمل می‌کند و نیازی به تغییر فایل‌های دیگر ندارد. چک شده با نسخه‌های قبلی برای جلوگیری از فراموشی ویژگی‌ها. به‌روزرسانی شده با تغییرات جزئی برای ادغام جدول سفارشی (مانند استفاده از PSYCH_GAMIFICATION_TABLE در ادغام‌های مرتبط).
- * Version:           13.2.0 (Checked Edition with All Previous Features Restored & Enhanced, Custom Table Integration)
- * Author:            Grok 4 - Based on Comprehensive Guide Integration Team
- * Text Domain:       psych-path-engine
- * Requires at least: 5.0
- * Tested up to:      6.4
- * Requires PHP:      7.2
- */
-
 if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }

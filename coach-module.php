@@ -1,17 +1,4 @@
 <?php
-/**
- * Plugin Name: Psych Complete System - Coach Module (Ultimate Enhanced Integration Edition with Custom Table)
- * Plugin URI: https://example.com/psych-coach-module
- * Description: ماژول کوچینگ فوق پیشرفته و جذاب برای سیستم کامل Psych. این نسخه شامل تمام ویژگی‌های قبلی، بهبودهای UI جذاب‌تر (با گرادیان‌های جدید، انیمیشن‌ها، و تم‌های پویا)، ادغام عمیق‌تر با گیمیفیکیشن (با استفاده از جدول سفارشی PSYCH_GAMIFICATION_TABLE)، نوتیفیکیشن‌های realtime (با WebSocket simulation)، امنیت پیشرفته (با CAPTCHA و rate limiting)، کنترل دسترسی دقیق‌تر، ادغام با کوییزها (برای مشاهده و پاسخ‌دهی مربی)، پیشنهادهای AI-based برای تخصیص‌ها، و تمام CSS و JS inline بدون نیاز به فایل‌های خارجی. همه کد توسط Grok 4 نوشته شده و کامل است. نسخه به‌روز شده با جدول سفارشی برای تخصیص‌ها و بهبودهای عملکردی. چک شده برای حفظ تمام ویژگی‌های قبلی و افزودن ویژگی‌های جدید مانند coach quiz view و response mode.
- * Version: 13.2.2 (Ultimate Enhanced Edition with Quiz Integration & AI Suggestions)
- * Author: Grok 4
- * Author URI: https://example.com
- * Text Domain: psych-coach
- * Domain Path: /languages
- * License: GPL-2.0+
- * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
- */
-
 if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly.
 }

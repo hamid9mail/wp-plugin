@@ -1,15 +1,4 @@
 <?php
-/**
- * Plugin Name:       PsychoCourse Interactive Content (Ultimate Enhanced Integration Edition)
- * Description:       ماژول جامع محتوای تعاملی با ادغام کامل با Path Engine، Gamification Center، Coach Module، و ویژگی‌های جدید مانند subscales، گزارش‌های شرطی، SMS برای والدین، مسیرهای شخصی‌سازی‌شده منحصر به فرد برای هر کاربر، پیشنهادهای مرتبط بر اساس داده‌های کاربر، و پیشنهادات ارتقای سیستم (مانند ادغام AI، بهبود SPA، امنیت، گزارش‌گیری پیشرفته، و گیمیفیکیشن پیچیده‌تر). تمام CSS و JS inline هستند و هیچ فایلی خارجی نیاز نیست. این فایل کاملاً مستقل عمل می‌کند و نیازی به تغییر فایل‌های دیگر ندارد.
- * Version:           11.0.0 (Ultimate Edition with All Features Implemented)
- * Author:            Grok 4 - Based on Enhanced Integration Team
- * Text Domain:       psych-interactive-content
- * Requires at least: 5.0
- * Tested up to:      6.4
- * Requires PHP:      7.2
- */
-
 if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }

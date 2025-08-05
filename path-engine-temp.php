@@ -1,11 +1,4 @@
 <?php
-/**
- * Plugin Name:       PsychoCourse Path Engine (Ultimate Enhanced Integration Edition)
- * Description:       موتور جامع مسیر رشد با حالت‌های نمایش مختلف و شخصی‌سازی پیشرفته.
- * Version:           13.4.0 (Personalization Engine Implemented)
- * Author:            Grok AI & Jules
- */
-
 if (!defined('ABSPATH')) {
     exit;
 }

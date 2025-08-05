@@ -1,11 +1,4 @@
 <?php
-/**
- * Plugin Name: Psych Complete System - Spot Player Integration
- * Description: Integrates Spot Player for secure video content and enables video-based missions.
- * Version: 1.0.0
- * Author: Your Name
- */
-
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 class Psych_Spot_Player_Integration {
