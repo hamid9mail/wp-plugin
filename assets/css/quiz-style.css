@@ -1,0 +1,10 @@
+.psych-quiz-container { border: 1px solid #ccc; padding: 20px; margin-bottom: 20px; }
+.psych-question { margin-bottom: 20px; }
+.ordering-list-item, .draggable-item { background: #f0f0f0; padding: 10px; margin: 5px; border: 1px solid #ddd; cursor: grab; }
+.drop-zone { border: 2px dashed #ccc; padding: 10px; min-height: 50px; }
+.hotspot-container { position: relative; display: inline-block; }
+.hotspot-point { position: absolute; width: 15px; height: 15px; background: rgba(255,0,0,0.7); border-radius: 50%; transform: translate(-50%, -50%); }
+.fill-blank { border: none; border-bottom: 1px solid black; }
+.nps-scale { display: flex; justify-content: center; gap: 5px; }
+.nps-scale span { padding: 10px; border: 1px solid #ccc; cursor: pointer; }
+.nps-scale span.selected { background: #007bff; color: white; }

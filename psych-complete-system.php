@@ -30,8 +30,8 @@ require_once PSYCH_SYSTEM_PATH . 'coach-module.php';
 require_once PSYCH_SYSTEM_PATH . 'dashboard-display.php';
 require_once PSYCH_SYSTEM_PATH . 'gamification-center.php';
 require_once PSYCH_SYSTEM_PATH . 'interactive-content.php';
-require_once PSYCH_SYSTEM_PATH . 'path-engine.php';
-require_once PSYCH_SYSTEM_PATH . 'report-card.php';
+require_once PSYCH_SYSTEM_PATH . 'modules/path-engine-temp.php'; // Use the fixed temporary version
+require_once PSYCH_SYSTEM_PATH . 'modules/report-card-temp.php'; // Use the fixed temporary version
 require_once PSYCH_SYSTEM_PATH . 'advanced-quiz-module.php'; // نام فایل جدید quiz module
 
 // Global API Functions are now primarily handled by their respective modules (e.g., gamification-center.php)
