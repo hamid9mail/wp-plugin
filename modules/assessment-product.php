@@ -97,7 +97,6 @@ class Psych_Assessment_Product {
         }
         return '<div class="psych-alert error">تابع گزارش پیشرفته یافت نشد.</div>';
     }
-}
 
     public function apply_smart_pricing($cart) {
         if (is_admin() && !defined('DOING_AJAX')) {
@@ -157,7 +156,6 @@ class Psych_Assessment_Product {
         }
         return [];
     }
-}
 
     public function grant_bundled_product_access($order_id) {
         $order = wc_get_order($order_id);
