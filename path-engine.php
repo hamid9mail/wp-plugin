@@ -74,24 +74,9 @@ if (!function_exists('psych_path_unlock_station')) {
     }
 }
 
-if (!function_exists('psych_gamification_add_points')) {
-    function psych_gamification_add_points($user_id, $points, $reason) {
-        // Simulated - adjust to real gamification-center.php
-        $current_points = get_user_meta($user_id, 'psych_points', true) ?: 0;
-        update_user_meta($user_id, 'psych_points', $current_points + $points);
-    }
-}
-
-if (!function_exists('psych_gamification_award_badge')) {
-    function psych_gamification_award_badge($user_id, $badge) {
-        // Simulated - adjust to real gamification-center.php
-        $badges = get_user_meta($user_id, 'psych_badges', true) ?: [];
-        if (!in_array($badge, $badges)) {
-            $badges[] = $badge;
-            update_user_meta($user_id, 'psych_badges', $badges);
-        }
-    }
-}
+// The simulated psych_gamification_add_points and psych_gamification_award_badge functions have been removed.
+// This module will now rely on the versions loaded from gamification-center.php, ensuring a single source of truth
+// and preventing data from being incorrectly saved to user_meta instead of the custom tables.
 
 /**
  * Enhanced Path Engine Class with All Features Implemented & Checked from Previous Versions
@@ -783,34 +768,24 @@ final class PsychoCourse_Path_Engine_Ultimate {
     }
 
     public function handle_gamification_rewards($user_id, $node_id, $station_data) {
-        global $wpdb; // Integration with custom table for scalability
-        if (defined('PSYCH_GAMIFICATION_TABLE')) {
-            // Check if user exists in custom table
-            $existing = $wpdb->get_row($wpdb->prepare("SELECT points FROM " . PSYCH_GAMIFICATION_TABLE . " WHERE user_id = %d", $user_id));
-            $points_to_add = 100; // Example points
-            if ($existing) {
-                $new_points = $existing->points + $points_to_add;
-                $wpdb->update(PSYCH_GAMIFICATION_TABLE, ['points' => $new_points], ['user_id' => $user_id]);
-            } else {
-                $wpdb->insert(PSYCH_GAMIFICATION_TABLE, [
-                    'user_id' => $user_id,
-                    'points' => $points_to_add,
-                    'badges' => json_encode([]),
-                    'level' => 'Beginner',
-                    'created_at' => current_time('mysql')
-                ]);
-            }
-            // Award badge if applicable
-            if (isset($station_data['rewards'])) {
-                $existing_badges = $wpdb->get_var($wpdb->prepare("SELECT badges FROM " . PSYCH_GAMIFICATION_TABLE . " WHERE user_id = %d", $user_id));
-                $badges = json_decode($existing_badges, true) ?: [];
-                if (!in_array($station_data['rewards'], $badges)) {
-                    $badges[] = $station_data['rewards'];
-                    $wpdb->update(PSYCH_GAMIFICATION_TABLE, ['badges' => json_encode($badges)], ['user_id' => $user_id]);
-                }
-            }
-            do_action('psych_gamification_points_added', $user_id, $points_to_add, 'station_completed', $new_points ?? $points_to_add);
+        // Refactored to use the central API functions from the Gamification Center module
+        // This promotes code reuse and ensures logic is not duplicated.
+
+        // Extract rewards from station data. The shortcode attributes should be specific, e.g., 'reward_points' and 'reward_badge'.
+        $points_to_add = isset($station_data['reward_points']) ? intval($station_data['reward_points']) : 0;
+        $badge_to_award = isset($station_data['reward_badge']) ? sanitize_key($station_data['reward_badge']) : null;
+
+        if ($points_to_add > 0 && function_exists('psych_gamification_add_points')) {
+            $reason = 'تکمیل ایستگاه: ' . ($station_data['title'] ?? $node_id);
+            psych_gamification_add_points($user_id, $points_to_add, $reason);
         }
+
+        if ($badge_to_award && function_exists('psych_gamification_award_badge')) {
+            psych_gamification_award_badge($user_id, $badge_to_award);
+        }
+
+        // The action can still be fired for other integrations to listen to.
+        do_action('psych_path_gamification_reward_processed', $user_id, $node_id, $station_data);
     }
 
     public function send_conditional_reports($user_id, $node_id, $station_data) {

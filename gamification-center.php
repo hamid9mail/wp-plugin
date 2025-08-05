@@ -216,6 +216,10 @@ final class Psych_Gamification_Center {
         add_action('admin_init', [$this, 'register_settings']);
         add_action('admin_footer', [$this, 'inject_inline_assets']); // Inline assets in admin footer
         add_action('wp_ajax_psych_manual_award', [$this, 'handle_manual_award_ajax']);
+        // New AJAX handlers for mission types
+        add_action('wp_ajax_psych_track_mood', [$this, 'ajax_track_mood']);
+        add_action('wp_ajax_psych_track_habit', [$this, 'ajax_track_habit']);
+
 
         // Frontend hooks (Fully implemented)
         add_action('wp_footer', [$this, 'inject_inline_assets']); // Inline assets in frontend footer
@@ -234,6 +238,7 @@ final class Psych_Gamification_Center {
         add_action('psych_station_completed', [$this, 'handle_station_completion'], 10, 3);
         add_action('psych_coach_notification', [$this, 'handle_coach_notification'], 10, 4);
         add_action('psych_badge_earned', [$this, 'handle_badge_earned_automation'], 10, 2);
+        add_action('profile_update', [$this, 'check_profile_completion_hook'], 10, 2);
 
         // Shortcodes (Fully implemented)
         add_shortcode('psych_user_points', [$this, 'render_user_points_shortcode']);
@@ -835,6 +840,64 @@ public function handle_quiz_points($user_id104, $score) {
         wp_send_json_error(['message' => 'نوع نامعتبر.']);
     }
 
+    public function ajax_track_mood() {
+        check_ajax_referer('psych_ajax_nonce', 'nonce');
+        $user_id = get_current_user_id();
+        $mood = sanitize_text_field($_POST['mood']);
+        if ($user_id && $mood) {
+            $moods = get_user_meta($user_id, '_psych_mood_tracker', true) ?: [];
+            $moods[date('Y-m-d')] = $mood;
+            update_user_meta($user_id, '_psych_mood_tracker', $moods);
+            $this->add_points($user_id, 10, 'ثبت حال روزانه');
+            wp_send_json_success(['message' => 'حال شما ثبت شد.']);
+        }
+        wp_send_json_error(['message' => 'خطا در ثبت.']);
+    }
+
+    public function ajax_track_habit() {
+        check_ajax_referer('psych_ajax_nonce', 'nonce');
+        $user_id = get_current_user_id();
+        $habit_id = sanitize_key($_POST['habit_id']);
+        if ($user_id && $habit_id) {
+            $habits = get_user_meta($user_id, '_psych_habit_tracker', true) ?: [];
+            $habits[$habit_id][date('Y-m-d')] = true;
+            update_user_meta($user_id, '_psych_habit_tracker', $habits);
+
+            // Check for streak completion
+            // (More complex logic would be needed here to check for consecutive days)
+            $this->add_points($user_id, 15, 'انجام عادت: ' . $habit_id);
+            wp_send_json_success(['message' => 'عادت شما ثبت شد.']);
+        }
+        wp_send_json_error(['message' => 'خطا در ثبت.']);
+    }
+
+    public function check_profile_completion_hook($user_id) {
+        $this->check_profile_completion($user_id);
+    }
+
+    public function check_profile_completion($user_id) {
+        $user = get_userdata($user_id);
+        // Example fields to check for completion
+        $fields = [
+            'description',      // Bio
+            'user_url',         // Website
+            'billing_phone',    // Phone number
+        ];
+        $completed = true;
+        foreach ($fields as $field) {
+            if (empty($user->$field)) {
+                $completed = false;
+                break;
+            }
+        }
+
+        if ($completed) {
+            $this->award_badge($user_id, 'profile_complete');
+            return true;
+        }
+        return false;
+    }
+
     // Utilities
     public function get_top_users_by_points($limit = 10) {
         global $wpdb;
@@ -895,10 +958,24 @@ public function handle_quiz_points($user_id104, $score) {
         $badges = get_option(self::BADGES_OPTION_KEY, []);
         if (empty($badges)) {
             $badges = [
+                // General
                 'first_steps' => ['name' => 'نخستین گام‌ها', 'icon' => 'fa-shoe-prints', 'color' => '#4CAF50', 'description' => 'برای شروع مسیر'],
                 'dedicated_learner' => ['name' => 'فراگیر مجاهد', 'icon' => 'fa-book-open', 'color' => '#2196F3', 'description' => 'یادگیری مداوم'],
                 'point_collector' => ['name' => 'جمع‌آور امتیاز', 'icon' => 'fa-coins', 'color' => '#FFC107', 'description' => 'جمع‌آوری امتیازها'],
-                'achievement_hunter' => ['name' => 'شکارچی موفقیت', 'icon' => 'fa-bullseye', 'color' => '#E91E63', 'description' => 'شکار دستاوردها']
+                'achievement_hunter' => ['name' => 'شکارچی موفقیت', 'icon' => 'fa-bullseye', 'color' => '#E91E63', 'description' => 'شکار دستاوردها'],
+                // Mission-specific Badges
+                'social_share' => ['name' => 'پروانه اجتماعی', 'icon' => 'fa-share-alt', 'color' => '#1DA1F2', 'description' => 'برای اشتراک‌گذاری محتوا'],
+                'ambassador' => ['name' => 'سفیر', 'icon' => 'fa-user-friends', 'color' => '#FF4500', 'description' => 'برای معرفی دوستان جدید'],
+                'profile_complete' => ['name' => 'کامل‌کننده', 'icon' => 'fa-id-card', 'color' => '#6c757d', 'description' => 'برای تکمیل پروفایل کاربری'],
+                'dedicated' => ['name' => 'متعهد', 'icon' => 'fa-calendar-check', 'color' => '#fd7e14', 'description' => 'برای ورود مستمر و روزانه'],
+                'contributor' => ['name' => 'مشارکت‌کننده', 'icon' => 'fa-comments', 'color' => '#20c997', 'description' => 'برای ثبت دیدگاه مفید'],
+                'ai_explorer' => ['name' => 'کاوشگر AI', 'icon' => 'fa-robot', 'color' => '#6f42c1', 'description' => 'برای استفاده از تحلیل هوش مصنوعی'],
+                'quiz_expert' => ['name' => 'متخصص آزمون', 'icon' => 'fa-graduation-cap', 'color' => '#0d6efd', 'description' => 'برای کسب نمره عالی در آزمون'],
+                'quiz_master' => ['name' => 'استاد آزمون', 'icon' => 'fa-crown', 'color' => '#ffc107', 'description' => 'برای کسب بالاترین نمره در آزمون'],
+                'love_expert' => ['name' => 'کارشناس عشق', 'icon' => 'fa-heart', 'color' => '#d63384', 'description' => 'برای تکمیل آزمون زبان عشق'],
+                'feedback_pro' => ['name' => 'حرفه‌ای بازخورد', 'icon' => 'fa-comment-dots', 'color' => '#0dcaf0', 'description' => 'برای دریافت بازخورد از دوستان'],
+                'dribbler' => ['name' => 'دریبل‌زن', 'icon' => 'fa-futbol', 'color' => '#198754', 'description' => 'برای تکمیل تمرینات فوتبال'],
+                'consistent' => ['name' => 'باثبات', 'icon' => 'fa-sync-alt', 'color' => '#6610f2', 'description' => 'برای پیگیری عادات روزانه'],
             ];
             update_option(self::BADGES_OPTION_KEY, $badges);
         }
@@ -1080,7 +1157,41 @@ public function handle_quiz_points($user_id104, $score) {
     }
 
     public function on_user_login($user_login, $user) {
-        $this->add_points($user->ID, $this->get_settings()['points_per_login'], 'ورود روزانه');
+        $settings = $this->get_settings();
+        $user_id = $user->ID;
+
+        // Add points for login
+        $this->add_points($user_id, $settings['points_per_login'], 'ورود روزانه');
+
+        // --- Login Streak Logic ---
+        $last_login = get_user_meta($user_id, '_psych_last_login_timestamp', true);
+        $streak = get_user_meta($user_id, '_psych_login_streak_count', true) ?: 0;
+
+        if ($last_login) {
+            $last_login_date = date('Y-m-d', $last_login);
+            $yesterday_date = date('Y-m-d', strtotime('-1 day'));
+
+            if ($last_login_date === $yesterday_date) {
+                // Consecutive day
+                $streak++;
+            } else if ($last_login_date !== date('Y-m-d')) {
+                // Not a consecutive day, and not the same day
+                $streak = 1;
+            }
+            // If it's the same day, do nothing to the streak
+        } else {
+            // First login ever
+            $streak = 1;
+        }
+
+        // Update user meta
+        update_user_meta($user_id, '_psych_last_login_timestamp', time());
+        update_user_meta($user_id, '_psych_login_streak_count', $streak);
+
+        // Check for streak badge
+        if ($streak >= 7) { // Example: 7-day streak
+            $this->award_badge($user_id, 'dedicated');
+        }
     }
 
     public function on_comment_post($comment_id, $comment_approved, $commentdata) {

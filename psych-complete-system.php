@@ -34,44 +34,9 @@ require_once PSYCH_SYSTEM_PATH . 'path-engine.php';
 require_once PSYCH_SYSTEM_PATH . 'report-card.php';
 require_once PSYCH_SYSTEM_PATH . 'advanced-quiz-module.php'; // نام فایل جدید quiz module
 
-// Global API Functions (Updated for custom tables)
-if (!function_exists('psych_gamification_get_user_level')) {
-    function psych_gamification_get_user_level($user_id) {
-        global $wpdb;
-        $row = $wpdb->get_row($wpdb->prepare("SELECT level FROM " . PSYCH_GAMIFICATION_TABLE . " WHERE user_id = %d", $user_id));
-        if ($row) {
-            return ['name' => $row->level, 'icon' => 'fa-user', 'color' => '#blue'];
-        }
-        return ['name' => 'Beginner', 'icon' => 'fa-user', 'color' => '#blue'];
-    }
-}
-
-if (!function_exists('psych_gamification_add_points')) {
-    function psych_gamification_add_points($user_id, $points, $reason = 'General') {
-        global $wpdb;
-        $existing = $wpdb->get_row($wpdb->prepare("SELECT points FROM " . PSYCH_GAMIFICATION_TABLE . " WHERE user_id = %d", $user_id));
-        if ($existing) {
-            $new_points = $existing->points + $points;
-            $wpdb->update(PSYCH_GAMIFICATION_TABLE, ['points' => $new_points], ['user_id' => $user_id]);
-        } else {
-            $wpdb->insert(PSYCH_GAMIFICATION_TABLE, ['user_id' => $user_id, 'points' => $points, 'level' => 'Beginner']);
-        }
-    }
-}
-
-if (!function_exists('psych_gamification_award_badge')) {
-    function psych_gamification_award_badge($user_id, $badge_slug) {
-        global $wpdb;
-        $existing = $wpdb->get_row($wpdb->prepare("SELECT badges FROM " . PSYCH_GAMIFICATION_TABLE . " WHERE user_id = %d", $user_id));
-        $badges = $existing ? json_decode($existing->badges, true) : [];
-        if (!in_array($badge_slug, $badges)) {
-            $badges[] = $badge_slug;
-            $wpdb->update(PSYCH_GAMIFICATION_TABLE, ['badges' => json_encode($badges)], ['user_id' => $user_id]);
-            return true;
-        }
-        return false;
-    }
-}
+// Global API Functions are now primarily handled by their respective modules (e.g., gamification-center.php)
+// to ensure a single source of truth and prevent conflicts.
+// The main plugin file is responsible for loading these modules.
 
 // AI API Call Function (Updated to use real OpenAI API and store in custom table, with quiz support)
 if (!function_exists('call_ai_api')) {
@@ -145,21 +110,18 @@ if (!function_exists('call_ai_api')) {
     }  // اصلاح: این } بسته‌کننده تابع call_ai_api رو اضافه/اصلاح کردم (بدون خط خالی اضافی)
 }
 
-// Register Shortcodes
-add_action('init', function() {
+// Register Core System Shortcodes
+add_action('init', 'psych_register_core_shortcodes');
+function psych_register_core_shortcodes() {
     add_shortcode('psych_report_card', 'psych_shortcode_report_card');
     add_shortcode('psych_test_result', 'psych_shortcode_test_result');
     add_shortcode('psych_ai_report', 'psych_shortcode_ai_report');
-    add_shortcode('psych_user_points', 'psych_shortcode_user_points');
-    add_shortcode('psych_user_level', 'psych_shortcode_user_level');
-    // New: Advanced Quiz Shortcodes
-    add_shortcode('psych_advanced_quiz', array(new Psych_Advanced_Quiz_Module(), 'quiz_shortcode'));
-    add_shortcode('psych_competition_quiz', array(new Psych_Advanced_Quiz_Module(), 'competition_quiz_shortcode'));
-    add_shortcode('psych_visual_report', array(new Psych_Advanced_Quiz_Module(), 'visual_report_shortcode'));
-    add_shortcode('psych_ai_input', array(new Psych_Advanced_Quiz_Module(), 'ai_input_shortcode'));
-    add_shortcode('psych_ai_output', array(new Psych_Advanced_Quiz_Module(), 'ai_output_shortcode'));
-    // Add more shortcodes as needed
-});
+
+    // Gamification shortcodes like [psych_user_points] and [psych_user_level] are now registered in gamification-center.php.
+    // Quiz shortcodes are registered in advanced-quiz-module.php.
+
+    // This ensures that if a module is disabled, its shortcodes do not remain registered with missing callbacks.
+}
 
 // Define Shortcode Functions
 function psych_shortcode_report_card($atts) {
@@ -253,18 +215,8 @@ function psych_shortcode_ai_report($atts) {
     return 'نامشخص';
 }
 
-function psych_shortcode_user_points($atts) {
-    $user_id = get_current_user_id();
-    global $wpdb;
-    $row = $wpdb->get_row($wpdb->prepare("SELECT points FROM " . PSYCH_GAMIFICATION_TABLE . " WHERE user_id = %d", $user_id));
-    return esc_html($row ? $row->points : 0);
-}
-
-function psych_shortcode_user_level($atts) {
-    $user_id = get_current_user_id();
-    $level = psych_gamification_get_user_level($user_id);
-    return esc_html($level['name']);
-}
+// The functions for psych_shortcode_user_points and psych_shortcode_user_level have been moved to gamification-center.php
+// to be alongside their shortcode registration and core logic.
 
 // Enqueue Assets (All inline, no separate files)
 add_action('wp_enqueue_scripts', function() {
@@ -412,90 +364,69 @@ function psych_settings_page() {
 }
 
 // Activation/Deactivation Hooks (Create/Drop custom tables)
-register_activation_hook(__FILE__, function() {
+register_activation_hook(__FILE__, 'psych_system_activate');
+function psych_system_activate() {
     global $wpdb;
+    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
     $charset_collate = $wpdb->get_charset_collate();
 
-    // Create PSYCH_RESULTS_TABLE
+    // Core Table: PSYCH_RESULTS_TABLE (For general test/AI results)
     $results_table = $wpdb->prefix . 'psych_results';
-    $sql = "CREATE TABLE $results_table (
+    $sql_results = "CREATE TABLE $results_table (
         id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
         user_id bigint(20) UNSIGNED NOT NULL,
         test_id varchar(255) NOT NULL,
         score int DEFAULT 0,
         subscales longtext,
         text longtext,
+        type varchar(50) DEFAULT 'test',
         created_at datetime DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (id)
+        PRIMARY KEY (id),
+        KEY user_id (user_id),
+        KEY test_id (test_id)
     ) $charset_collate;";
-    dbDelta($sql);
+    dbDelta($sql_results);
 
-    // Create PSYCH_GAMIFICATION_TABLE
+    // Core Table: PSYCH_GAMIFICATION_TABLE (For points/badges/levels)
     $gamification_table = $wpdb->prefix . 'psych_gamification';
-    $sql = "CREATE TABLE $gamification_table (
+    $sql_gamification = "CREATE TABLE $gamification_table (
         id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
         user_id bigint(20) UNSIGNED NOT NULL,
         points int DEFAULT 0,
         level varchar(50) DEFAULT 'Beginner',
         badges longtext,
-        PRIMARY KEY (id)
+        notifications longtext,
+        points_logs longtext,
+        badge_logs longtext,
+        unlocked_products longtext,
+        created_at datetime DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY user_id (user_id)
     ) $charset_collate;";
-    dbDelta($sql);
+    dbDelta($sql_gamification);
 
-    // Create PSYCH_PATHS_TABLE
+    // Core Table: PSYCH_PATHS_TABLE (For user progress in paths)
     $paths_table = $wpdb->prefix . 'psych_paths';
-    $sql = "CREATE TABLE $paths_table (
+    $sql_paths = "CREATE TABLE $paths_table (
         id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
         user_id bigint(20) UNSIGNED NOT NULL,
         path_id varchar(255) NOT NULL,
         progress int DEFAULT 0,
-        PRIMARY KEY (id)
+        completed_stations longtext,
+        personalized_path longtext,
+        PRIMARY KEY (id),
+        KEY user_path (user_id, path_id)
     ) $charset_collate;";
-    dbDelta($sql);
+    dbDelta($sql_paths);
 
-    // Create PSYCH_QUIZ_RESULTS_TABLE (from quiz module)
-    $quiz_table = $wpdb->prefix . 'psych_quiz_results';
-    $sql = "CREATE TABLE $quiz_table (
-        id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-        user_id bigint(20) UNSIGNED NOT NULL,
-        quiz_id varchar(255) NOT NULL,
-        score int DEFAULT 0,
-        time_taken int DEFAULT 0,
-        ai_analysis longtext,
-        timestamp datetime DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (id)
-    ) $charset_collate;";
-    dbDelta($sql);
-
-    // Create PSYCH_REPORTS_TABLE (from report-card)
-    $reports_table = $wpdb->prefix . 'psych_reports';
-    $sql = "CREATE TABLE $reports_table (
-        id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-        user_id bigint(20) UNSIGNED NOT NULL,
-        test_results longtext DEFAULT NULL,
-        parent_mobile varchar(20) DEFAULT NULL,
-        user_notes longtext DEFAULT NULL,
-        user_goals longtext DEFAULT NULL,
-        created_at datetime DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (id)
-    ) $charset_collate;";
-    dbDelta($sql);
-	
-	$sql_quiz = "CREATE TABLE {$wpdb->prefix}psych_quiz_results (
-    id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-    user_id BIGINT(20) UNSIGNED NOT NULL,
-    quiz_id VARCHAR(255) NOT NULL,
-    score INT NOT NULL,
-    responses TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id)
-) $charset_collate;";
-dbDelta($sql_quiz);
-
+    // Note: Tables for specific modules like 'psych_quiz_results' or 'psych_reports'
+    // should be created within their respective module's activation hook to ensure modularity.
+    // This prevents errors if a module is disabled.
+    // The duplicate CREATE TABLE statements have been removed.
 
     // Flush rewrite rules
     flush_rewrite_rules();
-});
+}
 
 
 register_deactivation_hook(__FILE__, function() {
@@ -510,17 +441,15 @@ register_deactivation_hook(__FILE__, function() {
 });
 
 // Additional Hooks for Integration
-add_action('psych_ai_result_stored', function($user_id, $ai_result) {
-    psych_gamification_add_points($user_id, 50, 'تکمیل تحلیل AI');
-    psych_gamification_queue_notification($user_id, 'تحلیل AI آماده است', $ai_result['text']);
-});
-
-// Placeholder for queue_notification
-if (!function_exists('psych_gamification_queue_notification')) {
-    function psych_gamification_queue_notification($user_id, $title, $message) {
-        $notifications = get_user_meta($user_id, 'psych_notifications', true) ?: [];
-        $notifications[] = ['title' => $title, 'message' => $message, 'time' => time()];
-        update_user_meta($user_id, 'psych_notifications', $notifications);
+add_action('psych_ai_result_stored', 'psych_handle_ai_result_rewards');
+function psych_handle_ai_result_rewards($user_id, $ai_result) {
+    // This action is now a bridge to the gamification module.
+    // We check if the function exists to ensure no fatal errors if the module is disabled.
+    if (function_exists('psych_gamification_add_points')) {
+        psych_gamification_add_points($user_id, 50, 'تکمیل تحلیل AI');
+    }
+    if (function_exists('psych_gamification_queue_notification')) {
+        psych_gamification_queue_notification($user_id, 'تحلیل AI آماده است', $ai_result['text']);
     }
 }
 
