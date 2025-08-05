@@ -246,6 +246,7 @@ final class Psych_Gamification_Center {
         add_shortcode('psych_user_level', [$this, 'render_user_level_shortcode']);
         add_shortcode('psych_user_badges', [$this, 'render_user_badges_shortcode']);
         add_shortcode('psych_leaderboard', [$this, 'render_leaderboard_shortcode']);
+        add_shortcode('psych_mission_badge', [$this, 'render_mission_badge_shortcode']);
 		// In add_hooks() function, add:
 		add_action('psych_quiz_completed', [$this, 'handle_quiz_points'], 10, 2);
 
@@ -1096,13 +1097,30 @@ public function handle_quiz_points($user_id104, $score) {
     }
 
     public function render_user_badges_shortcode($atts) {
+        $atts = shortcode_atts([
+            'show_only' => '',
+            'hide' => '',
+        ], $atts, 'psych_user_badges');
+
         $user_id = get_current_user_id();
         global $wpdb;
         $row = $wpdb->get_row($wpdb->prepare("SELECT badges FROM " . PSYCH_GAMIFICATION_TABLE . " WHERE user_id = %d", $user_id));
         $user_badges = $row ? json_decode($row->badges, true) : [];
         $all_badges = $this->get_badges();
+
+        $show_only = !empty($atts['show_only']) ? array_map('trim', explode(',', $atts['show_only'])) : [];
+        $hide = !empty($atts['hide']) ? array_map('trim', explode(',', $atts['hide'])) : [];
+
         $output = '<div class="psych-badges-gallery" style="display: flex; flex-wrap: wrap; gap: 10px;">';
         foreach ($all_badges as $slug => $badge) {
+            // Filtering logic
+            if (!empty($show_only) && !in_array($slug, $show_only)) {
+                continue;
+            }
+            if (!empty($hide) && in_array($slug, $hide)) {
+                continue;
+            }
+
             $earned = in_array($slug, $user_badges);
             $style = $earned ? 'opacity: 1; border: 2px solid ' . esc_attr($badge['color']) . ';' : 'opacity: 0.5;';
             $output .= '<div class="psych-badge" style="background: white; padding: 10px; border-radius: 8px; text-align: center; width: 120px; ' . $style . '">
@@ -1132,6 +1150,35 @@ public function handle_quiz_points($user_id104, $score) {
         return $output;
     }
 
+    public function render_mission_badge_shortcode($atts) {
+        $atts = shortcode_atts([
+            'slug' => '',
+            'icon' => 'fa-star',
+            'name' => 'ماموریت',
+            'points' => '0',
+        ], $atts, 'psych_mission_badge');
+
+        if (empty($atts['slug'])) {
+            return '';
+        }
+
+        $user_id = get_current_user_id();
+        $earned = $this->user_has_badge($user_id, $atts['slug']);
+        $class = 'psych-mission-badge ' . ($earned ? 'earned' : 'unearned');
+        $title = esc_attr($atts['name']) . ' (' . esc_attr($atts['points']) . ' امتیاز)';
+
+        return sprintf(
+            '<div class="%s" title="%s">
+                <i class="fas %s"></i>
+                <span>%s</span>
+            </div>',
+            $class,
+            $title,
+            esc_attr($atts['icon']),
+            esc_html($atts['name'])
+        );
+    }
+
     // =====================================================================
     // INLINE ASSETS (All CSS and JS Inline, Injected in Footer)
     // =====================================================================
@@ -1142,9 +1189,25 @@ public function handle_quiz_points($user_id104, $score) {
         ?>
         <style type="text/css">
             /* General Styles for Attractive UI */
-            .psych-points-badge, .psych-level-card, .psych-badges-gallery .psych-badge, .psych-leaderboard {
+            .psych-points-badge, .psych-level-card, .psych-badges-gallery .psych-badge, .psych-leaderboard, .psych-mission-badge {
                 box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-                transition: transform 0.3s ease;
+                transition: all 0.3s ease;
+            }
+            .psych-mission-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 10px;
+                border-radius: 8px;
+                background: #f0f0f0;
+            }
+            .psych-mission-badge.unearned {
+                filter: grayscale(100%);
+                opacity: 0.6;
+            }
+            .psych-mission-badge.earned {
+                background: #e6ffed;
+                border: 1px solid #28a745;
             }
             .psych-points-badge:hover, .psych-level-card:hover, .psych-badges-gallery .psych-badge:hover, .psych-leaderboard li:hover {
                 transform: scale(1.05);
