@@ -255,8 +255,18 @@ final class Psych_Gamification_Center {
     // CORE FUNCTIONS (Updated for Custom Table)
     // =====================================================================
 
-    public function add_points($user_id, $points, $reason = 'کسب امتیاز') {
+    public function add_points($user_id, $points, $reason = 'کسب امتیاز', $is_mystery_box = false) {
         global $wpdb;
+
+        if ($is_mystery_box) {
+            $reward = $this->calculate_variable_reward();
+            $points = $reward['points'];
+            $reason = $reward['reason'];
+            if (isset($reward['badge'])) {
+                $this->award_badge($user_id, $reward['badge']);
+            }
+        }
+
         $existing = $wpdb->get_row($wpdb->prepare("SELECT points, level FROM " . PSYCH_GAMIFICATION_TABLE . " WHERE user_id = %d", $user_id));
         $current_points = $existing ? (int)$existing->points : 0;
         $new_points = $current_points + $points;
@@ -865,18 +875,27 @@ public function handle_quiz_points($user_id104, $score) {
             wp_send_json_error(['message' => 'اطلاعات ناقص است.']);
         }
 
+        $reward = null;
+
         switch ($event) {
             case 'ended':
-                $this->add_points($user_id, 25, "تماشای کامل ویدیو: $video_id");
+                // Use the mystery box for completing a video
+                $reward = $this->calculate_variable_reward();
+                $this->add_points($user_id, $reward['points'], $reward['reason']);
+                if(isset($reward['badge'])) {
+                    $this->award_badge($user_id, $reward['badge']);
+                    $reward['badge_name'] = $this->get_badge_name($reward['badge']);
+                }
                 $this->award_badge($user_id, "video_watched_{$video_id}");
                 break;
             case 'ninety_percent':
+                // A fixed reward for reaching 90%
                 $this->add_points($user_id, 15, "تماشای ۹۰٪ ویدیو: $video_id");
                 $this->award_badge($user_id, 'video_milestone_90_percent');
                 break;
         }
 
-        wp_send_json_success(['message' => 'پیشرفت ویدیو ثبت شد.']);
+        wp_send_json_success(['message' => 'پیشرفت ویدیو ثبت شد.', 'reward' => $reward]);
     }
 
     public function ajax_track_habit() {
@@ -964,6 +983,30 @@ public function handle_quiz_points($user_id104, $score) {
         return (int) $wpdb->get_var("SELECT SUM(points) FROM " . PSYCH_GAMIFICATION_TABLE);
     }
 
+    private function calculate_variable_reward() {
+        $rand = rand(1, 100);
+        if ($rand <= 5) { // 5% chance for rare reward
+            return [
+                'points' => 200,
+                'reason' => 'جایزه بزرگ از جعبه شانس!',
+                'badge' => 'lucky_star',
+                'rarity' => 'rare'
+            ];
+        } elseif ($rand <= 20) { // 15% chance for uncommon reward
+            return [
+                'points' => 50,
+                'reason' => 'جایزه خوب از جعبه شانس!',
+                'rarity' => 'uncommon'
+            ];
+        } else { // 80% chance for common reward
+            return [
+                'points' => 25,
+                'reason' => 'جایزه از جعبه شانس',
+                'rarity' => 'common'
+            ];
+        }
+    }
+
     private function get_levels() {
         $levels = get_option(self::LEVELS_OPTION_KEY, []);
         if (empty($levels)) {
@@ -1006,6 +1049,7 @@ public function handle_quiz_points($user_id104, $score) {
                 'video_watched_{video_id}' => ['name' => 'تماشای ویدیو', 'description' => 'برای تماشای کامل یک ویدیوی خاص.', 'icon' => 'dashicons-video-alt3'],
                 'video_milestone_90_percent' => ['name' => 'پشتکار در تماشا', 'description' => 'برای تماشای ۹۰٪ از یک ویدیو.', 'icon' => 'dashicons-controls-forward'],
                 'video_collection_completed_{collection_name}' => ['name' => 'تکمیل کالکشن ویدیو', 'description' => 'برای تماشای تمام ویدیوهای یک مجموعه.', 'icon' => 'dashicons-format-video'],
+                'lucky_star' => ['name' => 'ستاره خوش‌شانس', 'description' => 'یک جایزه بسیار نادر از جعبه شانس!', 'icon' => 'dashicons-star-filled', 'unlisted' => true],
             ];
             update_option(self::BADGES_OPTION_KEY, $badges);
         }

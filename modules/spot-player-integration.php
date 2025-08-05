@@ -53,6 +53,20 @@ class Psych_Spot_Player_Integration {
         );
 
         // Localize script with necessary data
+        wp_enqueue_script(
+            'psych-mystery-box',
+            plugin_dir_url(__FILE__) . '../assets/js/mystery-box.js',
+            [],
+            PSYCH_SYSTEM_VERSION,
+            true
+        );
+        wp_enqueue_style(
+            'psych-mystery-box-style',
+            plugin_dir_url(__FILE__) . '../assets/css/mystery-box.css',
+            [],
+            PSYCH_SYSTEM_VERSION
+        );
+
         wp_localize_script('psych-spot-player-handler', 'spot_player_data', [
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('spot_player_nonce'),

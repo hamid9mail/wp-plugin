@@ -1,0 +1,97 @@
+/**
+ * Psych Complete System - Mystery Box CSS
+ *
+ * Styles for the variable reward modal and animation.
+ *
+ * @version 1.0.0
+ */
+
+.psych-mystery-box-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    backdrop-filter: blur(5px);
+}
+
+.psych-mystery-box-content {
+    text-align: center;
+    color: white;
+}
+
+.psych-mystery-chest {
+    width: 200px;
+    height: 150px;
+    background: #8B4513; /* SaddleBrown */
+    position: relative;
+    border-radius: 10px;
+    border: 5px solid #D2691E; /* Chocolate */
+    transition: transform 0.5s ease-in-out;
+}
+
+.psych-mystery-chest::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    left: 10px;
+    width: 180px;
+    height: 50px;
+    background: #A0522D; /* Sienna */
+    border-radius: 10px 10px 0 0;
+    border: 5px solid #D2691E;
+    transform-origin: bottom;
+    transition: transform 1s ease-in-out;
+}
+
+/* Animation */
+.psych-mystery-chest.open::before {
+    transform: rotateX(-120deg);
+}
+
+.psych-mystery-chest.open {
+    animation: shake 0.5s;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+.psych-mystery-result-text {
+    margin-top: 20px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    animation: fadeIn 1s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.psych-mystery-result-text h3 {
+    margin: 0;
+    font-size: 2em;
+}
+
+.rarity-common { color: #FFFFFF; }
+.rarity-uncommon { color: #1E90FF; } /* DodgerBlue */
+.rarity-rare { color: #FFD700; } /* Gold */
+
+.points-won {
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
+.badge-won {
+    font-size: 1.2em;
+    color: #FFD700;
+}

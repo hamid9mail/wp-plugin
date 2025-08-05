@@ -68,8 +68,10 @@ jQuery(document).ready(function($) {
                 success: function(response) {
                     if (response.success) {
                         console.log('Video progress tracked:', response.data.message);
-                        // Optional: Display a small notification to the user
-                        // e.g., using a library like Toastr or a custom div
+                        // If the reward is a mystery box, initialize it
+                        if (response.data.reward && typeof PsychMysteryBox !== 'undefined') {
+                            PsychMysteryBox.init(response.data.reward);
+                        }
                     } else {
                         console.error('Failed to track video progress:', response.data.message);
                     }
