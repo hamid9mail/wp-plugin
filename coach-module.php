@@ -1268,7 +1268,7 @@ final class Psych_Coach_Module_Ultimate {
 
     // Prevent cloning and wakeup
     private function __clone() {}
-    private function __wakeup() {}
+    public function __wakeup() {}
 }
 
 // Initialize the module

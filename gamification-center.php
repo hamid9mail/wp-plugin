@@ -16,7 +16,9 @@ if (!defined('ABSPATH')) {
 
 // Define custom table (assuming defined in main plugin, but reference here)
 global $wpdb;
-define('PSYCH_GAMIFICATION_TABLE', $wpdb->prefix . 'psych_gamification'); // For points, badges, levels, logs (as JSON)
+if (!defined('PSYCH_GAMIFICATION_TABLE')) {
+    define('PSYCH_GAMIFICATION_TABLE', $wpdb->prefix . 'psych_gamification'); // For points, badges, levels, logs (as JSON)
+}
 
 // =====================================================================
 // SECTION 0: GLOBAL API FUNCTIONS (STABLE & RELIABLE - All Fully Written, Updated for Custom Table)

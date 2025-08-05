@@ -25,17 +25,17 @@ define('PSYCH_RESULTS_TABLE', $wpdb->prefix . 'psych_results'); // For test/AI r
 define('PSYCH_GAMIFICATION_TABLE', $wpdb->prefix . 'psych_gamification'); // For points/badges/levels
 define('PSYCH_PATHS_TABLE', $wpdb->prefix . 'psych_paths'); // For path progress
 
-// Load all modules (assuming they are in the same directory; adjust if needed)
+// Load all modules
 require_once PSYCH_SYSTEM_PATH . 'coach-module.php';
 require_once PSYCH_SYSTEM_PATH . 'dashboard-display.php';
 require_once PSYCH_SYSTEM_PATH . 'gamification-center.php';
 require_once PSYCH_SYSTEM_PATH . 'interactive-content.php';
-require_once PSYCH_SYSTEM_PATH . 'modules/path-engine-temp.php'; // Use the fixed temporary version
-require_once PSYCH_SYSTEM_PATH . 'modules/report-card-temp.php'; // Use the fixed temporary version
-require_once PSYCH_SYSTEM_PATH . 'advanced-quiz-module.php'; // نام فایل جدید quiz module
-require_once PSYCH_SYSTEM_PATH . 'modules/spot-player-integration.php'; // New Spot Player Module
-require_once PSYCH_SYSTEM_PATH . 'modules/secure-audio.php'; // New Secure Audio Module
-require_once PSYCH_SYSTEM_PATH . 'modules/assessment-product.php'; // New Assessment Product Module
+require_once PSYCH_SYSTEM_PATH . 'path-engine-temp.php'; // Use the fixed temporary version
+require_once PSYCH_SYSTEM_PATH . 'report-card-temp.php'; // Use the fixed temporary version
+require_once PSYCH_SYSTEM_PATH . 'advanced-quiz-module.php';
+require_once PSYCH_SYSTEM_PATH . 'modules/spot-player-integration.php';
+require_once PSYCH_SYSTEM_PATH . 'modules/secure-audio.php';
+require_once PSYCH_SYSTEM_PATH . 'modules/assessment-product.php';
 
 // Global API Functions are now primarily handled by their respective modules (e.g., gamification-center.php)
 // to ensure a single source of truth and prevent conflicts.
