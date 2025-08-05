@@ -219,6 +219,7 @@ final class Psych_Gamification_Center {
         // New AJAX handlers for mission types
         add_action('wp_ajax_psych_track_mood', [$this, 'ajax_track_mood']);
         add_action('wp_ajax_psych_track_habit', [$this, 'ajax_track_habit']);
+        add_action('wp_ajax_psych_track_video_progress', [$this, 'ajax_track_video_progress']);
 
 
         // Frontend hooks (Fully implemented)
@@ -854,6 +855,30 @@ public function handle_quiz_points($user_id104, $score) {
         wp_send_json_error(['message' => 'خطا در ثبت.']);
     }
 
+    public function ajax_track_video_progress() {
+        check_ajax_referer('spot_player_nonce', 'nonce');
+        $user_id = get_current_user_id();
+        $video_id = sanitize_text_field($_POST['video_id']);
+        $event = sanitize_text_field($_POST['event']);
+
+        if (!$user_id || !$video_id || !$event) {
+            wp_send_json_error(['message' => 'اطلاعات ناقص است.']);
+        }
+
+        switch ($event) {
+            case 'ended':
+                $this->add_points($user_id, 25, "تماشای کامل ویدیو: $video_id");
+                $this->award_badge($user_id, "video_watched_{$video_id}");
+                break;
+            case 'ninety_percent':
+                $this->add_points($user_id, 15, "تماشای ۹۰٪ ویدیو: $video_id");
+                $this->award_badge($user_id, 'video_milestone_90_percent');
+                break;
+        }
+
+        wp_send_json_success(['message' => 'پیشرفت ویدیو ثبت شد.']);
+    }
+
     public function ajax_track_habit() {
         check_ajax_referer('psych_ajax_nonce', 'nonce');
         $user_id = get_current_user_id();
@@ -976,6 +1001,11 @@ public function handle_quiz_points($user_id104, $score) {
                 'feedback_pro' => ['name' => 'حرفه‌ای بازخورد', 'icon' => 'fa-comment-dots', 'color' => '#0dcaf0', 'description' => 'برای دریافت بازخورد از دوستان'],
                 'dribbler' => ['name' => 'دریبل‌زن', 'icon' => 'fa-futbol', 'color' => '#198754', 'description' => 'برای تکمیل تمرینات فوتبال'],
                 'consistent' => ['name' => 'باثبات', 'icon' => 'fa-sync-alt', 'color' => '#6610f2', 'description' => 'برای پیگیری عادات روزانه'],
+
+                // Spot Player Video Badges
+                'video_watched_{video_id}' => ['name' => 'تماشای ویدیو', 'description' => 'برای تماشای کامل یک ویدیوی خاص.', 'icon' => 'dashicons-video-alt3'],
+                'video_milestone_90_percent' => ['name' => 'پشتکار در تماشا', 'description' => 'برای تماشای ۹۰٪ از یک ویدیو.', 'icon' => 'dashicons-controls-forward'],
+                'video_collection_completed_{collection_name}' => ['name' => 'تکمیل کالکشن ویدیو', 'description' => 'برای تماشای تمام ویدیوهای یک مجموعه.', 'icon' => 'dashicons-format-video'],
             ];
             update_option(self::BADGES_OPTION_KEY, $badges);
         }

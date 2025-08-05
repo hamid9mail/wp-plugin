@@ -33,6 +33,7 @@ require_once PSYCH_SYSTEM_PATH . 'interactive-content.php';
 require_once PSYCH_SYSTEM_PATH . 'modules/path-engine-temp.php'; // Use the fixed temporary version
 require_once PSYCH_SYSTEM_PATH . 'modules/report-card-temp.php'; // Use the fixed temporary version
 require_once PSYCH_SYSTEM_PATH . 'advanced-quiz-module.php'; // نام فایل جدید quiz module
+require_once PSYCH_SYSTEM_PATH . 'modules/spot-player-integration.php'; // New Spot Player Module
 
 // Global API Functions are now primarily handled by their respective modules (e.g., gamification-center.php)
 // to ensure a single source of truth and prevent conflicts.

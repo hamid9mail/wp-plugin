@@ -239,6 +239,7 @@ public function call_ai_api($prompt) {
         add_shortcode('psych_interactive_feedback', [$this, 'render_feedback_shortcode']);
         add_shortcode('mission', [$this, 'render_mission_shortcode']);
         add_shortcode('psych_recommendation', [$this, 'render_recommendation_shortcode']); // New for user-specific recommendations
+        add_shortcode('psych_personalize', [$this, 'render_personalize_shortcode']); // The new, more powerful shortcode
 		add_shortcode('psych_ai_test_form', [$this, 'render_ai_test_form_shortcode']);
 		add_shortcode('psych_quiz_in_content', [$this, 'render_quiz_in_content_shortcode']);
 
@@ -412,6 +413,72 @@ public function render_quiz_in_content_shortcode($atts) {
         <?php endif; ?>
         <?php
         return ob_get_clean();
+    }
+
+    public function render_personalize_shortcode($atts, $content = null) {
+        $atts = shortcode_atts([
+            'show_to' => '', // e.g., "user_has_badge:video_watched_intro" or "user_points>100"
+            'hide_from' => '',
+        ], $atts, 'psych_personalize');
+
+        $context = $this->get_viewing_context();
+        $user_id = $context['viewed_user_id'];
+
+        if (!$user_id) {
+            return ''; // Don't show personalized content to logged-out users
+        }
+
+        $show_conditions = !empty($atts['show_to']) ? explode(',', $atts['show_to']) : [];
+        $hide_conditions = !empty($atts['hide_from']) ? explode(',', $atts['hide_from']) : [];
+
+        $should_show = $this->evaluate_conditions($user_id, $show_conditions, 'AND');
+        $should_hide = $this->evaluate_conditions($user_id, $hide_conditions, 'OR');
+
+        if ($should_hide) {
+            return '';
+        }
+
+        if (empty($show_conditions) || $should_show) {
+            return do_shortcode($content);
+        }
+
+        return '';
+    }
+
+    private function evaluate_conditions($user_id, $conditions, $operator = 'AND') {
+        if (empty($conditions)) {
+            return ($operator === 'AND'); // No conditions to meet for AND, but fail for OR
+        }
+
+        $results = [];
+        foreach ($conditions as $condition) {
+            $condition = trim($condition);
+            if (strpos($condition, ':') !== false) {
+                list($type, $value) = explode(':', $condition, 2);
+            } else {
+                // Handle conditions like "is_coach"
+                $type = $condition;
+                $value = true;
+            }
+
+            $result = false;
+            switch ($type) {
+                case 'user_has_badge':
+                    if (function_exists('psych_user_has_badge')) {
+                        $result = psych_user_has_badge($user_id, $value);
+                    }
+                    break;
+                // Add more conditions here as needed, e.g., user_points, user_level, etc.
+            }
+            $results[] = $result;
+        }
+
+        if ($operator === 'OR') {
+            return in_array(true, $results);
+        }
+
+        // Default to AND
+        return !in_array(false, $results);
     }
 
     public function render_hidden_content_shortcode($atts, $content = null) {
@@ -826,6 +893,71 @@ public function render_quiz_in_content_shortcode($atts) {
         }
 
         return '<script type="application/ld+json">' . wp_json_encode($schema) . '</script>';
+    }
+
+    /**
+     * Generates the content for a shareable, SEO-optimized achievement page.
+     * This can be hooked into a custom page template.
+     * @param int $user_id
+     * @param string $course_id
+     * @return string HTML content for the achievement page.
+     */
+    public function generate_achievement_page_content($user_id, $course_id) {
+        $user_data = get_userdata($user_id);
+        $course_post = get_post($course_id); // Assuming courses are posts or a CPT
+
+        if (!$user_data || !$course_post) {
+            return '<p>اطلاعات دوره یا کاربر یافت نشد.</p>';
+        }
+
+        $user_badges = get_user_meta($user_id, 'psych_user_badges', true) ?: [];
+        // Filter badges relevant to the course if possible (e.g., by a naming convention)
+
+        $page_title = sprintf('گواهی تکمیل دوره %s برای %s', $course_post->post_title, $user_data->display_name);
+
+        ob_start();
+        ?>
+        <article class="psych-achievement-page">
+            <header>
+                <h1><?php echo esc_html($page_title); ?></h1>
+                <p class="issue-date">صادر شده در: <?php echo date_i18n(get_option('date_format')); ?></p>
+            </header>
+            <div class="achievement-details">
+                <p>این گواهی تایید می‌کند که <strong><?php echo esc_html($user_data->display_name); ?></strong> با موفقیت دوره آموزشی آنلاین <strong>"<?php echo esc_html($course_post->post_title); ?>"</strong> را به اتمام رسانده است.</p>
+                <h3>دستاوردهای کسب شده:</h3>
+                <ul class="badges-earned">
+                    <?php foreach($user_badges as $badge_slug): ?>
+                        <li><?php echo esc_html(psych_get_badge_name($badge_slug)); ?></li>
+                    <?php endforeach; ?>
+                </ul>
+                <h3>درباره دوره:</h3>
+                <p><?php echo esc_html($course_post->post_excerpt ?: 'توضیحات دوره در اینجا قرار می‌گیرد.'); ?></p>
+            </div>
+            <footer>
+                <p>برای مشاهده دوره، <a href="<?php echo get_permalink($course_post); ?>">اینجا کلیک کنید</a>.</p>
+                <div class="social-share">
+                    <!-- Add social sharing buttons here -->
+                </div>
+            </footer>
+        </article>
+        <?php
+
+        // Add Schema.org markup for SEO
+        $schema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Person',
+            'name' => $user_data->display_name,
+            'alumniOf' => [
+                '@type' => 'EducationalOrganization',
+                'name' => get_bloginfo('name'),
+                'url' => home_url()
+            ],
+            'knowsAbout' => $course_post->post_title
+        ];
+
+        echo '<script type="application/ld+json">' . wp_json_encode($schema) . '</script>';
+
+        return ob_get_clean();
     }
 
     // ===================================================================
