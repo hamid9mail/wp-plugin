@@ -220,6 +220,7 @@ final class Psych_Gamification_Center {
         add_action('wp_ajax_psych_track_mood', [$this, 'ajax_track_mood']);
         add_action('wp_ajax_psych_track_habit', [$this, 'ajax_track_habit']);
         add_action('wp_ajax_psych_track_video_progress', [$this, 'ajax_track_video_progress']);
+        add_action('wp_ajax_psych_track_audio_progress', [$this, 'ajax_track_audio_progress']);
 
 
         // Frontend hooks (Fully implemented)
@@ -899,6 +900,31 @@ public function handle_quiz_points($user_id104, $score) {
         wp_send_json_success(['message' => 'پیشرفت ویدیو ثبت شد.', 'reward' => $reward]);
     }
 
+    public function ajax_track_audio_progress() {
+        check_ajax_referer('secure_audio_nonce', 'nonce');
+        $user_id = get_current_user_id();
+        $audio_id = sanitize_text_field($_POST['audio_id']);
+
+        if (!$user_id || !$audio_id) {
+            wp_send_json_error(['message' => 'اطلاعات ناقص است.']);
+        }
+
+        $this->add_points($user_id, 10, "گوش دادن به فایل صوتی: $audio_id");
+        $this->award_badge($user_id, "audio_listened_{$audio_id}");
+
+        // Check for podcast fan badge
+        $listened_audios = get_user_meta($user_id, '_psych_listened_audios', true) ?: [];
+        if (!in_array($audio_id, $listened_audios)) {
+            $listened_audios[] = $audio_id;
+            update_user_meta($user_id, '_psych_listened_audios', $listened_audios);
+        }
+        if (count($listened_audios) >= 5) {
+            $this->award_badge($user_id, 'podcast_fan');
+        }
+
+        wp_send_json_success(['message' => 'پیشرفت صوتی ثبت شد.']);
+    }
+
     public function ajax_track_habit() {
         check_ajax_referer('psych_ajax_nonce', 'nonce');
         $user_id = get_current_user_id();
@@ -1051,6 +1077,10 @@ public function handle_quiz_points($user_id104, $score) {
                 'video_milestone_90_percent' => ['name' => 'پشتکار در تماشا', 'description' => 'برای تماشای ۹۰٪ از یک ویدیو.', 'icon' => 'dashicons-controls-forward'],
                 'video_collection_completed_{collection_name}' => ['name' => 'تکمیل کالکشن ویدیو', 'description' => 'برای تماشای تمام ویدیوهای یک مجموعه.', 'icon' => 'dashicons-format-video'],
                 'lucky_star' => ['name' => 'ستاره خوش‌شانس', 'description' => 'یک جایزه بسیار نادر از جعبه شانس!', 'icon' => 'dashicons-star-filled', 'unlisted' => true],
+
+                // Secure Audio Badges
+                'audio_listened_{audio_id}' => ['name' => 'شنونده', 'description' => 'برای گوش دادن کامل به یک فایل صوتی.', 'icon' => 'dashicons-format-audio'],
+                'podcast_fan' => ['name' => 'طرفدار پادکست', 'description' => 'برای گوش دادن به ۵ فایل صوتی.', 'icon' => 'dashicons-microphone'],
             ];
             update_option(self::BADGES_OPTION_KEY, $badges);
         }
