@@ -331,7 +331,10 @@ add_action('wp_ajax_psych_dashboard_refresh', function() {
 });
 
 // Admin Panel for Settings
-add_action('admin_menu', function() {
+add_action('admin_menu', 'psych_create_all_admin_menus');
+
+function psych_create_all_admin_menus() {
+    // Main Menu Page
     add_menu_page(
         'تنظیمات Psych System',
         'Psych System',
@@ -341,7 +344,66 @@ add_action('admin_menu', function() {
         'dashicons-analytics',
         6
     );
-});
+
+    // Sub-menus for each module
+    if (class_exists('Psych_Coach_Module_Ultimate')) {
+        add_submenu_page(
+            'psych-settings',
+            'مدیریت مربیان',
+            'مربیگری',
+            'manage_options',
+            'psych-coach-management',
+            [Psych_Coach_Module_Ultimate::get_instance(), 'render_coach_management_page']
+        );
+    }
+
+    if (class_exists('Psych_Gamification_Center')) {
+        $gamification_instance = Psych_Gamification_Center::get_instance();
+        add_submenu_page(
+            'psych-settings',
+            'گیمیفیکیشن سنتر',
+            'گیمیفیکیشن',
+            'manage_options',
+            'psych-gamification-center',
+            [$gamification_instance, 'render_admin_page']
+        );
+        add_submenu_page(
+            'psych-gamification-center',
+            'سطوح',
+            'سطوح',
+            'manage_options',
+            'psych-gamification-center-levels',
+            [$gamification_instance, 'render_levels_page']
+        );
+        add_submenu_page(
+            'psych-gamification-center',
+            'نشان‌ها',
+            'نشان‌ها',
+            'manage_options',
+            'psych-gamification-center-badges',
+            [$gamification_instance, 'render_badges_page']
+        );
+        add_submenu_page(
+            'psych-gamification-center',
+            'اعطای دستی',
+            'اعطای دستی',
+            'manage_options',
+            'psych-gamification-center-manual',
+            [$gamification_instance, 'render_manual_award_page']
+        );
+    }
+
+    if (class_exists('Psych_Dashboard_Display_Enhanced')) {
+        add_submenu_page(
+            'psych-settings',
+            'Psych Dashboard',
+            'Psych Dashboard',
+            'manage_options',
+            'psych-dashboard',
+            [Psych_Dashboard_Display_Enhanced::get_instance(), 'render_admin_page']
+        );
+    }
+}
 
 function psych_settings_page() {
     if (isset($_POST['psych_settings_submit'])) {

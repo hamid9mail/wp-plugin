@@ -48,7 +48,6 @@ final class Psych_Coach_Module_Ultimate {
         add_action('woocommerce_thankyou', [$this, 'assign_coach_on_purchase_from_cookie']);
 
         // Admin & Dashboard
-        add_action('admin_menu', [$this, 'add_coach_management_page']);
         add_action('admin_notices', [$this, 'show_admin_notices']);
 
         // User Profile & Access Control
@@ -698,17 +697,6 @@ final class Psych_Coach_Module_Ultimate {
     // =====================================================================
     // SECTION 2: ADMIN & DASHBOARD (Enhanced with AI Suggestion Button)
     // =====================================================================
-
-    public function add_coach_management_page() {
-        add_submenu_page(
-            'psych-settings', // Parent slug
-            'مدیریت مربیان', // Page title
-            'مربیگری', // Menu title
-            'manage_options', // Capability
-            'psych-coach-management', // Menu slug
-            [$this, 'render_coach_management_page'] // Function
-        );
-    }
 
     public function render_coach_management_page() {
         $product_id = isset($_GET['product_id']) ? intval($_GET['product_id']) : 0;

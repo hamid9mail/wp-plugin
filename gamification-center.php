@@ -203,7 +203,6 @@ final class Psych_Gamification_Center {
 
     private function add_hooks() {
         // Admin hooks (Fully implemented)
-        add_action('admin_menu', [$this, 'add_admin_menu']);
         add_action('admin_init', [$this, 'register_settings']);
         add_action('admin_footer', [$this, 'inject_inline_assets']); // Inline assets in admin footer
         add_action('wp_ajax_psych_manual_award', [$this, 'handle_manual_award_ajax']);
@@ -581,41 +580,6 @@ public function handle_quiz_points($user_id104, $score) {
     // =====================================================================
     // ADMIN PANEL (Fully Implemented)
     // =====================================================================
-
-    public function add_admin_menu() {
-        add_submenu_page(
-            'psych-settings',
-            'گیمیفیکیشن سنتر',
-            'گیمیفیکیشن',
-            'manage_options',
-            $this->admin_page_slug,
-            [$this, 'render_admin_page']
-        );
-        add_submenu_page(
-            $this->admin_page_slug,
-            'سطوح',
-            'سطوح',
-            'manage_options',
-            $this->admin_page_slug . '-levels',
-            [$this, 'render_levels_page']
-        );
-        add_submenu_page(
-            $this->admin_page_slug,
-            'نشان‌ها',
-            'نشان‌ها',
-            'manage_options',
-            $this->admin_page_slug . '-badges',
-            [$this, 'render_badges_page']
-        );
-        add_submenu_page(
-            $this->admin_page_slug,
-            'اعطای دستی',
-            'اعطای دستی',
-            'manage_options',
-            $this->admin_page_slug . '-manual',
-            [$this, 'render_manual_award_page']
-        );
-    }
 
     public function render_admin_page() {
         if (!current_user_can('manage_options')) {

@@ -58,7 +58,6 @@ final class Psych_Dashboard_Display_Enhanced {
     private function add_hooks() {
         add_action('init', [$this, 'register_shortcodes']);
         add_action('wp_enqueue_scripts', [$this, 'enqueue_frontend_assets']);
-        add_action('admin_menu', [$this, 'add_admin_menu']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
 
         // AJAX handlers
@@ -983,17 +982,6 @@ final class Psych_Dashboard_Display_Enhanced {
     // =====================================================================
     // ADMIN MENU AND RENDER (complete)
     // =====================================================================
-
-    public function add_admin_menu() {
-        add_submenu_page(
-            'psych-settings',
-            'Psych Dashboard',
-            'Psych Dashboard',
-            'manage_options',
-            'psych-dashboard',
-            [$this, 'render_admin_page']
-        );
-    }
 
     public function render_admin_page() {
         ?>
