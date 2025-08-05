@@ -13,6 +13,16 @@ if (class_exists('Psych_Coach_Module_Ultimate')) {
     return;
 }
 
+if (!function_exists('psych_is_coach_impersonating')) {
+    function psych_is_coach_impersonating() {
+        if (class_exists('Psych_Coach_Module_Ultimate')) {
+            $context = Psych_Coach_Module_Ultimate::get_instance()->get_viewing_context();
+            return $context['is_impersonating'];
+        }
+        return false;
+    }
+}
+
 /**
  * Ultimate Enhanced Coach Module Class with full integration support, custom table usage, quiz integration, AI suggestions, and realtime notifications.
  * All assets are inline, no external files required. Enhanced with new features while preserving all previous ones.

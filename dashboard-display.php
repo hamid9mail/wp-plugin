@@ -40,8 +40,9 @@ final class Psych_Dashboard_Display_Enhanced {
             $this->viewing_context = psych_get_viewing_context();
         } else {
             // Basic fallback
+            $is_impersonating = function_exists('psych_is_coach_impersonating') ? psych_is_coach_impersonating() : false;
             $this->viewing_context = [
-                'is_impersonating' => psych_is_coach_impersonating(),
+                'is_impersonating' => $is_impersonating,
                 'real_user_id' => get_current_user_id(),
                 'viewed_user_id' => get_current_user_id(),
             ];
