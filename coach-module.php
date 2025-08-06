@@ -101,6 +101,7 @@ final class Psych_Coach_Module_Ultimate {
 
         // New: AI Suggestion Integration (simulated)
         add_action('wp_ajax_psych_coach_get_ai_suggestion', [$this, 'ajax_get_ai_suggestion']);
+        add_action('wp_ajax_psych_coach_claim_product', [$this, 'ajax_coach_claim_product']);
     }
 
     public function create_custom_tables() {
@@ -638,8 +639,8 @@ final class Psych_Coach_Module_Ultimate {
     }
 
     public function capture_coach_referral_cookie() {
-        if (isset($_GET['coach_ref'])) {
-            $coach_id = intval($_GET['coach_ref']);
+        if (isset($_GET['coach_id'])) {
+            $coach_id = intval($_GET['coach_id']);
             $coach_user = get_userdata($coach_id);
 
             if ($coach_user && !empty(array_intersect($this->coach_roles, (array)$coach_user->roles))) {
@@ -652,15 +653,15 @@ final class Psych_Coach_Module_Ultimate {
                     'httponly' => true,
                     'samesite' => 'Strict'
                 ];
-                setcookie('psych_coach_ref', $coach_id, $cookie_options);
+                setcookie('psych_coach_id', $coach_id, $cookie_options);
             }
         }
     }
 
     public function assign_coach_on_purchase_from_cookie($order_id) {
-        if (!isset($_COOKIE['psych_coach_ref'])) return;
+        if (!isset($_COOKIE['psych_coach_id'])) return;
 
-        $coach_id = intval($_COOKIE['psych_coach_ref']);
+        $coach_id = intval($_COOKIE['psych_coach_id']);
         $order = wc_get_order($order_id);
 
         if (!$order) return;
@@ -701,7 +702,7 @@ final class Psych_Coach_Module_Ultimate {
         }
 
         // Clear the cookie after assignment
-        setcookie('psych_coach_ref', '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true);
+        setcookie('psych_coach_id', '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true);
     }
 
     // =====================================================================
@@ -888,6 +889,8 @@ final class Psych_Coach_Module_Ultimate {
         add_shortcode('coach_search_by_code', [$this, 'shortcode_coach_search_by_code']);
         add_shortcode('psych_user_dashboard', [$this, 'shortcode_user_dashboard']);
         add_shortcode('coach_quiz_view', [$this, 'shortcode_coach_quiz_view']); // New: Shortcode for coach quiz view
+        add_shortcode('psych_coach_dashboard', [$this, 'shortcode_coach_dashboard']);
+        add_shortcode('psych_coach_page', [$this, 'shortcode_coach_page']);
     }
 
     public function shortcode_coach_impersonate_form($atts) {
@@ -1040,6 +1043,179 @@ final class Psych_Coach_Module_Ultimate {
 
         return $this->get_coach_quiz_view($student_id, $quiz_id);
     }
+
+    public function shortcode_coach_dashboard( $atts ) {
+		if ( ! current_user_can( 'coach' ) && ! current_user_can( 'administrator' ) ) {
+			return '<p>' . esc_html__( 'You do not have permission to view this dashboard.', 'psych-system' ) . '</p>';
+		}
+
+		ob_start();
+		$this->render_coach_dashboard();
+		return ob_get_clean();
+	}
+
+	private function render_coach_dashboard() {
+		$coach_id = get_current_user_id();
+		$products = wc_get_products( [ 'limit' => -1, 'status' => 'publish' ] );
+		$claimed_products = get_user_meta( $coach_id, '_psych_claimed_products', true );
+		if ( ! is_array( $claimed_products ) ) {
+			$claimed_products = [];
+		}
+
+		?>
+		<div class="wrap psych-coach-container">
+			<h2><?php esc_html_e( 'My Products', 'psych-system' ); ?></h2>
+			<table class="psych-student-table">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Product Name', 'psych-system' ); ?></th>
+						<th><?php esc_html_e( 'Status', 'psych-system' ); ?></th>
+						<th><?php esc_html_e( 'Actions', 'psych-system' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( $products as $product ) : ?>
+						<tr>
+							<td><?php echo esc_html( $product->get_name() ); ?></td>
+							<td>
+								<?php if ( in_array( $product->get_id(), $claimed_products ) ) : ?>
+									<span style="color:green;"><?php esc_html_e( 'Claimed', 'psych-system' ); ?></span>
+								<?php else : ?>
+									<span style="color:red;"><?php esc_html_e( 'Not Claimed', 'psych-system' ); ?></span>
+								<?php endif; ?>
+							</td>
+							<td>
+								<button class="psych-button psych-claim-button" data-product-id="<?php echo esc_attr( $product->get_id() ); ?>" data-coach-id="<?php echo esc_attr( $coach_id ); ?>">
+									<?php esc_html_e( 'Claim', 'psych-system' ); ?>
+								</button>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		</div>
+		<script>
+			document.addEventListener('DOMContentLoaded', function() {
+				const nonce = '<?php echo wp_create_nonce('psych_coach_claim_nonce'); ?>';
+				const ajaxurl = '<?php echo admin_url('admin-ajax.php'); ?>';
+
+				document.querySelectorAll('.psych-claim-button').forEach(button => {
+					button.addEventListener('click', () => {
+						const productId = button.dataset.productId;
+						const coachId = button.dataset.coachId;
+
+						fetch(ajaxurl, {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+							body: new URLSearchParams({
+								action: 'psych_coach_claim_product',
+								nonce: nonce,
+								product_id: productId,
+								coach_id: coachId
+							})
+						}).then(response => response.json()).then(data => {
+							if (data.success) {
+								alert('Product claimed successfully!');
+								location.reload();
+							} else {
+								alert(data.data.message);
+							}
+						}).catch(error => console.error('Error:', error));
+					});
+				});
+			});
+		</script>
+		<?php
+	}
+
+	public function ajax_coach_claim_product() {
+		check_ajax_referer( 'psych_coach_claim_nonce', 'nonce' );
+
+		$product_id = isset( $_POST['product_id'] ) ? intval( $_POST['product_id'] ) : 0;
+		$coach_id = isset( $_POST['coach_id'] ) ? intval( $_POST['coach_id'] ) : 0;
+
+		if ( $product_id <= 0 || $coach_id <= 0 ) {
+			wp_send_json_error( [ 'message' => 'Invalid data.' ] );
+		}
+
+		if ( ! current_user_can( 'coach' ) && ! current_user_can( 'administrator' ) ) {
+			wp_send_json_error( [ 'message' => 'You do not have permission.' ] );
+		}
+
+		$claimed_products = get_user_meta( $coach_id, '_psych_claimed_products', true );
+		if ( ! is_array( $claimed_products ) ) {
+			$claimed_products = [];
+		}
+
+		if ( ! in_array( $product_id, $claimed_products ) ) {
+			$claimed_products[] = $product_id;
+			update_user_meta( $coach_id, '_psych_claimed_products', $claimed_products );
+		}
+
+		wp_send_json_success();
+	}
+
+    public function shortcode_coach_page( $atts ) {
+		if ( ! current_user_can( 'coach' ) && ! current_user_can( 'administrator' ) ) {
+			return '<p>' . esc_html__( 'You do not have permission to view this page.', 'psych-system' ) . '</p>';
+		}
+
+		$atts = shortcode_atts( [
+			'view' => 'students', // 'students', 'reports', etc.
+		], $atts, 'psych_coach_page' );
+
+		if ( $atts['view'] === 'students' ) {
+			return $this->render_students_view();
+		}
+
+		return '';
+	}
+
+	private function render_students_view() {
+		$coach_id = get_current_user_id();
+		global $wpdb;
+		$table_name = $wpdb->prefix . self::ASSIGNMENTS_TABLE;
+		$assignments = $wpdb->get_results( $wpdb->prepare(
+			"SELECT * FROM $table_name WHERE coach_id = %d AND status = 'active'",
+			$coach_id
+		) );
+
+		ob_start();
+		?>
+		<div class="wrap psych-coach-container">
+			<h2><?php esc_html_e( 'My Students', 'psych-system' ); ?></h2>
+			<table class="psych-student-table">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Student Name', 'psych-system' ); ?></th>
+						<th><?php esc_html_e( 'Product', 'psych-system' ); ?></th>
+						<th><?php esc_html_e( 'Assigned At', 'psych-system' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php if ( ! empty( $assignments ) ) : ?>
+						<?php foreach ( $assignments as $assignment ) : ?>
+							<?php
+							$student = get_userdata( $assignment->student_id );
+							$product = wc_get_product( $assignment->product_id );
+							?>
+							<tr>
+								<td><?php echo esc_html( $student->display_name ); ?></td>
+								<td><?php echo esc_html( $product->get_name() ); ?></td>
+								<td><?php echo esc_html( date_i18n( 'Y/m/d', strtotime( $assignment->assigned_at ) ) ); ?></td>
+							</tr>
+						<?php endforeach; ?>
+					<?php else : ?>
+						<tr>
+							<td colspan="3" style="text-align:center;"><?php esc_html_e( 'No students assigned yet.', 'psych-system' ); ?></td>
+						</tr>
+					<?php endif; ?>
+				</tbody>
+			</table>
+		</div>
+		<?php
+		return ob_get_clean();
+	}
 
     // =====================================================================
     // SECTION 5: INTEGRATIONS & DATA HANDLING (Enhanced with Gamification Custom Table)
