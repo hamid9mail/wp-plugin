@@ -238,9 +238,18 @@ final class Psych_Gamification_Center {
         add_shortcode('psych_user_badges', [$this, 'render_user_badges_shortcode']);
         add_shortcode('psych_leaderboard', [$this, 'render_leaderboard_shortcode']);
         add_shortcode('psych_mission_badge', [$this, 'render_mission_badge_shortcode']);
+        add_shortcode('psych_referral_mission', [$this, 'render_referral_mission_shortcode']);
+        add_shortcode('psych_social_share', [$this, 'render_social_share_shortcode']);
+        add_shortcode('psych_instagram_story_mission', [$this, 'render_instagram_story_mission_shortcode']);
 		// In add_hooks() function, add:
 		add_action('psych_quiz_completed', [$this, 'handle_quiz_points'], 10, 2);
 
+        // Referral Hooks
+        add_action('init', [$this, 'capture_referral_cookie']);
+        add_action('user_register', [$this, 'credit_referrer_on_registration']);
+
+        // Self-attested Mission Hook
+        add_action('wp_ajax_psych_complete_self_attested_mission', [$this, 'ajax_complete_self_attested_mission']);
     }
 
     // =====================================================================
@@ -1263,6 +1272,29 @@ public function handle_quiz_points($user_id104, $score) {
                 card.addEventListener('mouseenter', () => card.style.transform = 'scale(1.05)');
                 card.addEventListener('mouseleave', () => card.style.transform = 'scale(1)');
             });
+
+            // Instagram Story Mission
+            jQuery(document).on('change', '.psych-instagram-attestation', function() {
+                if (jQuery(this).is(':checked')) {
+                    const missionContainer = jQuery(this).closest('.psych-instagram-mission');
+                    const missionId = missionContainer.data('mission-id');
+                    const badge = missionContainer.data('badge');
+
+                    jQuery.post('<?php echo admin_url('admin-ajax.php'); ?>', {
+                        action: 'psych_complete_self_attested_mission',
+                        nonce: '<?php echo wp_create_nonce('psych_gamification_nonce'); ?>',
+                        mission_id: missionId,
+                        badge: badge
+                    }).done(function(response) {
+                        if (response.success) {
+                            missionContainer.html('<div class="psych-alert success">' + response.data.message + '</div>');
+                        } else {
+                            alert(response.data.message);
+                            jQuery(this).prop('checked', false); // Uncheck if error
+                        }
+                    }.bind(this));
+                }
+            });
         </script>
         <?php
     }
@@ -1325,6 +1357,134 @@ public function handle_quiz_points($user_id104, $score) {
         $this->add_points($post->post_author, $this->get_settings()['points_per_post'], 'انتشار پست');
     }
 }
+
+    public function capture_referral_cookie() {
+        if ( isset( $_GET['ref'] ) ) {
+            $referrer_id = intval( $_GET['ref'] );
+            if ( get_userdata( $referrer_id ) ) {
+                setcookie( 'psych_referrer_id', $referrer_id, time() + ( 86400 * 30 ), COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true );
+            }
+        }
+    }
+
+    public function credit_referrer_on_registration( $new_user_id ) {
+        if ( isset( $_COOKIE['psych_referrer_id'] ) ) {
+            $referrer_id = intval( $_COOKIE['psych_referrer_id'] );
+            if ( get_userdata( $referrer_id ) ) {
+                $referral_count = get_user_meta( $referrer_id, '_psych_referral_count', true );
+                $referral_count = $referral_count ? intval( $referral_count ) + 1 : 1;
+                update_user_meta( $referrer_id, '_psych_referral_count', $referral_count );
+
+                // Add points to the referrer
+                $this->add_points( $referrer_id, 100, 'Referred a new user: ' . get_userdata( $new_user_id )->user_login );
+
+                // Clear the cookie
+                setcookie( 'psych_referrer_id', '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true );
+            }
+        }
+    }
+
+    public function render_referral_mission_shortcode( $atts, $content = null ) {
+        $atts = shortcode_atts( [
+            'goal' => 5,
+            'badge' => 'ambassador',
+        ], $atts, 'psych_referral_mission' );
+
+        $user_id = get_current_user_id();
+        if ( ! $user_id ) {
+            return '';
+        }
+
+        $referral_link = add_query_arg( 'ref', $user_id, home_url() );
+        $referral_count = get_user_meta( $user_id, '_psych_referral_count', true ) ?: 0;
+        $goal = intval( $atts['goal'] );
+        $is_complete = $referral_count >= $goal;
+
+        if ( $is_complete && ! $this->user_has_badge( $user_id, $atts['badge'] ) ) {
+            $this->award_badge( $user_id, $atts['badge'] );
+        }
+
+        $output = str_replace( '[referral_link]', esc_url( $referral_link ), $content );
+        $output = str_replace( '[referral_count]', $referral_count, $output );
+        $output = str_replace( '[goal]', $goal, $output );
+
+        return do_shortcode($output);
+    }
+    public function render_social_share_shortcode( $atts ) {
+        $atts = shortcode_atts( [
+            'url_to_share' => get_permalink(),
+            'text_to_share' => get_the_title(),
+            'badge' => 'social_share',
+        ], $atts, 'psych_social_share' );
+
+        $user_id = get_current_user_id();
+        if ( $user_id && !$this->user_has_badge( $user_id, $atts['badge'] ) ) {
+            $this->award_badge( $user_id, $atts['badge'] );
+        }
+
+        $twitter_url = 'https://twitter.com/intent/tweet?url=' . urlencode( $atts['url_to_share'] ) . '&text=' . urlencode( $atts['text_to_share'] );
+        $facebook_url = 'https://www.facebook.com/sharer/sharer.php?u=' . urlencode( $atts['url_to_share'] );
+        $linkedin_url = 'https://www.linkedin.com/shareArticle?mini=true&url=' . urlencode( $atts['url_to_share'] ) . '&title=' . urlencode( $atts['text_to_share'] );
+
+        $output = '<div class="psych-social-share-links">';
+        $output .= '<a href="' . esc_url( $twitter_url ) . '" target="_blank" class="psych-button">Share on Twitter</a>';
+        $output .= '<a href="' . esc_url( $facebook_url ) . '" target="_blank" class="psych-button">Share on Facebook</a>';
+        $output .= '<a href="' . esc_url( $linkedin_url ) . '" target="_blank" class="psych-button">Share on LinkedIn</a>';
+        $output .= '</div>';
+
+        return $output;
+    }
+
+    public function render_instagram_story_mission_shortcode( $atts ) {
+        $atts = shortcode_atts( [
+            'image_url' => '',
+            'mission_id' => 'instagram_share',
+            'badge' => 'instagram_sharer'
+        ], $atts, 'psych_instagram_story_mission' );
+
+        $user_id = get_current_user_id();
+        if ( !$user_id || empty( $atts['image_url'] ) ) {
+            return '';
+        }
+
+        $mission_key = '_psych_mission_completed_' . $atts['mission_id'];
+        if ( get_user_meta( $user_id, $mission_key, true ) ) {
+            return '<div class="psych-alert success">Thank you for sharing!</div>';
+        }
+
+        $output = '<div class="psych-instagram-mission" data-mission-id="' . esc_attr( $atts['mission_id'] ) . '" data-badge="' . esc_attr( $atts['badge'] ) . '">';
+        $output .= '<p>Share this image to your Instagram Story:</p>';
+        $output .= '<img src="' . esc_url( $atts['image_url'] ) . '" style="max-width: 200px; border: 1px solid #ccc; padding: 5px;">';
+        $output .= '<p><label><input type="checkbox" class="psych-instagram-attestation"> I have shared this to my story.</label></p>';
+        $output .= '</div>';
+
+        return $output;
+    }
+
+    public function ajax_complete_self_attested_mission() {
+        check_ajax_referer( 'psych_gamification_nonce', 'nonce' );
+
+        $user_id = get_current_user_id();
+        $mission_id = isset( $_POST['mission_id'] ) ? sanitize_key( $_POST['mission_id'] ) : '';
+        $badge = isset( $_POST['badge'] ) ? sanitize_key( $_POST['badge'] ) : '';
+
+        if ( !$user_id || !$mission_id ) {
+            wp_send_json_error();
+        }
+
+        $mission_key = '_psych_mission_completed_' . $mission_id;
+        if ( get_user_meta( $user_id, $mission_key, true ) ) {
+            wp_send_json_error( [ 'message' => 'Mission already completed.' ] );
+        }
+
+        update_user_meta( $user_id, $mission_key, true );
+        if ( $badge && !$this->user_has_badge( $user_id, $badge ) ) {
+            $this->award_badge( $user_id, $badge );
+        }
+        $this->add_points( $user_id, 25, 'Completed self-attested mission: ' . $mission_id );
+
+        wp_send_json_success( [ 'message' => 'Mission completed! Thank you.' ] );
+    }
 
 // Initialize the class
 Psych_Gamification_Center::get_instance();

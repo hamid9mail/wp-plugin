@@ -1196,51 +1196,6 @@ function psych_shortcode_report_card($atts) {
 }
 
 
-// New shortcodes from user request
-add_shortcode('psych_test_result', function($atts) {
-    $atts = shortcode_atts(['test_id' => '', 'type' => 'score', 'key' => ''], $atts);
-    $user_id = get_current_user_id();
-    $report_data = Psych_Unified_Report_Card_Enhanced::get_instance()->get_report_data($user_id);
-    $results = json_decode($report_data['test_results'], true) ?: [];
-    foreach ($results as $result) {
-        if ($result['test_id'] == $atts['test_id']) {
-            if ($atts['type'] == 'score') return $result['score'];
-            if ($atts['type'] == 'subscale' && isset($result['subscales'][$atts['key']])) return $result['subscales'][$atts['key']];
-        }
-    }
-    return 'No result found';
-});
-
-add_shortcode('psych_ai_report', function($atts) {
-    $atts = shortcode_atts(['test_id' => '', 'format' => 'full'], $atts);
-    $user_id = get_current_user_id();
-    $report_data = Psych_Unified_Report_Card_Enhanced::get_instance()->get_report_data($user_id);
-    $results = json_decode($report_data['test_results'], true) ?: [];
-    $ai_report = '';
-    foreach ($results as $result) {
-        if ($result['test_id'] == $atts['test_id'] && isset($result['ai_analysis'])) {
-            $ai_report = $result['ai_analysis'];
-            break;
-        }
-    }
-    if (empty($ai_report)) {
-        // Call AI API and store
-        if (function_exists('call_ai_api')) {
-            $ai_report = call_ai_api($atts['test_id'], $user_id);
-            // Update in custom table
-            $new_results = $results;
-            $new_results[] = ['test_id' => $atts['test_id'], 'ai_analysis' => $ai_report];
-            Psych_Unified_Report_Card_Enhanced::get_instance()->update_report_data($user_id, ['test_results' => $new_results]);
-            do_action('psych_ai_result_stored', $user_id, $atts['test_id']);
-        } else {
-            $ai_report = 'AI analysis not available.';
-        }
-    }
-    if ($atts['format'] == 'summary') {
-        return substr($ai_report, 0, 100) . '...';
-    }
-    return $ai_report;
-});
 
 // Integration with other modules (assuming functions exist)
 function psych_integrate_with_coach($user_id) {

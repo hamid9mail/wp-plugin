@@ -102,14 +102,23 @@ final class Psych_Coach_Module_Ultimate {
         // New: AI Suggestion Integration (simulated)
         add_action('wp_ajax_psych_coach_get_ai_suggestion', [$this, 'ajax_get_ai_suggestion']);
         add_action('wp_ajax_psych_coach_claim_product', [$this, 'ajax_coach_claim_product']);
+        add_action('wp_ajax_psych_coach_approve_mission', [$this, 'ajax_coach_approve_mission']);
+
+        // Feedback Request
+        add_action('init', [$this, 'add_feedback_rewrite_rule']);
+        add_action('template_redirect', [$this, 'handle_feedback_request']);
+        add_action('wp_ajax_nopriv_psych_submit_feedback_response', [$this, 'ajax_submit_feedback_response']);
+        add_action('wp_ajax_psych_submit_feedback_response', [$this, 'ajax_submit_feedback_response']);
     }
 
     public function create_custom_tables() {
         global $wpdb;
-        $table_name = $wpdb->prefix . self::ASSIGNMENTS_TABLE;
         $charset_collate = $wpdb->get_charset_collate();
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
-        $sql = "CREATE TABLE $table_name (
+        // Assignments Table
+        $table_name = $wpdb->prefix . self::ASSIGNMENTS_TABLE;
+        $sql_assignments = "CREATE TABLE $table_name (
             id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             student_id bigint(20) UNSIGNED NOT NULL,
             coach_id bigint(20) UNSIGNED NOT NULL,
@@ -122,9 +131,23 @@ final class Psych_Coach_Module_Ultimate {
             KEY coach_id (coach_id),
             KEY product_id (product_id)
         ) $charset_collate;";
+        dbDelta($sql_assignments);
 
-        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-        dbDelta($sql);
+        // Feedback Requests Table
+        $feedback_table_name = $wpdb->prefix . 'psych_feedback_requests';
+        $sql_feedback = "CREATE TABLE $feedback_table_name (
+            id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            student_id bigint(20) UNSIGNED NOT NULL,
+            mission_id varchar(255) NOT NULL,
+            token varchar(255) NOT NULL,
+            responses longtext,
+            response_count int DEFAULT 0,
+            created_at datetime DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY unique_request (student_id, mission_id),
+            KEY token (token)
+        ) $charset_collate;";
+        dbDelta($sql_feedback);
     }
 
     public function deactivation_cleanup() {
@@ -468,6 +491,31 @@ final class Psych_Coach_Module_Ultimate {
                 checkNotifications();
 
                 // Impersonation Initializer (if needed)
+
+                // Coach Approval Button
+                $(document).on('click', '.psych-approve-button', function() {
+                    const gate = $(this).closest('.psych-coach-approval-gate');
+                    const studentId = gate.data('student-id');
+                    const missionId = gate.data('mission-id');
+
+                    fetch(ajaxurl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({
+                            action: 'psych_coach_approve_mission',
+                            nonce: '<?php echo wp_create_nonce('psych_coach_approval_nonce'); ?>',
+                            student_id: studentId,
+                            mission_id: missionId
+                        })
+                    }).then(response => response.json()).then(data => {
+                        if (data.success) {
+                            alert(data.data.message);
+                            gate.html('<div class="psych-alert success"><p>Mission approved!</p></div>');
+                        } else {
+                            alert(data.data.message);
+                        }
+                    });
+                });
             });
         </script>
         <?php
@@ -891,6 +939,8 @@ final class Psych_Coach_Module_Ultimate {
         add_shortcode('coach_quiz_view', [$this, 'shortcode_coach_quiz_view']); // New: Shortcode for coach quiz view
         add_shortcode('psych_coach_dashboard', [$this, 'shortcode_coach_dashboard']);
         add_shortcode('psych_coach_page', [$this, 'shortcode_coach_page']);
+        add_shortcode('psych_coach_approval_gate', [$this, 'shortcode_coach_approval_gate']);
+        add_shortcode('psych_feedback_request', [$this, 'shortcode_feedback_request']);
     }
 
     public function shortcode_coach_impersonate_form($atts) {
@@ -1425,6 +1475,233 @@ final class Psych_Coach_Module_Ultimate {
         // For realtime, integrate with Pusher or WebSockets; here simulated with AJAX polling in JS
         add_action('wp_ajax_psych_coach_check_notifications', [$this, 'ajax_check_notifications']);
     }
+
+    public function shortcode_coach_approval_gate( $atts, $content = null ) {
+        $atts = shortcode_atts( [
+            'mission_id' => '',
+        ], $atts, 'psych_coach_approval_gate' );
+
+        if ( empty( $atts['mission_id'] ) ) {
+            return 'Error: mission_id is required for the approval gate.';
+        }
+
+        $context = $this->get_viewing_context();
+        $student_id = $context['viewed_user_id'];
+		$mission_status_key = '_psych_mission_status_' . $atts['mission_id'];
+		$is_approved = get_user_meta( $student_id, $mission_status_key, true ) === 'approved';
+
+		if ( $is_approved ) {
+			return '<div class="psych-alert success"><p>This mission has been approved by the coach.</p></div>';
+		}
+
+        // Use regex to parse nested shortcodes for student and coach views
+        preg_match( '/\[message_for_student\](.*?)\[\/message_for_student\]/s', $content, $student_match );
+        $student_view = $student_match[1] ?? '';
+
+        preg_match( '/\[message_for_coach\](.*?)\[\/message_for_coach\]/s', $content, $coach_match );
+        $coach_view = $coach_match[1] ?? '';
+
+        if ( $context['is_impersonating'] ) {
+            // Coach's view
+            $output = '<div class="psych-coach-approval-gate" data-mission-id="' . esc_attr( $atts['mission_id'] ) . '" data-student-id="' . esc_attr( $student_id ) . '">';
+            $output .= do_shortcode( $coach_view );
+            $output .= '</div>';
+            return $output;
+        } else {
+            // Student's view
+            return do_shortcode( $student_view );
+        }
+    }
+
+	public function ajax_coach_approve_mission() {
+		check_ajax_referer( 'psych_coach_approval_nonce', 'nonce' );
+
+		$student_id = isset( $_POST['student_id'] ) ? intval( $_POST['student_id'] ) : 0;
+		$mission_id = isset( $_POST['mission_id'] ) ? sanitize_key( $_POST['mission_id'] ) : '';
+
+		if ( ! $student_id || ! $mission_id ) {
+			wp_send_json_error( [ 'message' => 'Invalid data.' ] );
+		}
+
+		$context = $this->get_viewing_context();
+		if ( ! $context['is_impersonating'] ) {
+			wp_send_json_error( [ 'message' => 'Only coaches can approve missions.' ] );
+		}
+
+		$coach_id = $context['real_user_id'];
+		if ( ! $this->can_coach_impersonate_user( $coach_id, $student_id ) ) {
+			wp_send_json_error( [ 'message' => 'You are not assigned to this student.' ] );
+		}
+
+		$mission_status_key = '_psych_mission_status_' . $mission_id;
+		update_user_meta( $student_id, $mission_status_key, 'approved' );
+
+		// Optionally, award points/badge
+		if ( function_exists( 'psych_gamification_add_points' ) ) {
+			psych_gamification_add_points( $student_id, 50, 'Mission approved by coach: ' . $mission_id );
+		}
+
+		wp_send_json_success( [ 'message' => 'Mission approved successfully!' ] );
+	}
+
+
+    public function add_feedback_rewrite_rule() {
+        add_rewrite_rule( '^feedback/([^/]+)/?', 'index.php?feedback_token=$matches[1]', 'top' );
+        add_rewrite_tag('%feedback_token%','([^&]+)');
+    }
+
+    public function handle_feedback_request() {
+        global $wp_query;
+        $token = $wp_query->get('feedback_token');
+        if ( ! $token ) {
+            return;
+        }
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'psych_feedback_requests';
+        $request = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table_name WHERE token = %s", $token ) );
+
+        if ( ! $request ) {
+            wp_safe_redirect( home_url() );
+            exit;
+        }
+
+        $student = get_userdata( $request->student_id );
+        ?>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Feedback for <?php echo esc_html( $student->display_name ); ?></title>
+            <?php wp_head(); ?>
+        </head>
+        <body>
+            <div class="psych-feedback-form-container">
+                <h1>Feedback for <?php echo esc_html( $student->display_name ); ?></h1>
+                <p>Please provide your anonymous feedback below.</p>
+                <form id="psych-feedback-form">
+                    <input type="hidden" name="token" value="<?php echo esc_attr( $token ); ?>">
+                    <textarea name="feedback_response" rows="5" required></textarea>
+                    <button type="submit">Submit Feedback</button>
+                </form>
+                <div id="feedback-response-message"></div>
+            </div>
+            <?php wp_footer(); ?>
+            <script>
+                jQuery('#psych-feedback-form').on('submit', function(e) {
+                    e.preventDefault();
+                    jQuery.post('<?php echo admin_url('admin-ajax.php'); ?>', {
+                        action: 'psych_submit_feedback_response',
+                        token: jQuery('[name="token"]').val(),
+                        response: jQuery('[name="feedback_response"]').val()
+                    }, function(response) {
+                        if (response.success) {
+                            jQuery('#psych-feedback-form').hide();
+                            jQuery('#feedback-response-message').html('<p>' + response.data.message + '</p>');
+                        } else {
+                            alert(response.data.message);
+                        }
+                    });
+                });
+            </script>
+        </body>
+        </html>
+        <?php
+        exit;
+    }
+
+    public function ajax_submit_feedback_response() {
+        $token = isset( $_POST['token'] ) ? sanitize_text_field( $_POST['token'] ) : '';
+        $response_text = isset( $_POST['response'] ) ? sanitize_textarea_field( $_POST['response'] ) : '';
+
+        if ( empty( $token ) || empty( $response_text ) ) {
+            wp_send_json_error( [ 'message' => 'Invalid data.' ] );
+        }
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'psych_feedback_requests';
+        $request = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table_name WHERE token = %s", $token ) );
+
+        if ( ! $request ) {
+            wp_send_json_error( [ 'message' => 'Invalid token.' ] );
+        }
+
+        $responses = json_decode( $request->responses, true );
+        if ( ! is_array( $responses ) ) {
+            $responses = [];
+        }
+        $responses[] = $response_text;
+
+        $wpdb->update(
+            $table_name,
+            [
+                'responses' => json_encode( $responses ),
+                'response_count' => $request->response_count + 1,
+            ],
+            [ 'id' => $request->id ]
+        );
+
+        wp_send_json_success( [ 'message' => 'Thank you for your feedback!' ] );
+    }
+
+    public function shortcode_feedback_request($atts, $content = null) {
+        $atts = shortcode_atts([
+            'mission_id' => '',
+            'required_responses' => 3,
+        ], $atts, 'psych_feedback_request');
+
+        if (empty($atts['mission_id'])) {
+            return 'Error: mission_id is required.';
+        }
+
+        $student_id = get_current_user_id();
+        if (!$student_id) {
+            return '';
+        }
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'psych_feedback_requests';
+        $request = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE student_id = %d AND mission_id = %s", $student_id, $atts['mission_id']));
+
+        if (!$request) {
+            $token = wp_generate_uuid4();
+            $wpdb->insert($table_name, [
+                'student_id' => $student_id,
+                'mission_id' => $atts['mission_id'],
+                'token' => $token,
+                'created_at' => current_time('mysql'),
+            ]);
+            $request = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE student_id = %d AND mission_id = %s", $student_id, $atts['mission_id']));
+        }
+
+        $feedback_url = home_url('/feedback/' . $request->token . '/');
+        $response_count = $request->response_count;
+        $required_responses = intval($atts['required_responses']);
+        $is_complete = $response_count >= $required_responses;
+
+        // Parse nested shortcodes
+        preg_match( '/\[link_display\](.*?)\[\/link_display\]/s', $content, $link_match );
+        $link_view = $link_match[1] ?? '';
+        $link_view = str_replace('[generated_link]', esc_url($feedback_url), $link_view);
+
+        preg_match( '/\[progress_display\](.*?)\[\/progress_display\]/s', $content, $progress_match );
+        $progress_view = $progress_match[1] ?? '';
+        $progress_view = str_replace('[response_count]', $response_count, $progress_view);
+        $progress_view = str_replace('[required_responses]', $required_responses, $progress_view);
+
+        preg_match( '/\[completion_message\](.*?)\[\/completion_message\]/s', $content, $completion_match );
+        $completion_view = $completion_match[1] ?? '';
+
+        $output = '';
+        if ($is_complete) {
+            $output .= do_shortcode($completion_view);
+        } else {
+            $output .= do_shortcode($link_view);
+            $output .= do_shortcode($progress_view);
+        }
+
+        return $output;
+    }
+
 
     // Prevent cloning and wakeup
     private function __clone() {}

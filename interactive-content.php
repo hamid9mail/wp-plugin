@@ -178,7 +178,11 @@ public function ajax_process_ai_test() {
  * @return string پاسخ AI (JSON یا متن)
  */
 public function call_ai_api($prompt) {
-    $api_key = 'your_openai_api_key_here'; // جایگزین با کلید واقعی (بهتره از تنظیمات وردپرس بگیری)
+    $api_settings = get_option('psych_api_settings');
+    $api_key = isset($api_settings['openai_key']) ? $api_settings['openai_key'] : '';
+    if (empty($api_key)) {
+        return 'Error: OpenAI API Key is not set in Psych System settings.';
+    }
     $api_url = 'https://api.openai.com/v1/chat/completions'; // یا برای Grok: https://api.x.ai/v1/chat/completions
 
     $data = [
@@ -226,11 +230,10 @@ public function call_ai_api($prompt) {
         add_shortcode('psych_interactive_quiz', [$this, 'render_quiz_shortcode']);
         add_shortcode('psych_interactive_poll', [$this, 'render_poll_shortcode']);
         add_shortcode('psych_interactive_feedback', [$this, 'render_feedback_shortcode']);
-        add_shortcode('mission', [$this, 'render_mission_shortcode']);
-        add_shortcode('psych_recommendation', [$this, 'render_recommendation_shortcode']); // New for user-specific recommendations
         add_shortcode('psych_personalize', [$this, 'render_personalize_shortcode']); // The new, more powerful shortcode
 		add_shortcode('psych_ai_test_form', [$this, 'render_ai_test_form_shortcode']);
 		add_shortcode('psych_quiz_in_content', [$this, 'render_quiz_in_content_shortcode']);
+		add_shortcode('psych_add_to_cart', [$this, 'render_add_to_cart_shortcode']);
 
     }
 
@@ -403,6 +406,35 @@ public function render_quiz_in_content_shortcode($atts) {
         <?php
         return ob_get_clean();
     }
+
+	public function render_add_to_cart_shortcode( $atts ) {
+		$atts = shortcode_atts( [
+			'product_id' => 0,
+			'text'       => __( 'Purchase Course', 'psych-system' ),
+			'class'      => 'psych-button psych-btn-primary',
+		], $atts, 'psych_add_to_cart' );
+
+		$product_id = intval( $atts['product_id'] );
+		if ( ! $product_id || ! function_exists( 'wc_get_product' ) ) {
+			return '';
+		}
+
+		$product = wc_get_product( $product_id );
+		if ( ! $product ) {
+			return '';
+		}
+
+		$add_to_cart_url = $product->add_to_cart_url();
+
+		return sprintf(
+			'<a href="%s" class="%s" data-quantity="1" data-product_id="%s" data-product_sku="%s" rel="nofollow">%s</a>',
+			esc_url( $add_to_cart_url ),
+			esc_attr( $atts['class'] ),
+			esc_attr( $product->get_id() ),
+			esc_attr( $product->get_sku() ),
+			esc_html( $atts['text'] )
+		);
+	}
 
     public function render_personalize_shortcode($atts, $content = null) {
         $atts = shortcode_atts([
@@ -643,41 +675,6 @@ public function render_quiz_in_content_shortcode($atts) {
         return ob_get_clean();
     }
 
-    public function render_mission_shortcode($atts, $content = null) {
-        $atts = shortcode_atts([
-            'type' => 'generic', // social_share, upsell_purchase, app_rate, etc.
-            'target' => '',
-            'rewards' => 'points:10',
-            'course_id' => '',
-        ], $atts, 'mission');
-
-        ob_start();
-        ?>
-        <div class="psych-mission" data-type="<?php echo esc_attr($atts['type']); ?>" data-target="<?php echo esc_attr($atts['target']); ?>" data-rewards="<?php echo esc_attr($atts['rewards']); ?>" data-course-id="<?php echo esc_attr($atts['course_id']); ?>">
-            <p>ماموریت: <?php echo esc_html($content); ?></p>
-            <button class="psych-button psych-btn-success" data-action="mission" data-mission-id="<?php echo esc_attr($atts['type'] . '_' . $atts['target']); ?>">شروع ماموریت</button>
-        </div>
-        <?php
-        return ob_get_clean();
-    }
-
-    public function render_recommendation_shortcode($atts, $content = null) {
-        $atts = shortcode_atts([
-            'condition' => '', // e.g., subscale:anxiety<10
-            'content_id' => '',
-        ], $atts, 'psych_recommendation');
-
-        $context = $this->get_viewing_context();
-        $user_id = $context['viewed_user_id'];
-
-        ob_start();
-        ?>
-        <div class="psych-recommendation" data-condition="<?php echo esc_attr($atts['condition']); ?>" data-content-id="<?php echo esc_attr($atts['content_id']); ?>" style="display: none;">
-            <?php echo do_shortcode($content); ?>
-        </div>
-        <?php
-        return ob_get_clean();
-    }
 
     // ===================================================================
     // SECTION 2: AJAX Handlers
