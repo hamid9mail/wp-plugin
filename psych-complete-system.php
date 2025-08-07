@@ -289,12 +289,18 @@ function psych_system_activate() {
     ) $charset_collate;";
     dbDelta($sql_paths);
 
-    // Note: Tables for specific modules like 'psych_quiz_results' or 'psych_reports'
-    // should be created within their respective module's activation hook to ensure modularity.
-    // This prevents errors if a module is disabled.
-    // The duplicate CREATE TABLE statements have been removed.
+    // Call table creation methods from other modules
+    if (class_exists('Psych_Coach_Module_Ultimate')) {
+        Psych_Coach_Module_Ultimate::get_instance()->create_custom_tables();
+    }
+    if (class_exists('Psych_Advanced_Quiz_Module')) {
+        Psych_Advanced_Quiz_Module::get_instance()->activate();
+    }
+    if (class_exists('Psych_Unified_Report_Card_Enhanced')) {
+        Psych_Unified_Report_Card_Enhanced::get_instance()->create_custom_tables();
+    }
 
-    // Flush rewrite rules to activate the new audio endpoint
+    // Flush rewrite rules to activate the new rewrite rules
     flush_rewrite_rules();
 }
 

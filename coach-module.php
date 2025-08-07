@@ -92,9 +92,7 @@ final class Psych_Coach_Module_Ultimate {
         add_action('wp_ajax_psych_coach_get_quiz_view', [$this, 'ajax_get_coach_quiz_view']); // New: For coach quiz view
         add_action('wp_ajax_psych_coach_submit_quiz_response', [$this, 'ajax_submit_coach_quiz_response']); // New: For coach response mode
 
-        // Database table creation on activation
-        register_activation_hook(__FILE__, [$this, 'create_custom_tables']);
-        register_deactivation_hook(__FILE__, [$this, 'deactivation_cleanup']);
+        // Database table creation is now handled by the main plugin file.
 
         // New: Realtime notifications hook (simulated with polling for simplicity)
         add_action('init', [$this, 'setup_realtime_notifications']);

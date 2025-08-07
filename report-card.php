@@ -67,9 +67,7 @@ final class Psych_Unified_Report_Card_Enhanced {
         // Handle form submissions (non-AJAX fallback)
         add_action('init', [$this, 'handle_form_submissions']);
 
-        // Database table creation on activation
-        register_activation_hook(__FILE__, [$this, 'create_custom_tables']);
-        register_deactivation_hook(__FILE__, [$this, 'deactivation_cleanup']);
+        // Database table creation is now handled by the main plugin file.
     }
 
     public function create_custom_tables() {

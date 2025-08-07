@@ -11,7 +11,7 @@ if (!class_exists('Psych_Advanced_Quiz_Module')) {
         public function __construct() {
             global $wpdb;
             $this->table_name = $wpdb->prefix . 'psych_quiz_results';
-            register_activation_hook(__FILE__, array($this, 'activate'));
+            // Activation hook is now handled by the main plugin file.
             add_action('init', array($this, 'register_shortcodes'));
             add_action('wp_ajax_psych_save_quiz_results', array($this, 'save_quiz_results_ajax'));
             add_action('wp_ajax_nopriv_psych_save_quiz_results', array($this, 'save_quiz_results_ajax'));
