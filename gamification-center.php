@@ -482,19 +482,19 @@ final class Psych_Gamification_Center {
         }
     }
 	// New complete function
-public function handle_quiz_points($user_id104, $score) {
-    // Add points based on score (e.g., 10x score)
-    $points = $score * 10;
-    $this->add_points($user_id, $points, 'تکمیل کوئیز پیشرفته با امتیاز ' . $score);
+    public function handle_quiz_points($user_id104, $score) {
+        // Add points based on score (e.g., 10x score)
+        $points = $score * 10;
+        $this->add_points($user_id, $points, 'تکمیل کوئیز پیشرفته با امتیاز ' . $score);
 
-    // Optional: Check for badge
-    if ($score > 90) {
-        $this->award_badge($user_id, 'quiz_expert');
+        // Optional: Check for badge
+        if ($score > 90) {
+            $this->award_badge($user_id, 'quiz_expert');
+        }
+
+        // Queue notification
+        $this->queue_notification($user_id, 'کوئیز تکمیل شد!', 'شما ' . $points . ' امتیاز کسب کردید.');
     }
-
-    // Queue notification
-    $this->queue_notification($user_id, 'کوئیز تکمیل شد!', 'شما ' . $points . ' امتیاز کسب کردید.');
-}
 
     private function check_automatic_badge_awards($user_id) {
         global $wpdb;
@@ -1356,8 +1356,6 @@ public function handle_quiz_points($user_id104, $score) {
     public function on_post_publish($post_id, $post) {
         $this->add_points($post->post_author, $this->get_settings()['points_per_post'], 'انتشار پست');
     }
-}
-
     public function capture_referral_cookie() {
         if ( isset( $_GET['ref'] ) ) {
             $referrer_id = intval( $_GET['ref'] );
@@ -1485,6 +1483,4 @@ public function handle_quiz_points($user_id104, $score) {
 
         wp_send_json_success( [ 'message' => 'Mission completed! Thank you.' ] );
     }
-
-// Initialize the class
-Psych_Gamification_Center::get_instance();
+}
