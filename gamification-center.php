@@ -317,6 +317,7 @@ final class Psych_Gamification_Center {
         $this->log_badge_award($user_id, $badge_slug);
         $this->queue_notification($user_id, 'نشان جدید!', "شما نشان $badge_name را کسب کردید!");
         do_action('psych_badge_earned', $user_id, $badge_slug);
+        do_action('psych_log_activity_hook', $user_id, 'badge_earned', "User earned the '{$badge_name}' badge.", 0, 'badge');
         return true;
     }
 
@@ -392,6 +393,7 @@ final class Psych_Gamification_Center {
             $wpdb->update(PSYCH_GAMIFICATION_TABLE, ['level' => $new_level], ['user_id' => $user_id]);
             $this->queue_notification($user_id, 'ارتقاء سطح!', "تبریک! شما به سطح $new_level رسیدید.");
             $this->send_sms_by_template($user_id, 'level_up', ['level_name' => $new_level]);
+            do_action('psych_log_activity_hook', $user_id, 'level_up', "User reached level '{$new_level}'.");
         }
     }
 

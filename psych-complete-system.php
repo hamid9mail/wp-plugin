@@ -300,6 +300,22 @@ function psych_system_activate() {
         Psych_Unified_Report_Card_Enhanced::get_instance()->create_custom_tables();
     }
 
+    // Activity Log Table
+    $activity_log_table = $wpdb->prefix . 'psych_activity_log';
+    $sql_activity = "CREATE TABLE $activity_log_table (
+        id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+        user_id bigint(20) UNSIGNED NOT NULL,
+        object_id bigint(20) UNSIGNED DEFAULT 0,
+        object_type varchar(50) DEFAULT '',
+        action varchar(255) NOT NULL,
+        description longtext,
+        created_at datetime DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY user_id (user_id),
+        KEY action (action)
+    ) $charset_collate;";
+    dbDelta($sql_activity);
+
     // Flush rewrite rules to activate the new rewrite rules
     flush_rewrite_rules();
 }
@@ -328,5 +344,20 @@ function psych_handle_ai_result_rewards($user_id, $ai_result) {
         psych_gamification_queue_notification($user_id, 'تحلیل AI آماده است', $ai_result['text']);
     }
 }
+
+function psych_log_activity($user_id, $action, $description = '', $object_id = 0, $object_type = '') {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'psych_activity_log';
+    $wpdb->insert($table_name, [
+        'user_id' => $user_id,
+        'action' => $action,
+        'description' => $description,
+        'object_id' => $object_id,
+        'object_type' => $object_type,
+        'created_at' => current_time('mysql'),
+    ]);
+}
+
+add_action('psych_log_activity_hook', 'psych_log_activity', 10, 5);
 
 // End of plugin file

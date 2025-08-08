@@ -1371,6 +1371,7 @@ final class Psych_Coach_Module_Ultimate {
             );
             if ($updated) {
                 do_action('psych_coach_student_assigned', $student_id, $coach_id, $product_id);
+                do_action('psych_log_activity_hook', $student_id, 'student_assigned', "Student assigned to coach.", $coach_id, 'coach');
                 wp_send_json_success();
             } else {
                 wp_send_json_error(['message' => 'خطا در به‌روزرسانی.']);
@@ -1385,6 +1386,7 @@ final class Psych_Coach_Module_Ultimate {
             ]);
             if ($inserted) {
                 do_action('psych_coach_student_assigned', $student_id, $coach_id, $product_id);
+                do_action('psych_log_activity_hook', $student_id, 'student_assigned', "Student assigned to coach.", $coach_id, 'coach');
                 wp_send_json_success();
             } else {
                 wp_send_json_error(['message' => 'خطا در درج.']);

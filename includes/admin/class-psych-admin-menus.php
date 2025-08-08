@@ -19,6 +19,7 @@ class Psych_Admin_Menus {
 	public function __construct() {
 		add_action( 'admin_menu', [ $this, 'register_menus' ] );
 		add_action( 'admin_init', [ $this, 'register_settings' ] );
+		add_action( 'wp_ajax_psych_get_sales_chart_data', [ $this, 'ajax_get_sales_chart_data' ] );
 	}
 
 	/**
@@ -30,15 +31,25 @@ class Psych_Admin_Menus {
 			__( 'Psych System', 'psych-system' ),
 			__( 'Psych System', 'psych-system' ),
 			'manage_options',
-			'psych-system-settings',
-			[ $this, 'settings_page_callback' ],
+			'psych-dashboard', // New parent slug
+			[ $this, 'dashboard_page_callback' ],
 			'dashicons-admin-generic',
 			20
 		);
 
-		// Submenu: Settings (defaults to the main page)
+		// Submenu: Dashboard (the new main page)
 		add_submenu_page(
-			'psych-system-settings',
+			'psych-dashboard',
+			__( 'Dashboard', 'psych-system' ),
+			__( 'Dashboard', 'psych-system' ),
+			'manage_options',
+			'psych-dashboard',
+			[ $this, 'dashboard_page_callback' ]
+		);
+
+		// Submenu: Settings
+		add_submenu_page(
+			'psych-dashboard',
 			__( 'Settings', 'psych-system' ),
 			__( 'Settings', 'psych-system' ),
 			'manage_options',
@@ -48,7 +59,7 @@ class Psych_Admin_Menus {
 
 		// Submenu: Modules
 		add_submenu_page(
-			'psych-system-settings',
+			'psych-dashboard',
 			__( 'Modules', 'psych-system' ),
 			__( 'Modules', 'psych-system' ),
 			'manage_options',
@@ -58,7 +69,7 @@ class Psych_Admin_Menus {
 
 		// Submenu: Gamification
 		add_submenu_page(
-			'psych-system-settings',
+			'psych-dashboard',
 			__( 'Gamification', 'psych-system' ),
 			__( 'Gamification', 'psych-system' ),
 			'manage_options',
@@ -98,7 +109,7 @@ class Psych_Admin_Menus {
 
         // Submenu: Coaches
 		add_submenu_page(
-			'psych-system-settings',
+			'psych-dashboard',
 			__( 'Coaches', 'psych-system' ),
 			__( 'Coaches', 'psych-system' ),
 			'manage_options',
@@ -117,13 +128,270 @@ class Psych_Admin_Menus {
 
 		// Submenu: Reports
 		add_submenu_page(
-			'psych-system-settings',
+			'psych-dashboard',
 			__( 'Reports', 'psych-system' ),
 			__( 'Reports', 'psych-system' ),
 			'manage_options',
 			'psych-reports',
 			[ $this, 'reports_page_callback' ]
 		);
+	}
+
+	public function dashboard_page_callback() {
+		?>
+		<div class="wrap">
+			<h1><?php echo esc_html__( 'Psych System Dashboard', 'psych-system' ); ?></h1>
+			<div id="dashboard-widgets-wrap">
+				<div id="dashboard-widgets" class="metabox-holder">
+					<div id="postbox-container-1" class="postbox-container">
+						<div class="meta-box-sortables">
+							<?php $this->render_kpi_widgets(); ?>
+							<?php $this->render_quick_actions_widget(); ?>
+						</div>
+					</div>
+					<div id="postbox-container-2" class="postbox-container">
+						<div class="meta-box-sortables">
+							<?php $this->render_activity_feed_widget(); ?>
+						</div>
+					</div>
+					<div id="postbox-container-3" class="postbox-container">
+						<div class="meta-box-sortables">
+							<?php $this->render_system_health_widget(); ?>
+						</div>
+						<div class="meta-box-sortables">
+							<div class="postbox">
+								<div class="postbox-header">
+									<h2 class="hndle">
+										<span class="dashicons-before dashicons-chart-bar"></span>
+										<?php esc_html_e( 'Sales Over Time', 'psych-system' ); ?>
+									</h2>
+								</div>
+								<div class="inside">
+									<canvas id="sales-over-time-chart"></canvas>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<script>
+				jQuery(document).ready(function($) {
+					// Sales Over Time Chart
+					$.post(ajaxurl, { action: 'psych_get_sales_chart_data' }, function(response) {
+						if (response.success) {
+							var ctx = document.getElementById('sales-over-time-chart').getContext('2d');
+							new Chart(ctx, {
+								type: 'line',
+								data: {
+									labels: response.data.labels,
+									datasets: [{
+										label: 'Sales',
+										data: response.data.values,
+										borderColor: '#3498db',
+										backgroundColor: 'rgba(52, 152, 219, 0.2)',
+									}]
+								}
+							});
+						}
+					});
+				});
+			</script>
+		</div>
+		<?php
+	}
+
+	private function render_kpi_widgets() {
+		$kpis = [
+			'total_students' => [
+				'title' => __( 'Total Students', 'psych-system' ),
+				'value' => $this->get_total_students(),
+				'icon' => 'dashicons-groups',
+			],
+			'monthly_revenue' => [
+				'title' => __( 'Revenue (Last 30 Days)', 'psych-system' ),
+				'value' => wc_price($this->get_monthly_revenue()),
+				'icon' => 'dashicons-chart-area',
+			],
+			'new_users' => [
+				'title' => __( 'New Users (Last 30 Days)', 'psych-system' ),
+				'value' => $this->get_new_users_count(),
+				'icon' => 'dashicons-admin-users',
+			],
+			'avg_progress' => [
+				'title' => __( 'Average Course Progress', 'psych-system' ),
+				'value' => $this->get_average_progress() . '%',
+				'icon' => 'dashicons-performance',
+			],
+		];
+
+		foreach ($kpis as $kpi) {
+			?>
+			<div class="postbox">
+				<div class="postbox-header">
+					<h2 class="hndle">
+						<span class="dashicons-before <?php echo esc_attr($kpi['icon']); ?>"></span>
+						<?php echo esc_html($kpi['title']); ?>
+					</h2>
+				</div>
+				<div class="inside">
+					<div class="main">
+						<p class="kpi-value"><?php echo wp_kses_post($kpi['value']); ?></p>
+					</div>
+				</div>
+			</div>
+			<?php
+		}
+	}
+
+	private function get_total_students() {
+		return count_users( [ 'role' => 'subscriber' ] )['total_users'];
+	}
+
+	private function get_monthly_revenue() {
+		$args = [
+			'status' => ['wc-completed', 'wc-processing'],
+			'date_created' => '>=' . (time() - (30 * DAY_IN_SECONDS)),
+			'return' => 'ids',
+		];
+		$orders = wc_get_orders( $args );
+		$total = 0;
+		foreach ( $orders as $order_id ) {
+			$order = wc_get_order( $order_id );
+			$total += $order->get_total();
+		}
+		return $total;
+	}
+
+	private function get_new_users_count() {
+		$args = [
+			'date_query' => [
+				[
+					'after' => '30 days ago',
+				],
+			],
+		];
+		$user_query = new WP_User_Query( $args );
+		return $user_query->get_total();
+	}
+
+	private function get_average_progress() {
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'psych_paths';
+		$avg = $wpdb->get_var( "SELECT AVG(progress) FROM $table_name" );
+		return round( $avg, 2 );
+	}
+
+	private function render_quick_actions_widget() {
+		?>
+		<div class="postbox">
+			<div class="postbox-header">
+				<h2 class="hndle">
+					<span class="dashicons-before dashicons-controls-play"></span>
+					<?php esc_html_e( 'Quick Actions', 'psych-system' ); ?>
+				</h2>
+			</div>
+			<div class="inside">
+				<div class="main">
+					<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=psych_coach' ) ); ?>" class="button button-primary"><?php esc_html_e( 'Add New Coach', 'psych-system' ); ?></a>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=psych-manual-award' ) ); ?>" class="button"><?php esc_html_e( 'Manual Award', 'psych-system' ); ?></a>
+				</div>
+			</div>
+		</div>
+		<?php
+	}
+
+	private function render_system_health_widget() {
+		$health_checks = [];
+		$api_settings = get_option( 'psych_api_settings' );
+		if ( empty( $api_settings['openai_key'] ) ) {
+			$health_checks[] = [ 'message' => __( 'OpenAI API Key is not set.', 'psych-system' ), 'status' => 'error' ];
+		}
+		if ( empty( $api_settings['sms_api_key'] ) ) {
+			$health_checks[] = [ 'message' => __( 'SMS Gateway API Key is not set.', 'psych-system' ), 'status' => 'warning' ];
+		}
+
+		// You can add more checks here, e.g., for missions pending approval
+		?>
+		<div class="postbox">
+			<div class="postbox-header">
+				<h2 class="hndle">
+					<span class="dashicons-before dashicons-shield-alt"></span>
+					<?php esc_html_e( 'System Health', 'psych-system' ); ?>
+				</h2>
+			</div>
+			<div class="inside">
+				<div class="main">
+					<ul>
+						<?php if ( ! empty( $health_checks ) ) : ?>
+							<?php foreach ( $health_checks as $check ) : ?>
+								<li class="<?php echo esc_attr( $check['status'] ); ?>"><?php echo esc_html( $check['message'] ); ?></li>
+							<?php endforeach; ?>
+						<?php else : ?>
+							<li class="success"><?php esc_html_e( 'All systems nominal.', 'psych-system' ); ?></li>
+						<?php endif; ?>
+					</ul>
+				</div>
+			</div>
+		</div>
+		<?php
+	}
+
+	public function ajax_get_sales_chart_data() {
+		$args = [
+			'status' => ['wc-completed', 'wc-processing'],
+			'date_created' => '>=' . (time() - (30 * DAY_IN_SECONDS)),
+		];
+		$orders = wc_get_orders( $args );
+		$sales_data = [];
+		foreach ( $orders as $order ) {
+			$date = $order->get_date_created()->format('Y-m-d');
+			if ( ! isset( $sales_data[ $date ] ) ) {
+				$sales_data[ $date ] = 0;
+			}
+			$sales_data[ $date ] += $order->get_total();
+		}
+
+		ksort( $sales_data );
+
+		wp_send_json_success( [
+			'labels' => array_keys( $sales_data ),
+			'values' => array_values( $sales_data ),
+		] );
+	}
+
+	private function render_activity_feed_widget() {
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'psych_activity_log';
+		$activities = $wpdb->get_results( "SELECT * FROM $table_name ORDER BY created_at DESC LIMIT 10" );
+		?>
+		<div class="postbox">
+			<div class="postbox-header">
+				<h2 class="hndle">
+					<span class="dashicons-before dashicons-list-view"></span>
+					<?php esc_html_e( 'Recent Activity', 'psych-system' ); ?>
+				</h2>
+			</div>
+			<div class="inside">
+				<div class="main">
+					<ul>
+						<?php if ( ! empty( $activities ) ) : ?>
+							<?php foreach ( $activities as $activity ) : ?>
+								<li>
+									<?php
+									$user = get_userdata( $activity->user_id );
+									echo esc_html( $user->display_name . ' ' . $activity->description );
+									?>
+									<small>(<?php echo human_time_diff( strtotime( $activity->created_at ), current_time( 'timestamp' ) ); ?> ago)</small>
+								</li>
+							<?php endforeach; ?>
+						<?php else : ?>
+							<li><?php esc_html_e( 'No recent activity.', 'psych-system' ); ?></li>
+						<?php endif; ?>
+					</ul>
+				</div>
+			</div>
+		</div>
+		<?php
 	}
 
 	public function register_settings() {
