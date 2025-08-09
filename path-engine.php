@@ -321,21 +321,21 @@ final class PsychoCourse_Path_Engine_Ultimate {
         $stations = &$this->path_data[$path_id]['stations'];
         $previous_completed = true;
 
-        foreach ($stations as &$station) {
+        foreach ($stations as $index => &$station) {
             $station['status'] = 'locked';
             $station['is_completed'] = $this->is_station_completed($user_id, $station['station_node_id']);
             $station['is_unlocked'] = false;
 
-            $station = $this->calculate_station_status($user_id, $station, $previous_completed);
+            $station['status'] = $this->calculate_station_status($user_id, $station, $previous_completed, $path_id, $index);
 
             $previous_completed = $station['is_completed'];
         }
     }
 
     // Updated: calculate_station_status (with quiz subscale integration)
-    public function calculate_station_status($user_id, $station, $previous_stations_completed) {
+    public function calculate_station_status($user_id, $station, $previous_stations_completed, $path_id, $current_index) {
         // Existing logic (from your file summary)
-        if ($station['unlock_trigger'] === 'sequential' && $previous_stations_completed < count($this->path_data['stations']) - 1) {
+        if ($station['unlock_trigger'] === 'sequential' && !$previous_stations_completed) {
             return 'locked';
         }
 
