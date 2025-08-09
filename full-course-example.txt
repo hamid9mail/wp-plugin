@@ -1,0 +1,126 @@
+[psych_path path_id="personal_mastery" path_style="modern-roadmap"]
+
+  [!-- ================================================== --]
+  [!-- STATION 1: PUBLIC - Free Introduction --]
+  [!-- ================================================== --]
+  [psych_station title="Chapter 1: The Journey Begins" station_id="intro"]
+    [psych_mission title="Watch the Welcome Video" mission_id="intro_video"]
+      <h2>Welcome to the Personal Mastery Course!</h2>
+      <p>Your journey to a better you starts now. Watch this introductory video from your course leader, Dr. Anya Sharma, to understand the path ahead.</p>
+      [psych_spot_player video_id="your_spot_player_video_id_here"]
+      [psych_mission_badge slug="course_started" name="The Journey Begins" icon="fa-play-circle" points="10"]
+    [/psych_mission]
+  [/psych_station]
+
+  [!-- ================================================== --]
+  [!-- STATION 2: LOCKED - Requires Purchase --]
+  [!-- ================================================== --]
+  [psych_station title="Chapter 2: Understanding Your Mind" station_id="mindset" required_product_id="123"]
+    [psych_mission title="The Mindset Assessment Quiz" mission_id="mindset_quiz"]
+
+      [!-- This content is ONLY for users who have NOT purchased the product --]
+      [psych_personalize hide_from="user_has_product:123"]
+        <div style="padding:30px; background:#ffebee; border:2px dashed #e57373; border-radius:12px; text-align:center;">
+          <h3><i class="fa fa-lock"></i> This Chapter is Locked</h3>
+          <p>The Mindset Assessment is the first premium step in your journey. Purchase the course to unlock this chapter and all future content.</p>
+          [psych_add_to_cart product_id="123" text="Unlock Now & Start Your Transformation"]
+        </div>
+      [/psych_personalize]
+
+      [!-- This content is ONLY for users who HAVE purchased the product --]
+      [psych_personalize show_to="user_has_product:123"]
+        <h2>Let's Discover Your Mindset</h2>
+        <p>This quiz will help you understand your current mindset and identify areas for growth. Please answer honestly.</p>
+        [psych_quiz id="mindset_assessment_quiz"]
+          [!-- Add your quiz questions here, using the advanced quiz module's syntax --]
+        [/psych_quiz]
+        [psych_mission_badge slug="mindset_quiz_complete" name="Mindset Assessed" icon="fa-brain" points="50"]
+      [/psych_personalize]
+
+    [/psych_mission>
+  [/psych_station]
+
+  [!-- ================================================== --]
+  [!-- STATION 3: LOCKED - Requires Coach Approval --]
+  [!-- ================================================== --]
+  [psych_station title="Chapter 3: Coach's First Review" station_id="coach_review" required_product_id="123"]
+    [psych_mission title="Submit Your Insights for Review" mission_id="coach_review_1"]
+      <p>Based on your quiz results, please write a few sentences below about what you discovered and what you hope to work on. Your assigned coach will review your submission and unlock the next chapter for you.</p>
+
+      [!-- This form will submit the data for the coach to see --]
+      [gravityform id="3" title="false" description="false" ajax="true"]
+
+      [psych_coach_approval_gate mission_id="coach_review_approval_1"]
+        [message_for_student]
+          <div style="padding:20px; background:#e3f2fd; border-left: 5px solid #2196f3;">
+            <h4><i class="fa fa-hourglass-start"></i> Waiting for Coach Approval</h4>
+            <p>Your notes have been sent to your coach. They will be notified and will unlock the next step for you after their review. This usually takes 24-48 hours.</p>
+          </div>
+        [/message_for_student]
+        [message_for_coach]
+          <div style="padding:20px; background:#e8f5e9; border-left: 5px solid #4caf50;">
+            <h4><i class="fa fa-check-circle"></i> Coach's Action Required</h4>
+            <p>Review the student's notes above. If you are satisfied with their reflection, click the button below to grant them access to the next chapter.</p>
+            <button class="psych-approve-button">Approve and Unlock Next Chapter</button>
+          </div>
+        [/message_for_coach]
+      [/psych_coach_approval_gate]
+    [/psych_mission]
+  [/psych_station]
+
+  [!-- ================================================== --]
+  [!-- STATION 4: LOCKED - Requires Friend Feedback --]
+  [!-- ================================================== --]
+  [psych_station title="Chapter 4: The World's Perspective" station_id="feedback" required_product_id="123"]
+    [psych_mission title="360-Degree Feedback" mission_id="360_feedback"]
+        <h2>360-Degree Feedback</h2>
+        <p>Self-perception is powerful, but understanding how others see us provides a complete picture. For this mission, you must get anonymous feedback from at least <strong>3</strong> friends, family members, or colleagues.</p>
+
+        [psych_feedback_request mission_id="feedback_360_mission" required_responses="3" form_id="feedback_form_7"]
+            [link_display]
+                <h4>Your Unique & Anonymous Feedback Link:</h4>
+                <p>Share this link privately. The responses are completely anonymous.</p>
+                <input type="text" value="[generated_link]" style="width:100%; padding:8px;" readonly>
+                <button onclick="navigator.clipboard.writeText('[generated_link]')">Copy Link</button>
+            [/link_display]
+            [progress_display]
+                <h4 style="margin-top:20px;">Your Progress:</h4>
+                <p>You have received <strong>[response_count]</strong> out of <strong>[required_responses]</strong> required responses.</p>
+                <div style="background:#e0e0e0; border-radius:5px; padding:3px;"><div style="width: calc(100% * [response_count] / [required_responses]); background:#4caf50; height:10px; border-radius:3px;"></div></div>
+            [/progress_display]
+            [completion_message]
+                <div style="padding:20px; background:#e8f5e9; text-align:center;">
+                    <h3><i class="fa fa-star"></i> Fantastic Work!</h3>
+                    <p>You have collected all the required feedback. A summary of the anonymous responses is now available in your main Report Card.</p>
+                </div>
+            [/completion_message]
+        [/psych_feedback_request]
+    [/psych_mission]
+  [/psych_station]
+
+  [!-- ================================================== --]
+  [!-- STATION 5: LOCKED - Referrals & Social Sharing --]
+  [!-- ================================================== --]
+  [psych_station title="Chapter 5: Growing the Community" station_id="community" required_product_id="123"]
+    [psych_mission title="Become an Ambassador" mission_id="ambassador_mission"]
+        <h3>Invite 5 Friends to the Platform</h3>
+        <p>If you've found this course helpful, share the journey! When 5 new users register on this site using your unique link, you will earn the "Ambassador" badge and 500 bonus points.</p>
+        [psych_referral_mission goal="5" badge="ambassador"]
+            <p>Your personal referral link:</p>
+            <input type="text" value="[referral_link]" style="width:100%;" readonly>
+            <p><strong>Progress: You have successfully referred [referral_count] out of [goal] people.</strong></p>
+        [/psych_referral_mission]
+    [/psych_mission]
+
+    [psych_mission title="Share Your Progress" mission_id="social_share_mission"]
+        <h3>Share this Course on Social Media</h3>
+        <p>Let your network know about your commitment to growth. Sharing this will instantly award you the "Social Butterfly" badge!</p>
+        [psych_social_share url_to_share="[course_url]" text_to_share="I'm learning so much about personal mastery in this amazing course!"]
+
+        <h4 style="margin-top:30px;">Share to your Instagram Story</h4>
+        <p>For Instagram, download this image and share it to your Story. Then, check the box below to complete the mission.</p>
+        [psych_instagram_story_mission image_url="/path/to/your/story_image.jpg" mission_id="instagram_story_share" badge="instagram_star"]
+    [/psych_mission]
+  [/psych_station]
+
+[/psych_path]
