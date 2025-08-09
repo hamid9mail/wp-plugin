@@ -295,7 +295,8 @@ function psych_system_activate() {
         Psych_Coach_Module_Ultimate::get_instance()->create_custom_tables();
     }
     if (class_exists('Psych_Advanced_Quiz_Module')) {
-        Psych_Advanced_Quiz_Module::get_instance()->activate();
+        $quiz_module = new Psych_Advanced_Quiz_Module();
+        $quiz_module->activate();
     }
     if (class_exists('Psych_Unified_Report_Card_Enhanced')) {
         Psych_Unified_Report_Card_Enhanced::get_instance()->create_custom_tables();
