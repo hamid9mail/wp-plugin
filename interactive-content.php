@@ -77,7 +77,6 @@ final class Psych_Interactive_Content_Ultimate {
 
     private function __construct() {
         $this->init_viewing_context();
-        $this->register_shortcodes();
         $this->add_hooks();
     }
 
@@ -219,22 +218,6 @@ public function call_ai_api($prompt) {
         if (is_a($post, 'WP_Post') && (has_shortcode($post->post_content, 'psych_content_block') || has_shortcode($post->post_content, 'psych_progress_path'))) {
             // No external scripts; all JS is inline in inject_modal_and_js
         }
-    }
-
-    private function register_shortcodes() {
-        add_shortcode('psych_content_block', [$this, 'render_content_block_shortcode']);
-        add_shortcode('psych_content_view', [$this, 'capture_content_view_shortcode']);
-        add_shortcode('psych_button', [$this, 'render_button_shortcode']);
-        add_shortcode('psych_hidden_content', [$this, 'render_hidden_content_shortcode']);
-        add_shortcode('psych_progress_path', [$this, 'render_progress_path_shortcode']);
-        add_shortcode('psych_interactive_quiz', [$this, 'render_quiz_shortcode']);
-        add_shortcode('psych_interactive_poll', [$this, 'render_poll_shortcode']);
-        add_shortcode('psych_interactive_feedback', [$this, 'render_feedback_shortcode']);
-        add_shortcode('psych_personalize', [$this, 'render_personalize_shortcode']); // The new, more powerful shortcode
-		add_shortcode('psych_ai_test_form', [$this, 'render_ai_test_form_shortcode']);
-		add_shortcode('psych_quiz_in_content', [$this, 'render_quiz_in_content_shortcode']);
-		add_shortcode('psych_add_to_cart', [$this, 'render_add_to_cart_shortcode']);
-
     }
 
     // ===================================================================

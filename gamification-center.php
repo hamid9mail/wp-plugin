@@ -232,15 +232,7 @@ final class Psych_Gamification_Center {
         add_action('psych_badge_earned', [$this, 'handle_badge_earned_automation'], 10, 2);
         add_action('profile_update', [$this, 'check_profile_completion_hook'], 10, 2);
 
-        // Shortcodes (Fully implemented)
-        add_shortcode('psych_user_points', [$this, 'render_user_points_shortcode']);
-        add_shortcode('psych_user_level', [$this, 'render_user_level_shortcode']);
-        add_shortcode('psych_user_badges', [$this, 'render_user_badges_shortcode']);
-        add_shortcode('psych_leaderboard', [$this, 'render_leaderboard_shortcode']);
-        add_shortcode('psych_mission_badge', [$this, 'render_mission_badge_shortcode']);
-        add_shortcode('psych_referral_mission', [$this, 'render_referral_mission_shortcode']);
-        add_shortcode('psych_social_share', [$this, 'render_social_share_shortcode']);
-        add_shortcode('psych_instagram_story_mission', [$this, 'render_instagram_story_mission_shortcode']);
+        // Shortcodes are now handled by the central shortcode manager.
 		// In add_hooks() function, add:
 		add_action('psych_quiz_completed', [$this, 'handle_quiz_points'], 10, 2);
 

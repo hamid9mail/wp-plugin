@@ -113,8 +113,6 @@ final class PsychoCourse_Path_Engine_Ultimate {
         add_shortcode('mission_content', [$this, 'register_mission_content']);
         add_shortcode('result_content', [$this, 'register_result_content']);
         add_shortcode('psych_share_buttons', [$this, 'render_share_buttons_shortcode']);
-        add_shortcode('mission', [$this, 'register_mission_shortcode']);
-        add_shortcode('psych_recommendation', [$this, 'render_recommendation_shortcode']); // New for related suggestions
 
         // AJAX Handlers (Enhanced with security)
         add_action('wp_ajax_psych_path_get_station_content', [$this, 'ajax_get_station_content']);
@@ -824,61 +822,6 @@ final class PsychoCourse_Path_Engine_Ultimate {
         </div>
         <?php
         return ob_get_clean();
-    }
-
-    public function register_mission_shortcode($atts, $content = '') {
-        $atts = shortcode_atts([
-            'id' => '',
-            'type' => '', // e.g., 'quiz_submission', 'feedback', 'form', 'test'
-            'reward_points' => 0,
-            'reward_badge' => '',
-            'unlock_station' => '',
-            'coach_mode' => 'none' // New: 'none', 'view_only', 'response'
-        ], $atts);
-
-        if (empty($atts['id'])) return 'Mission ID required.';
-
-        $context = $this->get_viewing_context();
-        $user_id = $context['viewed_user_id']; // Student ID
-        $is_coach = $context['is_impersonating'];
-
-        // Render mission content
-        $output = '<div class="psych-mission" data-mission-id="' . esc_attr($atts['id']) . '" data-type="' . esc_attr($atts['type']) . '">';
-
-        if ($is_coach) {
-            if ($atts['coach_mode'] === 'view_only') {
-                // View-only mode: Show content but no submit button
-                $output .= '<p>حالت دیدن تنها برای مربی.</p>';
-                $output .= do_shortcode($content); // e.g., quiz or form display
-                $output .= '<p>شما نمی‌توانید ارسال کنید.</p>';
-            } elseif ($atts['coach_mode'] === 'response') {
-                // Coach response mode: Allow coach to submit, but save for student
-                $output .= '<p>حالت پاسخ‌دهی مربی: پاسخ شما برای دانشجو ذخیره می‌شود.</p>';
-                $output .= do_shortcode($content); // e.g., [psych_advanced_quiz] or form
-                $output .= '<button class="coach-submit-mission-btn" data-student-id="' . esc_attr($user_id) . '">ارسال به عنوان مربی</button>';
-            } else {
-                // Default: Coach sees as student
-                $output .= do_shortcode($content);
-                $output .= '<button class="complete-mission-btn">تکمیل ماموریت</button>';
-            }
-        } else {
-            // Regular user
-            $output .= do_shortcode($content);
-            $output .= '<button class="complete-mission-btn">تکمیل ماموریت</button>';
-        }
-
-        $output .= '</div>';
-
-        return $output;
-    }
-
-    public function render_recommendation_shortcode($atts) {
-        $atts = shortcode_atts([
-            'subscale' => 'anxiety',
-            'threshold' => 10
-        ], $atts);
-
-        return '<div class="psych-recommendation" data-subscale="' . esc_attr($atts['subscale']) . '" data-threshold="' . esc_attr($atts['threshold']) . '">در حال بارگذاری پیشنهاد...</div>';
     }
 
     // =====================================================================

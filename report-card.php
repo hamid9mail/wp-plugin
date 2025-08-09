@@ -34,7 +34,6 @@ final class Psych_Unified_Report_Card_Enhanced {
     private function __construct() {
         $this->init_viewing_context();
         $this->add_hooks();
-        $this->register_shortcodes();
     }
 
     private function init_viewing_context() {
@@ -868,10 +867,6 @@ final class Psych_Unified_Report_Card_Enhanced {
             $goals = sanitize_textarea_field($_POST['psych_user_goals']);
             $this->update_report_data($user_id, ['user_goals' => $goals]);
         }
-    }
-
-    private function register_shortcodes() {
-        add_shortcode('psych_report_card', [$this, 'render_report_card_shortcode']);
     }
 
     public function render_report_card_shortcode($atts) {

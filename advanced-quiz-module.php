@@ -12,7 +12,7 @@ if (!class_exists('Psych_Advanced_Quiz_Module')) {
             global $wpdb;
             $this->table_name = $wpdb->prefix . 'psych_quiz_results';
             // Activation hook is now handled by the main plugin file.
-            add_action('init', array($this, 'register_shortcodes'));
+            // Shortcode registration is now handled by the central shortcode manager.
             add_action('wp_ajax_psych_save_quiz_results', array($this, 'save_quiz_results_ajax'));
             add_action('wp_ajax_nopriv_psych_save_quiz_results', array($this, 'save_quiz_results_ajax'));
             add_action('wp_enqueue_scripts', array($this, 'enqueue_assets'));
@@ -31,10 +31,6 @@ if (!class_exists('Psych_Advanced_Quiz_Module')) {
             ) $charset_collate;";
             require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
             dbDelta($sql);
-        }
-
-        public function register_shortcodes() {
-            add_shortcode('psych_quiz', array($this, 'render_quiz_shortcode'));
         }
 
         public function render_quiz_shortcode($atts, $content = null) {

@@ -48,7 +48,6 @@ final class Psych_Coach_Module_Ultimate {
     private function __construct() {
         $this->coach_roles = apply_filters('psych_coach_roles', ['coach', 'adviser', 'administrator']);
         $this->setup_hooks();
-        $this->register_shortcodes();
     }
 
     private function setup_hooks() {
@@ -927,19 +926,6 @@ final class Psych_Coach_Module_Ultimate {
     // =====================================================================
     // SECTION 4: FRONTEND SHORTCODES & UI (Enhanced with Quiz Shortcode)
     // =====================================================================
-
-    public function register_shortcodes() {
-        add_shortcode('coach_see_as_user', [$this, 'shortcode_coach_impersonate_form']);
-        add_shortcode('coach_only_content', [$this, 'shortcode_coach_only_content']);
-        add_shortcode('user_product_codes', [$this, 'shortcode_user_codes_list']);
-        add_shortcode('coach_search_by_code', [$this, 'shortcode_coach_search_by_code']);
-        add_shortcode('psych_user_dashboard', [$this, 'shortcode_user_dashboard']);
-        add_shortcode('coach_quiz_view', [$this, 'shortcode_coach_quiz_view']); // New: Shortcode for coach quiz view
-        add_shortcode('psych_coach_dashboard', [$this, 'shortcode_coach_dashboard']);
-        add_shortcode('psych_coach_page', [$this, 'shortcode_coach_page']);
-        add_shortcode('psych_coach_approval_gate', [$this, 'shortcode_coach_approval_gate']);
-        add_shortcode('psych_feedback_request', [$this, 'shortcode_feedback_request']);
-    }
 
     public function shortcode_coach_impersonate_form($atts) {
         $context = $this->get_viewing_context();

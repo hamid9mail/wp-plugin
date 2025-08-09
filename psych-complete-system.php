@@ -231,6 +231,7 @@ add_action('wp_ajax_psych_dashboard_refresh', function() {
 // Admin Panel for Settings
 require_once PSYCH_SYSTEM_PATH . 'includes/admin/class-psych-admin-menus.php';
 require_once PSYCH_SYSTEM_PATH . 'includes/admin/class-psych-coach-cpt.php';
+require_once PSYCH_SYSTEM_PATH . 'includes/class-psych-shortcode-manager.php';
 
 
 // Activation/Deactivation Hooks (Create/Drop custom tables)
