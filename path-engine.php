@@ -68,28 +68,26 @@ final class PsychoCourse_Path_Engine_4 {
     }
 
     public function enqueue_assets() {
-        if ($this->is_shortcode_rendered) {
-            wp_enqueue_style(
-                'psych-path-engine-css',
-                PSYCH_PATH_URL . 'assets/css/path-engine.css',
-                [],
-                PSYCH_PATH_VERSION
-            );
-            wp_enqueue_script(
-                'psych-path-engine-js',
-                PSYCH_PATH_URL . 'assets/js/path-engine.js',
-                ['jquery'],
-                PSYCH_PATH_VERSION,
-                true
-            );
-            wp_localize_script('psych-path-engine-js', 'psych_path_ajax', [
-                'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce'    => wp_create_nonce(PSYCH_PATH_AJAX_NONCE),
-            ]);
-            // Enqueue FontAwesome and Confetti from the template if needed, or here globally.
-            wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
-            wp_enqueue_script('canvas-confetti', 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js', [], null, true);
-        }
+        // Register styles and scripts so they are available to be enqueued later.
+        wp_register_style(
+            'psych-path-engine-css',
+            PSYCH_PATH_URL . 'assets/css/path-engine.css',
+            [],
+            PSYCH_PATH_VERSION
+        );
+        wp_register_script(
+            'psych-path-engine-js',
+            PSYCH_PATH_URL . 'assets/js/path-engine.js',
+            ['jquery'],
+            PSYCH_PATH_VERSION,
+            true
+        );
+        wp_localize_script('psych-path-engine-js', 'psych_path_ajax', [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce'    => wp_create_nonce(PSYCH_PATH_AJAX_NONCE),
+        ]);
+        wp_register_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+        wp_register_script('canvas-confetti', 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js', [], null, true);
     }
 
     public function render_footer_elements() {
@@ -132,6 +130,12 @@ final class PsychoCourse_Path_Engine_4 {
     }
 
     public function render_path_shortcode($atts, $content = null) {
+        // Enqueue assets now that we know the shortcode is being rendered.
+        wp_enqueue_style('psych-path-engine-css');
+        wp_enqueue_script('psych-path-engine-js');
+        wp_enqueue_style('font-awesome');
+        wp_enqueue_script('canvas-confetti');
+
         $context = $this->get_viewing_context();
         $user_id = $context['viewed_user_id'];
         if (!$user_id && !is_admin()) {
@@ -142,7 +146,8 @@ final class PsychoCourse_Path_Engine_4 {
             'display_mode' => 'timeline',
             'theme' => 'default',
             'show_progress' => 'true',
-            'path_title' => ''
+            'path_title' => '',
+            'map_background_url' => '', // For treasure_map mode
         ], $atts);
 
         $this->is_shortcode_rendered = true;
@@ -152,7 +157,8 @@ final class PsychoCourse_Path_Engine_4 {
             'display_mode' => sanitize_key($shortcode_atts['display_mode']),
             'theme' => sanitize_key($shortcode_atts['theme']),
             'show_progress' => $shortcode_atts['show_progress'] === 'true',
-            'path_title' => sanitize_text_field($shortcode_atts['path_title'])
+            'path_title' => sanitize_text_field($shortcode_atts['path_title']),
+            'map_background_url' => esc_url($shortcode_atts['map_background_url'])
         ];
 
         do_shortcode($content);
@@ -173,12 +179,12 @@ final class PsychoCourse_Path_Engine_4 {
 
     private function render_path_body($path_id, $context) {
         ob_start();
-        $stations = $this->path_data[$path_id]['stations'];
-        $display_mode = $this->path_data[$path_id]['display_mode'];
-        $this->get_template_part($display_mode . '-mode', [
-            'stations' => $stations,
+        $path_data = $this->path_data[$path_id];
+        $this->get_template_part($path_data['display_mode'] . '-mode', [
+            'stations' => $path_data['stations'],
             'context' => $context,
-            'engine' => $this
+            'engine' => $this,
+            'path_data' => $path_data
         ]);
         return ob_get_clean();
     }
@@ -193,7 +199,7 @@ final class PsychoCourse_Path_Engine_4 {
     public function register_static_content($atts, $content = null) { if (!empty($this->path_data)) { $path_id = array_key_last($this->path_data); $station_index = count($this->path_data[$path_id]['stations']) - 1; if ($station_index >= 0) { $this->path_data[$path_id]['stations'][$station_index]['static_content'] = $content; } } return ''; }
     public function register_mission_content($atts, $content = null) { if (!empty($this->path_data)) { $path_id = array_key_last($this->path_data); $station_index = count($this->path_data[$path_id]['stations']) - 1; if ($station_index >= 0) { $this->path_data[$path_id]['stations'][$station_index]['mission_content'] = $content; } } return ''; }
     public function register_result_content($atts, $content = null) { if (!empty($this->path_data)) { $path_id = array_key_last($this->path_data); $station_index = count($this->path_data[$path_id]['stations']) - 1; if ($station_index >= 0) { $this->path_data[$path_id]['stations'][$station_index]['result_content'] = $content; } } return ''; }
-    private function process_stations($path_id, $user_id) { if (!isset($this->path_data[$path_id]) || !$user_id) return; $raw_stations = $this->path_data[$path_id]['stations']; $processed_stations = []; $previous_station_completed = true; foreach ($raw_stations as $index => $station_data) { $atts = shortcode_atts(['station_node_id' => 'st_' . $path_id . '_' . ($index + 1), 'title' => 'Untitled Station', 'icon' => 'fas fa-flag', 'unlock_trigger' => 'sequential', 'mission_type' => 'button_click', 'mission_target' => '', 'mission_button_text' => 'View Mission', 'rewards' => '', ], $station_data['atts']); $atts['station_node_id'] = sanitize_key($atts['station_node_id']); $atts = $this->calculate_station_status($user_id, $atts, $previous_station_completed); $atts['static_content'] = $station_data['static_content'] ?? ''; $atts['mission_content'] = $station_data['mission_content'] ?? ''; $atts['result_content'] = $station_data['result_content'] ?? ''; $processed_stations[] = $atts; if ($atts['unlock_trigger'] === 'sequential') { $previous_station_completed = $atts['is_completed']; } } $this->path_data[$path_id]['stations'] = $processed_stations; }
+    private function process_stations($path_id, $user_id) { if (!isset($this->path_data[$path_id]) || !$user_id) return; $raw_stations = $this->path_data[$path_id]['stations']; $processed_stations = []; $previous_station_completed = true; foreach ($raw_stations as $index => $station_data) { $atts = shortcode_atts(['station_node_id' => 'st_' . $path_id . '_' . ($index + 1), 'title' => 'Untitled Station', 'icon' => 'fas fa-flag', 'unlock_trigger' => 'sequential', 'mission_type' => 'button_click', 'mission_target' => '', 'mission_button_text' => 'View Mission', 'rewards' => '', 'x_pos' => '50%', 'y_pos' => '50%'], $station_data['atts']); $atts['station_node_id'] = sanitize_key($atts['station_node_id']); $atts = $this->calculate_station_status($user_id, $atts, $previous_station_completed); $atts['static_content'] = $station_data['static_content'] ?? ''; $atts['mission_content'] = $station_data['mission_content'] ?? ''; $atts['result_content'] = $station_data['result_content'] ?? ''; $processed_stations[] = $atts; if ($atts['unlock_trigger'] === 'sequential') { $previous_station_completed = $atts['is_completed']; } } $this->path_data[$path_id]['stations'] = $processed_stations; }
     private function calculate_station_status($user_id, $atts, $previous_station_completed) { $node_id = $atts['station_node_id']; $atts['is_completed'] = $this->is_station_completed($user_id, $node_id); $status = 'locked'; $is_unlocked = false; if ($atts['is_completed']) { $status = 'completed'; $is_unlocked = true; } elseif ($atts['unlock_trigger'] === 'independent' || $previous_station_completed) { $status = 'open'; $is_unlocked = true; } $atts['status'] = $status; $atts['is_unlocked'] = $is_unlocked; return $atts; }
     private function is_station_completed($user_id, $node_id) { $completed_stations = get_user_meta($user_id, PSYCH_PATH_META_COMPLETED, true) ?: []; return isset($completed_stations[$node_id]); }
     public function get_button_text($station) { if ($station['status'] === 'completed') { return 'View Result'; } if ($station['status'] === 'locked') { return 'Locked'; } return $station['mission_button_text']; }

@@ -24,23 +24,20 @@ final class Psych_Dashboard_And_Reports {
 
     private function __construct() {
         add_action('init', [$this, 'register_shortcodes']);
-        add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
+        add_action('wp_enqueue_scripts', [$this, 'register_assets']);
         add_action('wp_ajax_psych_save_user_notes', [$this, 'ajax_save_user_notes']);
         add_action('wp_ajax_psych_save_user_goals', [$this, 'ajax_save_user_goals']);
     }
 
-    public function enqueue_assets() {
-        global $post;
-        if (is_a($post, 'WP_Post') && has_shortcode($post->post_content, 'psych_report_card')) {
-            wp_enqueue_style('psych-dashboard-reports-css', plugin_dir_url(__FILE__) . 'assets/css/dashboard-and-reports.css');
-            wp_enqueue_script('psych-dashboard-reports-js', plugin_dir_url(__FILE__) . 'assets/js/dashboard-and-reports.js', ['jquery'], null, true);
-            wp_enqueue_script('chart-js', 'https://cdn.jsdelivr.net/npm/chart.js', [], null, true);
-            wp_localize_script('psych-dashboard-reports-js', 'psych_dashboard_ajax', [
-                'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce'    => wp_create_nonce('psych_dashboard_nonce'),
-                'viewed_user_id' => $this->get_viewing_context()['viewed_user_id']
-            ]);
-        }
+    public function register_assets() {
+        wp_register_style('psych-dashboard-reports-css', plugin_dir_url(__FILE__) . 'assets/css/dashboard-and-reports.css');
+        wp_register_script('psych-dashboard-reports-js', plugin_dir_url(__FILE__) . 'assets/js/dashboard-and-reports.js', ['jquery'], null, true);
+        wp_register_script('chart-js', 'https://cdn.jsdelivr.net/npm/chart.js', [], null, true);
+        wp_localize_script('psych-dashboard-reports-js', 'psych_dashboard_ajax', [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce'    => wp_create_nonce('psych_dashboard_nonce'),
+            'viewed_user_id' => $this->get_viewing_context()['viewed_user_id']
+        ]);
     }
 
     public function register_shortcodes() {
@@ -51,6 +48,8 @@ final class Psych_Dashboard_And_Reports {
     }
 
     public function render_gamified_header($atts) {
+        wp_enqueue_style('psych-dashboard-reports-css');
+        wp_enqueue_script('psych-dashboard-reports-js');
         $context = $this->get_viewing_context();
         $user_id = $context['viewed_user_id'];
         if (!$user_id) return '';
@@ -63,6 +62,8 @@ final class Psych_Dashboard_And_Reports {
     }
 
     public function render_user_dashboard($atts) {
+        wp_enqueue_style('psych-dashboard-reports-css');
+        wp_enqueue_script('psych-dashboard-reports-js');
         $context = $this->get_viewing_context();
         $user_id = $context['viewed_user_id'];
         if (!$user_id) return '';
@@ -75,6 +76,8 @@ final class Psych_Dashboard_And_Reports {
     }
 
     public function render_performance_header($atts) {
+        wp_enqueue_style('psych-dashboard-reports-css');
+        wp_enqueue_script('psych-dashboard-reports-js');
         $context = $this->get_viewing_context();
         $user_id = $context['viewed_user_id'];
         if (!$user_id) return '';
@@ -87,6 +90,9 @@ final class Psych_Dashboard_And_Reports {
     }
 
     public function render_report_card_shortcode($atts) {
+        wp_enqueue_style('psych-dashboard-reports-css');
+        wp_enqueue_script('psych-dashboard-reports-js');
+        wp_enqueue_script('chart-js');
         $atts = shortcode_atts(['show_tabs' => 'overview,gamification,path,analytics,notes'], $atts);
         $context = $this->get_viewing_context();
         $user_id = $context['viewed_user_id'];

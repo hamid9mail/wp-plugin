@@ -22,7 +22,7 @@ class Psych_Advanced_Quiz_Module {
         add_action('init', [$this, 'register_shortcodes']);
         add_action('wp_ajax_save_quiz_results', [$this, 'save_quiz_results_ajax']);
         add_action('wp_ajax_nopriv_save_quiz_results', [$this, 'save_quiz_results_ajax']);
-        add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
+        add_action('wp_enqueue_scripts', [$this, 'register_assets']);
         // All other original hooks are preserved here...
     }
 
@@ -30,16 +30,13 @@ class Psych_Advanced_Quiz_Module {
         // DB activation logic from original file is preserved here...
     }
 
-    public function enqueue_assets() {
-        global $post;
-        if (is_a($post, 'WP_Post') && has_shortcode($post->post_content, 'psych_advanced_quiz')) {
-            wp_enqueue_style('psych-quiz-css', plugin_dir_url(__FILE__) . 'assets/css/advanced-quiz-module.css');
-            wp_enqueue_script('psych-quiz-js', plugin_dir_url(__FILE__) . 'assets/js/advanced-quiz-module.js', ['jquery'], null, true);
-            wp_localize_script('psych-quiz-js', 'psych_quiz_ajax', [
-                'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce'    => wp_create_nonce('psych_quiz_nonce')
-            ]);
-        }
+    public function register_assets() {
+        wp_register_style('psych-quiz-css', plugin_dir_url(__FILE__) . 'assets/css/advanced-quiz-module.css');
+        wp_register_script('psych-quiz-js', plugin_dir_url(__FILE__) . 'assets/js/advanced-quiz-module.js', ['jquery'], null, true);
+        wp_localize_script('psych-quiz-js', 'psych_quiz_ajax', [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce'    => wp_create_nonce('psych_quiz_nonce')
+        ]);
     }
 
     public function register_shortcodes() {
@@ -51,6 +48,8 @@ class Psych_Advanced_Quiz_Module {
     }
 
     public function handle_quiz_shortcode($atts, $content = null) {
+        wp_enqueue_style('psych-quiz-css');
+        wp_enqueue_script('psych-quiz-js');
         $atts = shortcode_atts([
             'quiz_id' => 'default_quiz',
             'count' => 0,
@@ -79,7 +78,8 @@ class Psych_Advanced_Quiz_Module {
     }
 
     public function handle_psych_test_shortcode($atts, $content = null) {
-        $this->enqueue_assets();
+        wp_enqueue_style('psych-quiz-css');
+        wp_enqueue_script('psych-quiz-js');
 
         $atts = shortcode_atts([
             'title' => 'Psychology Test',
@@ -105,6 +105,8 @@ class Psych_Advanced_Quiz_Module {
     }
 
     public function quiz_report_card_shortcode($atts) {
+        wp_enqueue_style('psych-quiz-css');
+        wp_enqueue_script('psych-quiz-js');
         $atts = shortcode_atts(['quiz_id' => ''], $atts);
         global $wpdb;
         $user_id = get_current_user_id();

@@ -48,7 +48,7 @@ final class Psych_Gamification_Center {
         add_action('wp_ajax_psych_manual_award', [$this, 'handle_manual_award_ajax']);
 
         // Frontend
-        add_action('wp_enqueue_scripts', [$this, 'enqueue_frontend_assets']);
+        add_action('wp_enqueue_scripts', [$this, 'register_frontend_assets']);
         add_action('wp_ajax_psych_get_pending_notifications', [$this, 'ajax_get_pending_notifications']);
         add_action('wp_ajax_psych_clear_notification', [$this, 'ajax_clear_notification']);
 
@@ -69,10 +69,9 @@ final class Psych_Gamification_Center {
             'nonce' => wp_create_nonce('psych_manual_award')
         ]);
     }
-    public function enqueue_frontend_assets() {
-        // In a real scenario, we'd check if a shortcode is present before enqueuing.
-        wp_enqueue_style('psych-gamification-frontend-css', plugin_dir_url(__FILE__) . 'assets/css/gamification-center.css', [], self::VERSION);
-        wp_enqueue_script('psych-gamification-frontend-js', plugin_dir_url(__FILE__) . 'assets/js/gamification-center.js', ['jquery'], self::VERSION, true);
+    public function register_frontend_assets() {
+        wp_register_style('psych-gamification-frontend-css', plugin_dir_url(__FILE__) . 'assets/css/gamification-center.css', [], self::VERSION);
+        wp_register_script('psych-gamification-frontend-js', plugin_dir_url(__FILE__) . 'assets/js/gamification-center.js', ['jquery'], self::VERSION, true);
         wp_localize_script('psych-gamification-frontend-js', 'psych_gamification', [
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('psych_gamification_ajax'),
@@ -81,6 +80,8 @@ final class Psych_Gamification_Center {
 
     // --- Shortcode Rendering (Refactored) ---
     public function render_user_points_shortcode($atts) {
+        wp_enqueue_style('psych-gamification-frontend-css');
+        wp_enqueue_script('psych-gamification-frontend-js');
         $atts = shortcode_atts(['user_id' => 0, 'show_label' => 'true'], $atts);
         $user_id = $atts['user_id'] ?: get_current_user_id();
         if (!$user_id) return '';
@@ -92,6 +93,8 @@ final class Psych_Gamification_Center {
     }
 
     public function render_user_level_shortcode($atts) {
+        wp_enqueue_style('psych-gamification-frontend-css');
+        wp_enqueue_script('psych-gamification-frontend-js');
         $atts = shortcode_atts(['user_id' => 0, 'show_icon' => 'true'], $atts);
         $user_id = $atts['user_id'] ?: get_current_user_id();
         if (!$user_id) return '';
@@ -103,6 +106,8 @@ final class Psych_Gamification_Center {
     }
 
     public function render_user_badges_shortcode($atts) {
+        wp_enqueue_style('psych-gamification-frontend-css');
+        wp_enqueue_script('psych-gamification-frontend-js');
         $atts = shortcode_atts(['user_id' => 0, 'limit' => 5], $atts);
         $user_id = $atts['user_id'] ?: get_current_user_id();
         if (!$user_id) return '';
@@ -115,6 +120,8 @@ final class Psych_Gamification_Center {
     }
 
     public function render_leaderboard_shortcode($atts) {
+        wp_enqueue_style('psych-gamification-frontend-css');
+        wp_enqueue_script('psych-gamification-frontend-js');
         $atts = shortcode_atts(['limit' => 10], $atts);
         $top_users = $this->get_top_users_by_points(intval($atts['limit']));
         $current_user_id = get_current_user_id();

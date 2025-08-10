@@ -58,14 +58,14 @@ final class Psych_Coach_Module {
         add_shortcode('coach_only_content', [$this, 'shortcode_coach_only_content']);
         add_shortcode('user_product_codes', [$this, 'shortcode_user_codes_list']);
         add_shortcode('coach_search_by_code', [$this, 'shortcode_coach_search_by_code']);
-        add_action('wp_enqueue_scripts', [$this, 'enqueue_frontend_assets']);
+        add_action('wp_enqueue_scripts', [$this, 'register_frontend_assets']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
         // All other hooks from original file are preserved here...
     }
 
-    public function enqueue_frontend_assets() {
-        wp_enqueue_style('psych-coach-css', plugin_dir_url(__FILE__) . 'assets/css/coach-module.css');
-        wp_enqueue_script('psych-coach-js', plugin_dir_url(__FILE__) . 'assets/js/coach-module.js', ['jquery'], null, true);
+    public function register_frontend_assets() {
+        wp_register_style('psych-coach-css', plugin_dir_url(__FILE__) . 'assets/css/coach-module.css');
+        wp_register_script('psych-coach-js', plugin_dir_url(__FILE__) . 'assets/js/coach-module.js', ['jquery'], null, true);
     }
 
     public function enqueue_admin_assets($hook) {
@@ -120,6 +120,8 @@ final class Psych_Coach_Module {
 
     // --- Shortcode Rendering (Refactored) ---
     public function shortcode_coach_impersonate_form($atts, $content = null) {
+        wp_enqueue_style('psych-coach-css');
+        wp_enqueue_script('psych-coach-js');
         // ... Logic to get assigned students ...
         $assigned_students = get_users(['role' => 'subscriber', 'number' => 5]); // Placeholder
         $current_page_id = get_queried_object_id();
@@ -129,6 +131,8 @@ final class Psych_Coach_Module {
         return ob_get_clean();
     }
     public function shortcode_coach_only_content($atts, $content = null) {
+        wp_enqueue_style('psych-coach-css');
+        wp_enqueue_script('psych-coach-js');
         $context = $this->get_viewing_context(); // Placeholder for get_viewing_context method
         if (!isset($context['is_impersonating']) || !$context['is_impersonating']) return '';
 
@@ -141,6 +145,8 @@ final class Psych_Coach_Module {
         return ob_get_clean();
     }
     public function shortcode_user_codes_list($atts, $content = null) {
+        wp_enqueue_style('psych-coach-css');
+        wp_enqueue_script('psych-coach-js');
         if (!is_user_logged_in()) return 'Please log in.';
         $codes = get_user_meta(get_current_user_id(), 'psych_user_product_codes', true) ?: [];
         
@@ -149,6 +155,8 @@ final class Psych_Coach_Module {
         return ob_get_clean();
     }
     public function shortcode_coach_search_by_code($atts, $content = null) {
+        wp_enqueue_style('psych-coach-css');
+        wp_enqueue_script('psych-coach-js');
         $error = '';
         if (isset($_POST['product_code_search_nonce']) && wp_verify_nonce($_POST['product_code_search_nonce'], 'coach_search_by_code')) {
             $code = sanitize_text_field($_POST['product_code']);
