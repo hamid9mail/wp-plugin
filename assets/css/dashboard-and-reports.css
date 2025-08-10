@@ -1,0 +1,193 @@
+/**
+ * CSS for Dashboard & Reports Module
+ */
+
+.psych-report-card-container {
+    font-family: sans-serif;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+/* Tabs Navigation */
+.report-card-tabs {
+    display: flex;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.report-card-tabs .tab-link {
+    padding: 15px 25px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-size: 16px;
+    font-weight: 600;
+    color: #6c757d;
+    position: relative;
+    transition: color 0.3s;
+}
+
+.report-card-tabs .tab-link:hover {
+    color: #0056b3;
+}
+
+.report-card-tabs .tab-link.active {
+    color: #007bff;
+}
+
+.report-card-tabs .tab-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background-color: #007bff;
+    border-radius: 3px 3px 0 0;
+}
+
+/* Tab Content */
+.report-card-content {
+    padding: 25px;
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+    animation: fadeIn 0.5s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.tab-pane h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 22px;
+    color: #343a40;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 10px;
+}
+
+/* Summary Tab */
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.summary-item {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.summary-item .value {
+    font-size: 28px;
+    font-weight: bold;
+    color: #007bff;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.summary-item .label {
+    font-size: 14px;
+    color: #6c757d;
+}
+
+/* Generic Table for Courses, Badges, Tests */
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.report-table th, .report-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.report-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+}
+
+.report-table tbody tr:hover {
+    background-color: #f1f3f5;
+}
+
+.report-table .badge-icon {
+    width: 40px;
+    height: 40px;
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+.progress-bar-container {
+    width: 100%;
+    background-color: #e9ecef;
+    border-radius: 5px;
+    height: 10px;
+}
+
+.progress-bar {
+    background-color: #28a745;
+    height: 100%;
+    border-radius: 5px;
+}
+
+/* Timeline Tab */
+.timeline {
+    position: relative;
+    padding-left: 30px;
+    list-style: none;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background-color: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 25px;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -24px;
+    top: 5px;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background-color: #007bff;
+    border: 3px solid #fff;
+}
+
+.timeline-date {
+    font-weight: 600;
+    color: #6c757d;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.timeline-event {
+    font-size: 16px;
+    color: #343a40;
+}

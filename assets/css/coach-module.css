@@ -1,0 +1,88 @@
+/**
+ * CSS for Coach Module
+ */
+
+/* User Search Form */
+.psych-coach-user-search-container {
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    margin-bottom: 20px;
+}
+
+.psych-coach-user-search-container h3 {
+    margin-top: 0;
+    color: #333;
+}
+
+.psych-coach-user-search-form .form-group {
+    margin-bottom: 15px;
+}
+
+.psych-coach-user-search-form label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.psych-coach-user-search-form input[type="text"],
+.psych-coach-user-search-form input[type="email"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.psych-coach-user-search-form .search-button {
+    padding: 10px 20px;
+    border: none;
+    background-color: #0073aa;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.psych-coach-user-search-form .search-button:hover {
+    background-color: #005a87;
+}
+
+#coach-search-results {
+    margin-top: 20px;
+}
+
+/* View As Banner */
+.psych-coach-view-as-banner {
+    padding: 15px;
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    color: #856404;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.psych-coach-view-as-banner p {
+    margin: 0;
+    font-size: 16px;
+}
+
+.psych-coach-view-as-banner p strong {
+    font-weight: bold;
+}
+
+.psych-coach-view-as-banner .exit-view-as-button {
+    padding: 8px 15px;
+    background-color: #dc3545;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.psych-coach-view-as-banner .exit-view-as-button:hover {
+    background-color: #c82333;
+}

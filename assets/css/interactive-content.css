@@ -1,0 +1,89 @@
+/**
+ * CSS for Interactive Content Module
+ */
+
+/* [psych_content_block] */
+.psych-content-block {
+    padding: 20px;
+    margin-bottom: 20px;
+    border-left: 5px solid #0073aa;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.psych-content-block.alert {
+    border-left-color: #dc3545;
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.psych-content-block.success {
+    border-left-color: #28a745;
+    background-color: #d4edda;
+    color: #155724;
+}
+
+/* [psych_content_view] */
+.psych-content-view {
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+/* [psych_button] */
+.psych-interactive-button {
+    display: inline-block;
+    padding: 12px 25px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.psych-btn-default {
+    background-color: #0085ba;
+    color: white;
+}
+
+.psych-btn-default:hover {
+    background-color: #006799;
+    transform: translateY(-2px);
+}
+
+.psych-btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.psych-btn-secondary:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+}
+
+
+/* [psych_hidden_content] */
+.psych-hidden-content {
+    padding: 15px;
+    background-color: #e9ecef;
+    border: 1px dashed #ced4da;
+    border-radius: 4px;
+    margin-top: 15px;
+}
+
+/* Placeholder styles for more complex components */
+.psych-progress-path-placeholder,
+.psych-report-card-placeholder,
+.psych-user-summary-placeholder,
+.psych-path-progress-placeholder,
+.psych-achievement-timeline-placeholder {
+    padding: 20px;
+    border: 2px dashed #ccc;
+    background-color: #fafafa;
+    text-align: center;
+    color: #777;
+    font-style: italic;
+    margin-bottom: 20px;
+}

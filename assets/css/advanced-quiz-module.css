@@ -1,0 +1,156 @@
+/**
+ * CSS for Advanced Quiz Module
+ */
+
+/* [psych_test] Intro Card */
+.psych-test-intro-container {
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    overflow: hidden;
+    margin-bottom: 30px;
+    display: flex;
+    flex-direction: column;
+}
+
+.psych-test-intro-header {
+    padding: 20px;
+    color: white;
+}
+
+.psych-test-intro-header h3 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.psych-test-intro-header .subtitle {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.psych-test-intro-body {
+    padding: 20px;
+    background: #fff;
+}
+
+.psych-test-intro-body p {
+    margin-top: 0;
+    color: #555;
+}
+
+.psych-test-intro-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #eee;
+}
+
+.psych-test-start-button {
+    padding: 10px 25px;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+.psych-test-meta-info span {
+    font-size: 14px;
+    color: #6c757d;
+    margin-right: 15px;
+}
+
+/* Main Quiz Form */
+.psych-quiz-form-container {
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    padding: 25px;
+}
+
+.quiz-progress-bar {
+    width: 100%;
+    height: 8px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+.quiz-progress-bar-inner {
+    width: 0%;
+    height: 100%;
+    background-color: #007bff;
+    border-radius: 4px;
+    transition: width 0.4s ease-in-out;
+}
+
+.quiz-question {
+    margin-bottom: 25px;
+    padding-bottom: 25px;
+    border-bottom: 1px solid #f1f1f1;
+}
+.quiz-question:last-of-type {
+    border-bottom: none;
+}
+
+.question-text {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.question-options label {
+    display: block;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: border-color 0.3s, background-color 0.3s;
+}
+
+.question-options label:hover {
+    border-color: #007bff;
+}
+
+.question-options input[type="radio"] {
+    margin-right: 10px;
+}
+
+/* Drag and Drop Question Type */
+.drag-drop-options {
+    list-style: none;
+    padding: 0;
+}
+.drag-drop-options li {
+    padding: 10px;
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    margin-bottom: 5px;
+    cursor: move;
+}
+
+.submit-quiz-button {
+    padding: 12px 30px;
+    font-size: 18px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.submit-quiz-button:hover {
+    background-color: #218838;
+}
+
+/* Quiz Results */
+#psych-quiz-results-container {
+    margin-top: 20px;
+}
+
+.psych-quiz-results {
+    padding: 20px;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    border-radius: 8px;
+}
