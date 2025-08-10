@@ -1,9 +1,19 @@
+/**
+ * JavaScript for Psych Gamification Center
+ */
 jQuery(document).ready(function($) {
-    // Admin JS
-    if (typeof psych_gamification_admin !== 'undefined') {
+
+    // --- Admin Panel JS ---
+    if ($('body').hasClass('admin-bar')) {
+
         // Manual award form handling
         $("#manual-award-form").on("submit", function(e) {
             e.preventDefault();
+
+            var form = $(this);
+            var button = form.find('.button-primary');
+            var originalText = button.text();
+            button.text('Processing...').prop('disabled', true);
 
             var formData = {
                 action: "psych_manual_award",
@@ -17,33 +27,27 @@ jQuery(document).ready(function($) {
             $.post(psych_gamification_admin.ajax_url, formData)
             .done(function(response) {
                 if (response.success) {
-                    alert("✅ " + response.data.message);
-                    $("#manual-award-form")[0].reset();
+                    alert("Success: " + response.data.message);
+                    form[0].reset();
                 } else {
-                    alert("❌ " + response.data.message);
+                    alert("Error: " + response.data.message);
                 }
             })
             .fail(function() {
-                alert("❌ خطا در ارتباط با سرور");
+                alert("An unexpected server error occurred.");
+            })
+            .always(function() {
+                button.text(originalText).prop('disabled', false);
             });
-        });
-
-        // Live search for users
-        $("#award_user_search").on("input", function() {
-            var query = $(this).val();
-            if (query.length < 2) return;
-
-            // This is a placeholder for user search functionality
         });
     }
 
-    // Frontend JS
-    if (typeof psych_gamification !== 'undefined') {
+    // --- Frontend JS ---
+    if (!$('body').hasClass('admin-bar')) {
         var notificationShown = false;
 
-        // Check for pending notifications
         function checkNotifications() {
-            if (notificationShown) return;
+            if (notificationShown || typeof psych_gamification === 'undefined') return;
 
             $.post(psych_gamification.ajax_url, {
                 action: "psych_get_pending_notifications",
@@ -56,23 +60,30 @@ jQuery(document).ready(function($) {
             });
         }
 
-        // Show notification popup
         function showNotification(notification) {
-            var content = "<h4>" + notification.title + "</h4><p>" + notification.message + "</p>";
-            $("#psych-notification-content").html(content);
-            $("#psych-notification-container").fadeIn();
+            var container = $('#psych-notification-container');
+            if (container.length === 0) {
+                $('body').append('<div id="psych-notification-container"></div>');
+                container = $('#psych-notification-container');
+            }
+
+            var content = '<div id="psych-notification-popup">' +
+                          '<button id="psych-notification-close">&times;</button>' +
+                          '<div id="psych-notification-content">' +
+                          '<h4>' + notification.title + '</h4>' +
+                          '<p>' + notification.message + '</p>' +
+                          '</div></div>';
+
+            container.html(content).fadeIn();
             notificationShown = true;
 
-            // Auto-hide after 5 seconds
             setTimeout(function() {
                 hideNotification(notification.id);
             }, 5000);
         }
 
-        // Hide notification
         function hideNotification(notificationId) {
-            $("#psych-notification-container").fadeOut(function() {
-                // Clear the notification from database
+            $('#psych-notification-container').fadeOut(function() {
                 if (notificationId) {
                     $.post(psych_gamification.ajax_url, {
                         action: "psych_clear_notification",
@@ -84,20 +95,12 @@ jQuery(document).ready(function($) {
             });
         }
 
-        // Close notification manually
-        $("#psych-notification-close").on("click", function() {
+        $('body').on("click", "#psych-notification-close", function() {
             hideNotification();
         });
 
-        // Check for notifications every 30 seconds
+        // Check for notifications periodically and after a delay on page load
         setInterval(checkNotifications, 30000);
-
-        // Initial check
         setTimeout(checkNotifications, 2000);
-
-        // Handle mission completion integration
-        $(document).on("psych_mission_completed", function(e, missionId, buttonElement) {
-            setTimeout(checkNotifications, 1000);
-        });
     }
 });

@@ -236,12 +236,12 @@ final class Psych_Complete_System_Enhanced {
      */
     private function load_modules() {
         $modules_to_load = [
-            'path-engine.php' => 'PsychoCourse_Path_Engine_Refactored',
-            'gamification-center.php' => 'Psych_Gamification_Center_Refactored',
-            'coach-module.php' => 'Psych_Coach_Module_Refactored',
-            'interactive-content.php' => 'Psych_Interactive_Content_Refactored',
-            'dashboard-and-reports.php' => 'Psych_Dashboard_And_Reports_Refactored',
-            'advanced-quiz-module.php' => 'Psych_Advanced_Quiz_Module_Refactored',
+            'path-engine.php' => 'PsychoCourse_Path_Engine_4',
+            'gamification-center.php' => 'Psych_Gamification_Center',
+            'coach-module.php' => 'Psych_Coach_Module',
+            'interactive-content.php' => 'Psych_Interactive_Content_Module_3',
+            'dashboard-and-reports.php' => 'Psych_Dashboard_And_Reports',
+            'advanced-quiz-module.php' => 'Psych_Advanced_Quiz_Module',
         ];
 
         foreach ($modules_to_load as $file => $class) {
@@ -273,12 +273,12 @@ final class Psych_Complete_System_Enhanced {
      */
     private function initialize_modules() {
         $initialization_order = [
-            'path_engine' => 'PsychoCourse_Path_Engine_Refactored',
-            'gamification' => 'Psych_Gamification_Center_Refactored',
-            'quiz' => 'Psych_Advanced_Quiz_Module_Refactored',
-            'coach' => 'Psych_Coach_Module_Refactored',
-            'interactive_content' => 'Psych_Interactive_Content_Refactored',
-            'dashboard_reports' => 'Psych_Dashboard_And_Reports_Refactored',
+            'path_engine' => 'PsychoCourse_Path_Engine_4',
+            'gamification' => 'Psych_Gamification_Center',
+            'quiz' => 'Psych_Advanced_Quiz_Module',
+            'coach' => 'Psych_Coach_Module',
+            'interactive_content' => 'Psych_Interactive_Content_Module_3',
+            'dashboard_reports' => 'Psych_Dashboard_And_Reports',
         ];
 
         foreach ($initialization_order as $module_key => $class_name) {

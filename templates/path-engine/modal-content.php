@@ -1,31 +1,46 @@
 <?php
 /**
- * Template for the modal content, loaded via AJAX.
+ * Template for the content loaded into the modal via AJAX.
  *
- * @var array $station_details
- * @var bool  $is_completed
- * @var int   $user_id
- * @var array $context
+ * @param array $station The station data.
+ * @param array $context The viewing context.
+ * @param object $this The instance of the PsychoCourse_Path_Engine_4 class.
  */
 
-if (!empty($station_details['static_content'])) {
-    echo '<div class="psych-static-content">' . wpautop(do_shortcode($station_details['static_content'])) . '</div>';
+if (!defined('ABSPATH')) {
+    exit; // Exit if accessed directly
 }
 
-if ($is_completed) {
-    echo '<div class="psych-result-content">';
-    if (!empty($station_details['result_content'])) {
-        echo wpautop(do_shortcode($station_details['result_content']));
-    } else {
-        echo '<p>این ماموریت با موفقیت تکمیل شده است!</p>';
-    }
-    echo '</div>';
-} else {
-    echo '<div class="psych-mission-area">';
-    if (!empty($station_details['mission_content'])) {
-        echo '<div class="psych-mission-content">' . wpautop(do_shortcode($station_details['mission_content'])) . '</div>';
-    }
-    echo $this->generate_mission_action_html($user_id, $station_details, $context);
-    echo '</div>';
-}
+$user_id = $context['viewed_user_id'];
 ?>
+
+<div class="psych-modal-header">
+    <h3 class="psych-modal-title"><?php echo esc_html($station['title']); ?></h3>
+</div>
+
+<div class="psych-modal-body">
+    <?php if ($station['is_completed']) : ?>
+        <div class="result-content-wrapper">
+            <h4><?php esc_html_e('Result', 'psych-path-engine'); ?></h4>
+            <?php echo wpautop(do_shortcode($station['result_content'])); ?>
+        </div>
+    <?php else: ?>
+        <div class="static-content-wrapper">
+            <?php echo wpautop(do_shortcode($station['static_content'])); ?>
+        </div>
+        <div class="mission-content-wrapper">
+            <h4><?php esc_html_e('Mission', 'psych-path-engine'); ?></h4>
+            <?php echo wpautop(do_shortcode($station['mission_content'])); ?>
+        </div>
+    <?php endif; ?>
+</div>
+
+<div class="psych-modal-footer">
+     <?php if (!$station['is_completed']) : ?>
+        <div class="mission-action-wrapper">
+            <?php
+            echo $this->generate_mission_action_html($user_id, $station, $context);
+            ?>
+        </div>
+    <?php endif; ?>
+</div>

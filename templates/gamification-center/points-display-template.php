@@ -1,25 +1,17 @@
 <?php
 /**
- * Template for the [psych_user_points_display] shortcode.
+ * Template for the [psych_user_points] shortcode.
  *
  * @param array $atts Shortcode attributes.
- * @param int $points The user's current points.
+ * @param int $points The user's points.
  */
 
 if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
 
+$label = $atts['show_label'] === 'true' ? __('Points: ', 'psych-system') : '';
 ?>
-<div class="psych-points-display-container <?php echo esc_attr($atts['custom_class']); ?>">
-    <?php if (!empty($atts['title'])) : ?>
-        <h4 class="points-title"><?php echo esc_html($atts['title']); ?></h4>
-    <?php endif; ?>
-    <div class="points-value">
-        <?php if (!empty($atts['icon'])) : ?>
-            <i class="<?php echo esc_attr($atts['icon']); ?>"></i>
-        <?php endif; ?>
-        <span><?php echo number_format($points); ?></span>
-        <span class="points-label"><?php echo esc_html($atts['label']); ?></span>
-    </div>
-</div>
+<span class="psych-user-points">
+    <?php echo esc_html($label) . number_format_i18n($points); ?>
+</span>

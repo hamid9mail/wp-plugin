@@ -3,49 +3,30 @@
  * Template for the [psych_leaderboard] shortcode.
  *
  * @param array $atts Shortcode attributes.
- * @param array $leaderboard_data The leaderboard data (ranked users).
- * @param int $current_user_rank The rank of the current user.
+ * @param array $top_users Array of top user data.
+ * @param int $current_user_id ID of the current user viewing the page.
  */
 
 if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
-
 ?>
-<div class="psych-leaderboard-container">
-    <?php if (!empty($atts['title'])) : ?>
-        <h3 class="leaderboard-title"><?php echo esc_html($atts['title']); ?></h3>
-    <?php endif; ?>
-
-    <div class="leaderboard-table-wrapper">
-        <table class="leaderboard-table">
-            <thead>
-                <tr>
-                    <th class="rank-col"><?php echo esc_html__('Rank', 'psych-g-plugin'); ?></th>
-                    <th class="user-col"><?php echo esc_html__('User', 'psych-g-plugin'); ?></th>
-                    <th class="points-col"><?php echo esc_html__('Points', 'psych-g-plugin'); ?></th>
-                    <th class="level-col"><?php echo esc_html__('Level', 'psych-g-plugin'); ?></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($leaderboard_data as $row) : ?>
-                    <tr class="<?php echo $row['is_current_user'] ? 'current-user-row' : ''; ?>">
-                        <td class="rank-col"><?php echo esc_html($row['rank']); ?></td>
-                        <td class="user-col">
-                            <img src="<?php echo esc_url($row['avatar_url']); ?>" class="leaderboard-avatar" alt="<?php echo esc_attr($row['display_name']); ?>" />
-                            <span class="leaderboard-username"><?php echo esc_html($row['display_name']); ?></span>
-                        </td>
-                        <td class="points-col"><?php echo number_format($row['points']); ?></td>
-                        <td class="level-col"><?php echo esc_html($row['level_name']); ?></td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-
-    <?php if ($current_user_rank > $atts['limit']) : ?>
-        <div class="current-user-rank-footer">
-            <p><?php echo sprintf(esc_html__('Your current rank is %d.', 'psych-g-plugin'), $current_user_rank); ?></p>
-        </div>
+<div class="psych-leaderboard">
+    <h3><?php esc_html_e('Leaderboard', 'psych-system'); ?></h3>
+    <?php if (empty($top_users)) : ?>
+        <p><?php esc_html_e('No statistics available yet.', 'psych-system'); ?></p>
+    <?php else : ?>
+        <ol class="psych-leaderboard-list">
+            <?php foreach ($top_users as $user_data) :
+                $is_current = ($user_data['ID'] == $current_user_id);
+                $css_class = $is_current ? ' class="current-user"' : '';
+            ?>
+                <li<?php echo $css_class; ?>>
+                    <span class="user-name"><?php echo esc_html($user_data['display_name']); ?></span>
+                    <span class="user-level"><?php echo esc_html($user_data['level']); ?></span>
+                    <span class="user-points"><?php echo number_format_i18n($user_data['points']); ?> <?php esc_html_e('Points', 'psych-system'); ?></span>
+                </li>
+            <?php endforeach; ?>
+        </ol>
     <?php endif; ?>
 </div>

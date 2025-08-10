@@ -1,41 +1,36 @@
 <?php
 /**
- * Template for the [psych_user_badges_collection] shortcode.
+ * Template for the [psych_user_badges] shortcode.
  *
  * @param array $atts Shortcode attributes.
- * @param array $badges The user's earned badges.
+ * @param array $user_badges Array of badge slugs the user has earned.
+ * @param array $all_badges Array of all available badges.
  */
 
 if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
 
-$grid_columns = 'columns-' . intval($atts['columns']);
-$inline_styles = sprintf('border-radius: %s;', esc_attr($atts['border_radius']));
+if (empty($user_badges)) {
+    echo '<p class="psych-no-badges">' . esc_html__('No badges earned yet.', 'psych-system') . '</p>';
+    return;
+}
 
+$limit = intval($atts['limit']);
+$count = 0;
 ?>
-<div class="psych-badges-collection-container" style="<?php echo $inline_styles; ?>">
-    <?php if (!empty($atts['title'])) : ?>
-        <h3 class="badges-collection-title" style="color: <?php echo esc_attr($atts['main_color']); ?>;"><?php echo esc_html($atts['title']); ?></h3>
-    <?php endif; ?>
-
-    <?php if (!empty($badges)) : ?>
-        <div class="badges-grid <?php echo $grid_columns; ?>">
-            <?php foreach ($badges as $badge) : ?>
-                <div class="badge-item">
-                    <div class="badge-icon-wrapper">
-                        <img src="<?php echo esc_url($badge['icon_url']); ?>" alt="<?php echo esc_attr($badge['name']); ?>" />
-                    </div>
-                    <div class="badge-info">
-                        <h4 class="badge-name"><?php echo esc_html($badge['name']); ?></h4>
-                        <p class="badge-description"><?php echo esc_html($badge['description']); ?></p>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-        </div>
-    <?php else : ?>
-        <div class="badges-empty-message">
-            <p><?php echo esc_html($atts['empty_message']); ?></p>
-        </div>
-    <?php endif; ?>
+<div class="psych-user-badges-list">
+    <?php foreach ($user_badges as $badge_slug) :
+        if ($limit > 0 && $count >= $limit) break;
+        if (isset($all_badges[$badge_slug])) :
+            $badge = $all_badges[$badge_slug];
+            $count++;
+    ?>
+            <span class="psych-badge" style="color: <?php echo esc_attr($badge['color']); ?>;" title="<?php echo esc_attr($badge['description'] ?? ''); ?>">
+                <i class="<?php echo esc_attr($badge['icon']); ?>"></i> <?php echo esc_html($badge['name']); ?>
+            </span>
+    <?php
+        endif;
+    endforeach;
+    ?>
 </div>

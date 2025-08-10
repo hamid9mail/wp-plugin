@@ -1,79 +1,114 @@
 /**
- * JavaScript for Advanced Quiz Module
+ * JavaScript for Psych Advanced Quiz Module
  */
-
 jQuery(document).ready(function($) {
 
-    // Handle the main quiz form submission
-    $('body').on('submit', '.psych-quiz-form', function(e) {
-        e.preventDefault();
+    $('.quiz-container').each(function() {
+        const container = $(this);
+        const quizId = container.data('quiz-id');
+        const questions = container.data('questions') || [];
+        const aiEnabled = container.data('ai') === true;
 
-        var form = $(this);
-        var quizId = form.data('quiz-id');
-        var resultsContainer = $('#psych-quiz-results-container-' + quizId);
-        var submitButton = form.find('.submit-quiz-button');
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let responses = {};
 
-        // Disable button to prevent multiple submissions
-        submitButton.prop('disabled', true).text('Submitting...');
+        const questionEl = container.find('.question');
+        const optionsEl = container.find('.options');
+        const feedbackEl = container.find('.feedback');
+        const resultEl = container.find('.result');
+        const startButton = container.find('.start-quiz-button');
+        const loadingEl = container.find('.loading-result');
 
-        var answers = [];
-        form.find('.quiz-question').each(function() {
-            var question = $(this);
-            var questionId = question.data('question-id');
-            var selectedOption = question.find('input[type="radio"]:checked');
+        startButton.on('click', function() {
+            $(this).hide();
+            showQuestion();
+        });
 
-            if (selectedOption.length > 0) {
-                answers.push({
-                    question_id: questionId,
-                    value: selectedOption.val(),
-                    is_correct: selectedOption.data('correct') // Assuming correct flag is stored in data attribute
+        function showQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                showFinalResult();
+                return;
+            }
+
+            feedbackEl.hide();
+            const question = questions[currentQuestionIndex];
+            questionEl.html(question.question);
+            optionsEl.empty().show();
+
+            if (question.type === 'mcq') {
+                const shuffledOptions = shuffleArray(question.options);
+                shuffledOptions.forEach(opt => {
+                    const btn = $('<button>').html(opt.text).data('value', opt.value);
+                    btn.on('click', () => selectAnswer(opt, question));
+                    optionsEl.append(btn);
                 });
             }
-        });
-
-        // Basic validation
-        var totalQuestions = form.find('.quiz-question').length;
-        if (answers.length < totalQuestions) {
-            alert('Please answer all questions before submitting.');
-            submitButton.prop('disabled', false).text('Submit Quiz');
-            return;
+            // Add placeholders for other question types here
+            // else if (question.type === 'dragdrop') { ... }
         }
 
-        var formData = {
-            action: 'psych_submit_quiz',
-            nonce: psych_quiz_vars.nonce,
-            quiz_id: quizId,
-            answers: answers
-        };
-
-        // AJAX request
-        $.post(psych_quiz_vars.ajax_url, formData, function(response) {
-            if (response.success) {
-                // Hide the form and show the results
-                form.slideUp();
-                resultsContainer.html(response.data.html).slideDown();
+        function selectAnswer(selectedOption, question) {
+            const isCorrect = selectedOption.value === question.correct_answer;
+            if (isCorrect) {
+                score++;
+                feedbackEl.text('Correct!').removeClass('incorrect').addClass('correct').show();
             } else {
-                resultsContainer.html('<div class="error">Error: ' + response.data.message + '</div>').slideDown();
-                submitButton.prop('disabled', false).text('Submit Quiz');
+                feedbackEl.text('Incorrect.').removeClass('correct').addClass('incorrect').show();
             }
-        }).fail(function() {
-            resultsContainer.html('<div class="error">An unexpected error occurred. Please try again.</div>').slideDown();
-            submitButton.prop('disabled', false).text('Submit Quiz');
-        });
+
+            responses[question.id] = {
+                'value': selectedOption.value,
+                'is_correct': isCorrect
+            };
+
+            currentQuestionIndex++;
+            setTimeout(showQuestion, 1200); // Wait a moment before showing the next question
+        }
+
+        function showFinalResult() {
+            questionEl.hide();
+            optionsEl.hide();
+            feedbackEl.hide();
+            loadingEl.show();
+
+            $.ajax({
+                url: psych_quiz_ajax.ajax_url,
+                method: 'POST',
+                data: {
+                    action: 'save_quiz_results',
+                    nonce: psych_quiz_ajax.nonce,
+                    quiz_id: quizId,
+                    score: score,
+                    responses: JSON.stringify(responses),
+                    ai: aiEnabled
+                },
+                success: function(response) {
+                    loadingEl.hide();
+                    if (response.success) {
+                        let resultHtml = '<h3>Quiz Complete!</h3>';
+                        resultHtml += '<p>Your score: ' + score + ' / ' + questions.length + '</p>';
+                        if (aiEnabled && response.data.ai_analysis) {
+                            resultHtml += '<h4>AI Analysis:</h4><p>' + response.data.ai_analysis + '</p>';
+                        }
+                        resultEl.html(resultHtml).show();
+                    } else {
+                        resultEl.html('<p class="error">Error saving results.</p>').show();
+                    }
+                },
+                error: function() {
+                    loadingEl.hide();
+                    resultEl.html('<p class="error">Server error occurred.</p>').show();
+                }
+            });
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
     });
-
-    // Update progress bar as user answers questions
-    $('.psych-quiz-form').each(function() {
-        var form = $(this);
-        var progressBar = form.find('.quiz-progress-bar-inner');
-        var questions = form.find('.quiz-question');
-        var totalQuestions = questions.length;
-
-        form.find('input[type="radio"]').on('change', function() {
-            var answeredCount = form.find('input[type="radio"]:checked').length;
-            var progressPercent = (answeredCount / totalQuestions) * 100;
-            progressBar.css('width', progressPercent + '%');
-        });
-    });
-
 });

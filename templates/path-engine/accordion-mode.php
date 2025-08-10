@@ -1,39 +1,40 @@
 <?php
 /**
  * Template for the accordion display mode.
+ *
+ * @param array $stations The array of processed station data.
+ * @param array $context The viewing context.
+ * @param object $this The instance of the PsychoCourse_Path_Engine_4 class.
  */
+
+if (!defined('ABSPATH')) {
+    exit; // Exit if accessed directly
+}
 ?>
-<div class="psych-accordion">
-    <?php foreach ($stations as $index => $station) : ?>
-        <div class="psych-accordion-item <?php echo esc_attr($station['status']); ?>"
-             data-station-node-id="<?php echo esc_attr($station['station_node_id']); ?>"
-             data-station-details="<?php echo esc_attr(json_encode($station, JSON_UNESCAPED_UNICODE)); ?>">
-
-            <div class="psych-accordion-header">
-                <div class="psych-accordion-icon">
-                    <i class="<?php echo esc_attr($station['is_completed'] ? 'fas fa-check-circle' : $station['icon']); ?>"></i>
-                </div>
-                <h3 class="psych-accordion-title"><?php echo esc_html($station['title']); ?></h3>
-                <div class="psych-accordion-status">
-                    <?php echo $this->get_status_badge($station['status']); ?>
-                </div>
-                <button class="psych-accordion-toggle" aria-expanded="false">
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-            </div>
-
-            <div class="psych-accordion-content">
-                <div class="psych-accordion-inner">
-                    <?php if ($context['is_impersonating']) : ?>
-                        <div class="coach-impersonation-indicator">
-                            <i class="fas fa-user-tie"></i> نمایش مربی
-                        </div>
+<div class="psych-accordion-wrapper">
+    <?php foreach ($stations as $station) :
+        $status_class = 'status-' . esc_attr($station['status']);
+    ?>
+        <div class="station-node station-node-accordion <?php echo $status_class; ?>" data-node-id="<?php echo esc_attr($station['station_node_id']); ?>">
+            <div class="station-header">
+                <span class="station-icon"><i class="<?php echo esc_attr($station['icon']); ?>"></i></span>
+                <h4 class="station-title"><?php echo esc_html($station['title']); ?></h4>
+                <span class="station-status-icon">
+                    <?php if ($station['is_completed']) : ?>
+                        <i class="fas fa-check-circle"></i>
+                    <?php elseif ($station['is_unlocked']) : ?>
+                        <i class="fas fa-chevron-down"></i>
+                    <?php else : ?>
+                        <i class="fas fa-lock"></i>
                     <?php endif; ?>
-
-                    <div class="psych-accordion-mission-content">
-                        <?php echo $this->render_inline_station_content($station); ?>
-                    </div>
-                </div>
+                </span>
+            </div>
+            <div class="station-content-wrapper" style="display: none;">
+                <?php
+                // The inline content will be rendered here.
+                // We need a template for the content itself.
+                $this->get_template_part('station-inline-content', ['station' => $station, 'context' => $context]);
+                ?>
             </div>
         </div>
     <?php endforeach; ?>

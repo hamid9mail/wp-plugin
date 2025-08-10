@@ -2,12 +2,21 @@
 /**
  * Template for the timeline display mode.
  *
- * @var array $stations
- * @var array $context
+ * @param array $stations The array of processed station data.
+ * @param array $context The viewing context.
+ * @param object $this The instance of the PsychoCourse_Path_Engine_4 class.
  */
+
+if (!defined('ABSPATH')) {
+    exit; // Exit if accessed directly
+}
 ?>
-<div class="psych-timeline">
+
+<div class="psych-timeline-wrapper">
     <?php foreach ($stations as $station) : ?>
-        <?php echo $this->render_single_station_node($station, $context); ?>
+        <?php
+        // For each station, we include a sub-template to keep the code clean.
+        $this->get_template_part('station-node-timeline', ['station' => $station, 'context' => $context]);
+        ?>
     <?php endforeach; ?>
 </div>

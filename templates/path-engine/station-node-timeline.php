@@ -2,27 +2,38 @@
 /**
  * Template for a single station node in timeline view.
  *
- * @var array $station
- * @var array $context
- * @var string $status_class
- * @var string $button_text
- * @var bool $is_disabled
+ * @param array $station The station data.
+ * @param array $context The viewing context.
  */
+
+if (!defined('ABSPATH')) {
+    exit; // Exit if accessed directly
+}
+
+$status_class = 'status-' . esc_attr($station['status']); // completed, open, locked, restricted
+$is_disabled = !$station['is_unlocked'];
+$button_text = $this->get_button_text($station); // Helper method in the main class
+
 ?>
-<div class="psych-timeline-item <?php echo esc_attr($status_class); ?>"
-     data-station-node-id="<?php echo esc_attr($station['station_node_id']); ?>"
-     data-station-details="<?php echo esc_attr(json_encode($station, JSON_UNESCAPED_UNICODE)); ?>">
-    <div class="psych-timeline-icon">
-        <i class="<?php echo esc_attr($station['is_completed'] ? 'fas fa-check-circle' : $station['icon']); ?>"></i>
+<div class="station-node station-node-timeline <?php echo $status_class; ?>" data-node-id="<?php echo esc_attr($station['station_node_id']); ?>" data-station-details='<?php echo esc_attr(json_encode($station)); ?>'>
+    <div class="station-header">
+        <span class="station-icon">
+            <i class="<?php echo esc_attr($station['is_completed'] ? 'fas fa-check-circle' : $station['icon']); ?>"></i>
+        </span>
+        <h4 class="station-title"><?php echo esc_html($station['title']); ?></h4>
+        <span class="station-status-icon">
+            <?php if ($station['is_completed']) : ?>
+                <i class="fas fa-check-circle"></i>
+            <?php elseif ($station['is_unlocked']) : ?>
+                <i class="fas fa-lock-open"></i>
+            <?php else : ?>
+                <i class="fas fa-lock"></i>
+            <?php endif; ?>
+        </span>
     </div>
-    <div class="psych-timeline-content">
-        <h3 class="psych-station-title"><?php echo esc_html($station['title']); ?></h3>
-        <?php if ($context['is_impersonating']) : ?>
-            <div class="coach-impersonation-indicator">
-                <i class="fas fa-user-tie"></i> نمایش مربی
-            </div>
-        <?php endif; ?>
-        <button class="psych-station-action-btn" <?php echo $is_disabled ? 'disabled' : ''; ?>>
+    <div class="station-timeline-content-wrapper">
+        <!-- Content can be loaded via AJAX or be inline -->
+        <button class="station-action-button" <?php echo $is_disabled ? 'disabled' : ''; ?>>
             <?php echo esc_html($button_text); ?>
         </button>
     </div>

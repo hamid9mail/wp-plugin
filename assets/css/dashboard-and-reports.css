@@ -1,193 +1,130 @@
-/**
- * CSS for Dashboard & Reports Module
- */
+/* CSS for Psych Dashboard & Reports Module */
 
+/* --- Main Container --- */
 .psych-report-card-container {
-    font-family: sans-serif;
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    overflow: hidden;
+    font-family: 'Vazirmatn', sans-serif; /* A nice Persian font */
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 25px;
+    margin: 20px 0;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
 }
 
-/* Tabs Navigation */
-.report-card-tabs {
+/* --- Header --- */
+.psych-report-card-header {
     display: flex;
-    background-color: #f8f9fa;
-    border-bottom: 1px solid #dee2e6;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 25px;
+    border-bottom: 1px solid #e9ecef;
+}
+.psych-report-card-header .avatar {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    margin-left: 20px;
+}
+.psych-report-card-header h2 {
+    margin: 0;
+    font-size: 24px;
+    color: #2c3e50;
+}
+.psych-user-status {
+    font-size: 14px;
+    color: #7f8c8d;
+    margin-top: 5px;
 }
 
-.report-card-tabs .tab-link {
-    padding: 15px 25px;
+/* --- Tabs --- */
+.psych-report-card-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+.psych-report-card-tabs .tab-link {
+    padding: 10px 20px;
     cursor: pointer;
     border: none;
-    background: none;
-    font-size: 16px;
-    font-weight: 600;
+    background: #e9ecef;
     color: #6c757d;
-    position: relative;
-    transition: color 0.3s;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s;
 }
-
-.report-card-tabs .tab-link:hover {
-    color: #0056b3;
+.psych-report-card-tabs .tab-link:hover {
+    background: #ced4da;
 }
-
-.report-card-tabs .tab-link.active {
-    color: #007bff;
+.psych-report-card-tabs .tab-link.active {
+    background: #0073aa;
+    color: white;
+    box-shadow: 0 4px 10px rgba(0, 115, 170, 0.3);
 }
-
-.report-card-tabs .tab-link.active::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background-color: #007bff;
-    border-radius: 3px 3px 0 0;
-}
-
-/* Tab Content */
-.report-card-content {
-    padding: 25px;
-}
-
-.tab-pane {
+.psych-tab-content {
     display: none;
 }
-
-.tab-pane.active {
+.psych-tab-content.active {
     display: block;
-    animation: fadeIn 0.5s;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-.tab-pane h3 {
-    margin-top: 0;
-    margin-bottom: 20px;
-    font-size: 22px;
-    color: #343a40;
-    border-bottom: 2px solid #e9ecef;
-    padding-bottom: 10px;
-}
-
-/* Summary Tab */
-.summary-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-}
-
-.summary-item {
-    background-color: #f8f9fa;
+/* --- Section & Widget Styles --- */
+.psych-section, .psych-dashboard-widget {
+    background: #fff;
     padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.psych-section h3, .psych-widget-header h3 {
+    margin-top: 0;
+    font-size: 18px;
+    border-bottom: 2px solid #f1f1f1;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+.psych-widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* --- Summary Grid --- */
+.psych-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+.psych-summary-item {
+    background: #f8f9fa;
+    padding: 15px;
     border-radius: 8px;
     text-align: center;
 }
-
-.summary-item .value {
-    font-size: 28px;
-    font-weight: bold;
-    color: #007bff;
-    display: block;
-    margin-bottom: 5px;
+.psych-summary-item .value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #0073aa;
 }
-
-.summary-item .label {
-    font-size: 14px;
+.psych-summary-item .label {
+    font-size: 13px;
     color: #6c757d;
 }
 
-/* Generic Table for Courses, Badges, Tests */
-.report-table {
+/* --- Tables --- */
+.psych-data-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
 }
-
-.report-table th, .report-table td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid #dee2e6;
+.psych-data-table th, .psych-data-table td {
+    padding: 12px;
+    text-align: right;
+    border-bottom: 1px solid #f1f1f1;
 }
-
-.report-table th {
-    background-color: #f8f9fa;
+.psych-data-table th {
+    background: #f8f9fa;
     font-weight: 600;
-    color: #495057;
 }
 
-.report-table tbody tr:hover {
-    background-color: #f1f3f5;
-}
-
-.report-table .badge-icon {
-    width: 40px;
-    height: 40px;
-    vertical-align: middle;
-    margin-right: 10px;
-}
-
-.progress-bar-container {
-    width: 100%;
-    background-color: #e9ecef;
-    border-radius: 5px;
-    height: 10px;
-}
-
-.progress-bar {
-    background-color: #28a745;
-    height: 100%;
-    border-radius: 5px;
-}
-
-/* Timeline Tab */
-.timeline {
-    position: relative;
-    padding-left: 30px;
-    list-style: none;
-}
-
-.timeline::before {
-    content: '';
-    position: absolute;
-    left: 10px;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background-color: #e9ecef;
-}
-
-.timeline-item {
-    position: relative;
-    margin-bottom: 25px;
-}
-
-.timeline-item::before {
-    content: '';
-    position: absolute;
-    left: -24px;
-    top: 5px;
-    width: 15px;
-    height: 15px;
-    border-radius: 50%;
-    background-color: #007bff;
-    border: 3px solid #fff;
-}
-
-.timeline-date {
-    font-weight: 600;
-    color: #6c757d;
-    font-size: 14px;
-    margin-bottom: 5px;
-}
-
-.timeline-event {
-    font-size: 16px;
-    color: #343a40;
+/* --- Chart --- */
+.psych-chart-container {
+    height: 300px;
 }

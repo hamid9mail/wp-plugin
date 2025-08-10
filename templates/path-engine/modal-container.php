@@ -1,13 +1,18 @@
-<div class="psych-modal-overlay" id="psych-station-modal" style="display: none;">
-    <div class="psych-modal-container">
-        <button class="psych-modal-close" title="بستن" aria-label="بستن">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18 6L6 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M6 6L18 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        </button>
-        <h2 class="psych-modal-title"></h2>
-        <div class="psych-modal-content"></div>
+<?php
+/**
+ * Template for the modal container, typically added to the footer.
+ */
+
+if (!defined('ABSPATH')) {
+    exit; // Exit if accessed directly
+}
+?>
+
+<div class="psych-path-modal-overlay" id="psych-path-modal-overlay" style="display: none;">
+    <div class="psych-path-modal-container">
+        <button class="psych-path-modal-close" aria-label="<?php esc_attr_e('Close', 'psych-path-engine'); ?>">&times;</button>
+        <div id="psych-path-modal-content-inner">
+            <!-- Content will be loaded here via JavaScript -->
+        </div>
     </div>
 </div>
-<div id="psych-toast-container"></div>

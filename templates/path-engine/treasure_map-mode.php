@@ -1,43 +1,35 @@
 <?php
 /**
  * Template for the treasure map display mode.
+ *
+ * @param array $stations The array of processed station data.
+ * @param array $context The viewing context.
+ * @param object $this The instance of the PsychoCourse_Path_Engine_4 class.
  */
+
+if (!defined('ABSPATH')) {
+    exit; // Exit if accessed directly
+}
 ?>
-<div class="psych-treasure-map">
-    <div class="psych-map-background">
-        <div class="psych-map-path">
-            <?php foreach ($stations as $index => $station) : ?>
-                <div class="psych-treasure-station <?php echo esc_attr($station['status']); ?>"
-                     style="<?php echo $this->get_treasure_map_position($index, count($stations)); ?>"
-                     data-station-node-id="<?php echo esc_attr($station['station_node_id']); ?>"
-                     data-station-details="<?php echo esc_attr(json_encode($station, JSON_UNESCAPED_UNICODE)); ?>">
-
-                    <div class="psych-treasure-icon">
-                        <i class="<?php echo esc_attr($station['is_completed'] ? 'fas fa-trophy' : $station['icon']); ?>"></i>
-                        <?php if ($station['is_completed']) : ?>
-                            <div class="psych-treasure-glow"></div>
-                        <?php endif; ?>
-                    </div>
-
-                    <div class="psych-treasure-popup">
-                        <h4><?php echo esc_html($station['title']); ?></h4>
-
-                        <?php if ($context['is_impersonating']) : ?>
-                            <div class="coach-impersonation-indicator">
-                                <i class="fas fa-user-tie"></i> نمایش مربی
-                            </div>
-                        <?php endif; ?>
-
-                        <div class="psych-treasure-content">
-                            <?php echo $this->render_inline_station_content($station); ?>
-                        </div>
-                    </div>
-
-                    <?php if ($index < count($stations) - 1) : ?>
-                        <div class="psych-treasure-path-line <?php echo ($station['is_completed'] ? 'completed' : 'incomplete'); ?>"></div>
-                    <?php endif; ?>
+<div class="psych-treasure-map-wrapper">
+    <div class="treasure-map-background">
+        <div class="treasure-map-path-line"></div>
+        <?php foreach ($stations as $index => $station) :
+            $status_class = 'status-' . esc_attr($station['status']);
+            // The main class will have a helper to calculate these positions
+            $position_style = $this->get_treasure_map_position($index, count($stations));
+        ?>
+            <div class="station-node station-node-treasure-map <?php echo $status_class; ?>" style="<?php echo esc_attr($position_style); ?>" data-node-id="<?php echo esc_attr($station['station_node_id']); ?>">
+                <div class="station-treasure-icon" title="<?php echo esc_attr($station['title']); ?>">
+                    <i class="<?php echo esc_attr($station['icon']); ?>"></i>
                 </div>
-            <?php endforeach; ?>
-        </div>
+                <div class="station-treasure-popup">
+                    <h4 class="station-title"><?php echo esc_html($station['title']); ?></h4>
+                     <?php
+                        $this->get_template_part('station-inline-content', ['station' => $station, 'context' => $context]);
+                    ?>
+                </div>
+            </div>
+        <?php endforeach; ?>
     </div>
 </div>
