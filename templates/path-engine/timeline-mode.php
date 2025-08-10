@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     <?php foreach ($stations as $station) : ?>
         <?php
         // For each station, we include a sub-template to keep the code clean.
-        $this->get_template_part('station-node-timeline', ['station' => $station, 'context' => $context]);
+        $engine->get_template_part('station-node-timeline', ['station' => $station, 'context' => $context, 'engine' => $engine]);
         ?>
     <?php endforeach; ?>
 </div>
