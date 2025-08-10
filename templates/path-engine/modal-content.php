@@ -39,7 +39,7 @@ $user_id = $context['viewed_user_id'];
      <?php if (!$station['is_completed']) : ?>
         <div class="mission-action-wrapper">
             <?php
-            echo $this->generate_mission_action_html($user_id, $station, $context);
+            echo $engine->generate_mission_action_html($user_id, $station, $context);
             ?>
         </div>
     <?php endif; ?>

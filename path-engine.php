@@ -166,7 +166,7 @@ final class PsychoCourse_Path_Engine_4 {
             'shortcode_atts' => $shortcode_atts,
             'context' => $context,
             'path_body_content' => $path_body_content,
-            'this' => $this // Pass the object instance itself
+            'engine' => $this // Pass the object instance itself
         ]);
         return ob_get_clean();
     }
@@ -178,7 +178,7 @@ final class PsychoCourse_Path_Engine_4 {
         $this->get_template_part($display_mode . '-mode', [
             'stations' => $stations,
             'context' => $context,
-            'this' => $this
+            'engine' => $this
         ]);
         return ob_get_clean();
     }
@@ -198,7 +198,7 @@ final class PsychoCourse_Path_Engine_4 {
     private function is_station_completed($user_id, $node_id) { $completed_stations = get_user_meta($user_id, PSYCH_PATH_META_COMPLETED, true) ?: []; return isset($completed_stations[$node_id]); }
     public function get_button_text($station) { if ($station['status'] === 'completed') { return 'View Result'; } if ($station['status'] === 'locked') { return 'Locked'; } return $station['mission_button_text']; }
     public function get_treasure_map_position($index, $total) { $angle = ($index / ($total - 1)) * 180; $radius = 40; $x = 50 + $radius * cos(deg2rad($angle - 90)); $y = 20 + ($index / ($total - 1)) * 60; return "left: {$x}%; top: {$y}%;"; }
-    public function ajax_get_station_content() { if (!check_ajax_referer(PSYCH_PATH_AJAX_NONCE, 'nonce', false)) { wp_send_json_error(['message' => 'Invalid session.'], 403); } $context = $this->get_viewing_context(); $user_id = $context['viewed_user_id']; if (!$user_id) { wp_send_json_error(['message' => 'Invalid user.'], 401); } $station_details = json_decode(stripslashes($_POST['station_data'] ?? ''), true); if (empty($station_details)) { wp_send_json_error(['message' => 'Incomplete station data.']); } ob_start(); $this->get_template_part('modal-content', ['station' => $station_details, 'context' => $context, 'this' => $this]); wp_send_json_success(['html' => ob_get_clean()]); }
+    public function ajax_get_station_content() { if (!check_ajax_referer(PSYCH_PATH_AJAX_NONCE, 'nonce', false)) { wp_send_json_error(['message' => 'Invalid session.'], 403); } $context = $this->get_viewing_context(); $user_id = $context['viewed_user_id']; if (!$user_id) { wp_send_json_error(['message' => 'Invalid user.'], 401); } $station_details = json_decode(stripslashes($_POST['station_data'] ?? ''), true); if (empty($station_details)) { wp_send_json_error(['message' => 'Incomplete station data.']); } ob_start(); $this->get_template_part('modal-content', ['station' => $station_details, 'context' => $context, 'engine' => $this]); wp_send_json_success(['html' => ob_get_clean()]); }
     public function ajax_complete_mission() { if (!check_ajax_referer(PSYCH_PATH_AJAX_NONCE, 'nonce', false)) { wp_send_json_error(['message' => 'Invalid session.'], 403); } $context = $this->get_viewing_context(); $user_id = $context['viewed_user_id']; $node_id = sanitize_key($_POST['node_id'] ?? ''); if (!$user_id || !$node_id) { wp_send_json_error(['message' => 'Invalid data.']); } $result = $this->mark_station_as_completed($user_id, $node_id, []); if ($result['success']) { wp_send_json_success(['message' => 'Mission completed!', 'rewards' => $result['rewards_summary']]); } else { wp_send_json_error(['message' => 'Mission already completed.']); } }
     private function mark_station_as_completed($user_id, $node_id, $station_data) { $completed = get_user_meta($user_id, PSYCH_PATH_META_COMPLETED, true) ?: []; if (isset($completed[$node_id])) { return ['success' => false]; } $completed[$node_id] = ['completed_at' => current_time('mysql')]; update_user_meta($user_id, PSYCH_PATH_META_COMPLETED, $completed); $rewards_summary = $this->process_rewards($user_id, $station_data); do_action('psych_path_station_completed', $user_id, $node_id, $station_data); return ['success' => true, 'rewards_summary' => $rewards_summary]; }
     private function process_rewards($user_id, $station_data) { if (empty($station_data['rewards'])) return []; $rewards_summary = []; $rewards = explode('|', $station_data['rewards']); foreach ($rewards as $reward) { $parts = explode(':', $reward, 2); $type = trim($parts[0] ?? ''); $value = trim($parts[1] ?? ''); switch ($type) { case 'add_points': if (function_exists('psych_gamification_add_points')) { psych_gamification_add_points($user_id, intval($value), 'Station reward'); $rewards_summary['points'] = intval($value); } break; case 'award_badge': if (function_exists('psych_award_badge_to_user')) { psych_award_badge_to_user($user_id, intval($value)); $rewards_summary['badge'] = intval($value); } break; } } return $rewards_summary; }

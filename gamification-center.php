@@ -135,9 +135,92 @@ final class Psych_Gamification_Center {
     public function get_levels() { return get_option(self::LEVELS_OPTION_KEY, [['name' => 'Rookie', 'required_points' => 0, 'icon' => 'fa-seedling', 'color' => '#95a5a6']]); }
     public function get_badges() { return get_option(self::BADGES_OPTION_KEY, [['name' => 'First Steps', 'description' => 'Get 50 points', 'icon' => 'fa-baby', 'color' => '#2ecc71']]); }
     public function get_top_users_by_points($limit = 10) { global $wpdb; $results = $wpdb->get_results($wpdb->prepare("SELECT u.ID, u.display_name, um.meta_value as points FROM {$wpdb->users} u INNER JOIN {$wpdb->usermeta} um ON u.ID = um.user_id WHERE um.meta_key = 'psych_total_points' ORDER BY CAST(um.meta_value AS UNSIGNED) DESC LIMIT %d", $limit)); $users = []; foreach ($results as $result) { $level = $this->get_user_level($result->ID); $users[] = ['ID' => $result->ID, 'display_name' => $result->display_name, 'points' => intval($result->points), 'level' => $level['name']]; } return $users; }
-    public function add_admin_menu() { add_menu_page('Gamification', 'Gamification', 'manage_options', $this->admin_page_slug, [$this, 'render_admin_page'], 'dashicons-star-filled', 56); }
-    public function render_admin_page() { echo '<div class="wrap"><h1>Gamification Center</h1><p>Admin page placeholder.</p></div>'; }
-    public function register_settings() { register_setting('psych_gamification_settings', self::SETTINGS_OPTION_KEY); }
+    public function add_admin_menu() {
+        add_menu_page('Gamification Center', 'Gamification', 'manage_options', $this->admin_page_slug, [$this, 'render_admin_page'], 'dashicons-star-filled', 56);
+        add_submenu_page($this->admin_page_slug, 'Levels', 'Levels', 'manage_options', $this->admin_page_slug . '_levels', [$this, 'render_levels_page']);
+        add_submenu_page($this->admin_page_slug, 'Badges', 'Badges', 'manage_options', $this->admin_page_slug . '_badges', [$this, 'render_badges_page']);
+        add_submenu_page($this->admin_page_slug, 'Manual Award', 'Manual Award', 'manage_options', $this->admin_page_slug . '_manual', [$this, 'render_manual_award_page']);
+    }
+
+    public function render_admin_page() {
+        $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'overview';
+        include(plugin_dir_path(__FILE__) . 'templates/gamification-center/admin-main-page.php');
+    }
+
+    public function render_overview_tab() {
+        $stats = [
+            'total_users' => count_users()['total_users'],
+            'active_badges' => count($this->get_badges()),
+            'total_points_awarded' => $this->get_total_points_awarded(),
+        ];
+        include(plugin_dir_path(__FILE__) . 'templates/gamification-center/admin-tab-overview.php');
+    }
+
+    public function render_settings_tab() {
+        if (isset($_POST['submit']) && check_admin_referer('psych_gamification_settings')) {
+            $settings = [
+                'points_per_login' => intval($_POST['points_per_login']),
+                'points_per_post' => intval($_POST['points_per_post']),
+                'points_per_comment' => intval($_POST['points_per_comment']),
+                'enable_notifications' => isset($_POST['enable_notifications']),
+                'sms_enabled' => isset($_POST['sms_enabled']),
+                'sms_api_key' => sanitize_text_field($_POST['sms_api_key']),
+                'sms_sender' => sanitize_text_field($_POST['sms_sender']),
+            ];
+            update_option(self::SETTINGS_OPTION_KEY, $settings);
+            echo '<div class="notice notice-success is-dismissible"><p>Settings saved.</p></div>';
+        }
+        $settings = $this->get_settings();
+        include(plugin_dir_path(__FILE__) . 'templates/gamification-center/admin-tab-settings.php');
+    }
+
+    public function render_stats_tab() {
+        $top_users = $this->get_top_users_by_points(10);
+        $badge_stats = $this->get_badge_statistics();
+        include(plugin_dir_path(__FILE__) . 'templates/gamification-center/admin-tab-stats.php');
+    }
+
+    public function render_levels_page() {
+        if (isset($_POST['save_levels']) && check_admin_referer('psych_save_levels')) {
+            $levels = [];
+            if (isset($_POST['levels']) && is_array($_POST['levels'])) {
+                foreach ($_POST['levels'] as $level_data) {
+                    $levels[] = ['name' => sanitize_text_field($level_data['name']), 'required_points' => intval($level_data['required_points']), 'icon' => sanitize_text_field($level_data['icon']), 'color' => sanitize_hex_color($level_data['color'])];
+                }
+                usort($levels, function($a, $b) { return $a['required_points'] - $b['required_points']; });
+            }
+            update_option(self::LEVELS_OPTION_KEY, $levels);
+            echo '<div class="notice notice-success is-dismissible"><p>Levels saved.</p></div>';
+        }
+        $levels = $this->get_levels();
+        include(plugin_dir_path(__FILE__) . 'templates/gamification-center/admin-page-levels.php');
+    }
+
+    public function render_badges_page() {
+        if (isset($_POST['save_badges']) && check_admin_referer('psych_save_badges')) {
+            $badges = [];
+            if (isset($_POST['badges']) && is_array($_POST['badges'])) {
+                foreach ($_POST['badges'] as $slug => $badge_data) {
+                    $badges[sanitize_key($slug)] = ['name' => sanitize_text_field($badge_data['name']), 'description' => sanitize_textarea_field($badge_data['description']), 'icon' => sanitize_text_field($badge_data['icon']), 'color' => sanitize_hex_color($badge_data['color'])];
+                }
+            }
+            update_option(self::BADGES_OPTION_KEY, $badges);
+            echo '<div class="notice notice-success is-dismissible"><p>Badges saved.</p></div>';
+        }
+        $badges = $this->get_badges();
+        include(plugin_dir_path(__FILE__) . 'templates/gamification-center/admin-page-badges.php');
+    }
+
+    public function render_manual_award_page() {
+        $all_badges = $this->get_badges();
+        include(plugin_dir_path(__FILE__) . 'templates/gamification-center/admin-page-manual-award.php');
+    }
+
+    public function register_settings() {
+        register_setting('psych_gamification_settings', self::SETTINGS_OPTION_KEY);
+        register_setting('psych_gamification_levels', self::LEVELS_OPTION_KEY);
+        register_setting('psych_gamification_badges', self::BADGES_OPTION_KEY);
+    }
     public function handle_manual_award_ajax() { if (!current_user_can('manage_options') || !check_ajax_referer('psych_manual_award', 'nonce', false)) { wp_send_json_error(['message' => 'Permission denied.'], 403); } $user_id = intval($_POST['user_id'] ?? 0); $award_type = sanitize_key($_POST['award_type'] ?? ''); $award_value = sanitize_text_field($_POST['award_value'] ?? ''); if (!$user_id || !$award_type || !$award_value) { wp_send_json_error(['message' => 'Incomplete data.']); } if ($award_type === 'points') { $this->add_points($user_id, intval($award_value), 'Manual Award'); wp_send_json_success(['message' => 'Points awarded.']); } elseif ($award_type === 'badge') { if ($this->award_badge($user_id, $award_value)) { wp_send_json_success(['message' => 'Badge awarded.']); } else { wp_send_json_error(['message' => 'Could not award badge.']); } } else { wp_send_json_error(['message' => 'Invalid award type.']); } }
     public function ajax_get_pending_notifications() { if (!check_ajax_referer('psych_gamification_ajax', 'nonce', false)) { wp_send_json_error(); } $user_id = get_current_user_id(); $notifications = get_user_meta($user_id, 'psych_pending_notifications', true) ?: []; wp_send_json_success(['notifications' => $notifications]); }
     public function ajax_clear_notification() { if (!check_ajax_referer('psych_gamification_ajax', 'nonce', false)) { wp_send_json_error(); } $user_id = get_current_user_id(); $notification_id = sanitize_text_field($_POST['notification_id'] ?? ''); if (empty($notification_id)) { wp_send_json_error(); } $notifications = get_user_meta($user_id, 'psych_pending_notifications', true) ?: []; $notifications = array_filter($notifications, function($n) use ($notification_id) { return $n['id'] !== $notification_id; }); update_user_meta($user_id, 'psych_pending_notifications', array_values($notifications)); wp_send_json_success(); }

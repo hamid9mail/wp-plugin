@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
 
-$path_data = $this->path_data[$path_id];
+$path_data = $engine->path_data[$path_id];
 $theme_class = 'psych-theme-' . esc_attr($path_data['theme']);
 $display_mode_class = 'psych-display-' . esc_attr($path_data['display_mode']);
 $user_id = $context['viewed_user_id'];
@@ -38,7 +38,7 @@ $user_id = $context['viewed_user_id'];
 
     <?php if ($path_data['show_progress']) :
         // We need a separate template for the progress indicator
-        $this->get_template_part('progress-indicator', ['path_id' => $path_id]);
+        $engine->get_template_part('progress-indicator', ['path_id' => $path_id]);
     endif; ?>
 
     <div class="psych-path-body">

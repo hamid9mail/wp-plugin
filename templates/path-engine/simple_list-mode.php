@@ -28,7 +28,7 @@ if (!defined('ABSPATH')) {
             </div>
             <div class="station-list-action">
                  <button class="station-action-button" <?php echo $station['is_unlocked'] ? '' : 'disabled'; ?>>
-                    <?php echo esc_html($this->get_button_text($station)); ?>
+                    <?php echo esc_html($engine->get_button_text($station)); ?>
                 </button>
             </div>
         </div>

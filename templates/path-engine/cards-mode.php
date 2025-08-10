@@ -25,7 +25,7 @@ if (!defined('ABSPATH')) {
                 <div class="station-content-wrapper">
                      <?php
                         // We can reuse the inline content template
-                        $this->get_template_part('station-inline-content', ['station' => $station, 'context' => $context]);
+                        $engine->get_template_part('station-inline-content', ['station' => $station, 'context' => $context, 'engine' => $engine]);
                     ?>
                 </div>
             </div>

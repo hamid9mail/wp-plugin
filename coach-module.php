@@ -98,12 +98,23 @@ final class Psych_Coach_Module {
         $this->student_list_table = new Psych_Coach_Student_List_Table($product_id, $coach_id);
     }
     public function render_coach_management_page() {
+        // The list table object is already instantiated in init_student_list_table
         if ($this->student_list_table) {
             $this->student_list_table->process_bulk_action();
         }
-        $products = function_exists('wc_get_products') ? wc_get_products(['limit' => -1]) : [];
-        $coaches = get_users(['role__in' => $this->coach_roles]);
 
+        $selected_product_id = $this->student_list_table ? $this->student_list_table->product_id : 0;
+        $selected_coach_id = $this->student_list_table ? $this->student_list_table->coach_id : 0;
+
+        $products = function_exists('wc_get_products') ? wc_get_products([
+            'limit' => -1, 'status' => 'publish', 'orderby' => 'title', 'order' => 'ASC'
+        ]) : [];
+
+        $coaches = get_users([
+            'role__in' => $this->coach_roles, 'orderby' => 'display_name'
+        ]);
+
+        // Now, call the template and pass all the necessary data to it.
         include(plugin_dir_path(__FILE__) . 'templates/coach-module/admin-management-page.php');
     }
 

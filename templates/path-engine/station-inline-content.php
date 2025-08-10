@@ -31,7 +31,7 @@ $user_id = $context['viewed_user_id'];
             <?php
             // The main class has a helper function to generate the correct button or form
             // based on the mission type (e.g., button, gform, purchase).
-            echo $this->generate_mission_action_html($user_id, $station, $context);
+            echo $engine->generate_mission_action_html($user_id, $station, $context);
             ?>
         </div>
     <?php endif; ?>

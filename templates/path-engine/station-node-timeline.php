@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
 
 $status_class = 'status-' . esc_attr($station['status']); // completed, open, locked, restricted
 $is_disabled = !$station['is_unlocked'];
-$button_text = $this->get_button_text($station); // Helper method in the main class
+$button_text = $engine->get_button_text($station); // Helper method in the main class
 
 ?>
 <div class="station-node station-node-timeline <?php echo $status_class; ?>" data-node-id="<?php echo esc_attr($station['station_node_id']); ?>" data-station-details='<?php echo esc_attr(json_encode($station)); ?>'>

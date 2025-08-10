@@ -43,9 +43,47 @@ final class Psych_Dashboard_And_Reports {
         }
     }
 
-    private function register_shortcodes() {
+    public function register_shortcodes() {
         add_shortcode('psych_report_card', [$this, 'render_report_card_shortcode']);
-        // Add other shortcodes from dashboard-display.php if they are still needed
+        add_shortcode('psych_gamified_header', [$this, 'render_gamified_header']);
+        add_shortcode('psych_user_dashboard', [$this, 'render_user_dashboard']);
+        add_shortcode('psych_user_performance_header', [$this, 'render_performance_header']);
+    }
+
+    public function render_gamified_header($atts) {
+        $context = $this->get_viewing_context();
+        $user_id = $context['viewed_user_id'];
+        if (!$user_id) return '';
+        $user_data = $this->get_user_summary_data($user_id);
+        $level_info = $this->get_user_level_info($user_id);
+
+        ob_start();
+        $this->get_template_part('gamified-header', compact('user_data', 'level_info'));
+        return ob_get_clean();
+    }
+
+    public function render_user_dashboard($atts) {
+        $context = $this->get_viewing_context();
+        $user_id = $context['viewed_user_id'];
+        if (!$user_id) return '';
+        $user_data = $this->get_user_summary_data($user_id);
+        $level_info = $this->get_user_level_info($user_id);
+
+        ob_start();
+        $this->get_template_part('user-dashboard', compact('user_data', 'level_info'));
+        return ob_get_clean();
+    }
+
+    public function render_performance_header($atts) {
+        $context = $this->get_viewing_context();
+        $user_id = $context['viewed_user_id'];
+        if (!$user_id) return '';
+        $user_data = $this->get_user_summary_data($user_id);
+        $level_info = $this->get_user_level_info($user_id);
+
+        ob_start();
+        $this->get_template_part('performance-header', compact('user_data', 'level_info', 'atts'));
+        return ob_get_clean();
     }
 
     public function render_report_card_shortcode($atts) {

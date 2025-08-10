@@ -33,7 +33,7 @@ if (!defined('ABSPATH')) {
                 <?php
                 // The inline content will be rendered here.
                 // We need a template for the content itself.
-                $this->get_template_part('station-inline-content', ['station' => $station, 'context' => $context]);
+                $engine->get_template_part('station-inline-content', ['station' => $station, 'context' => $context, 'engine' => $engine]);
                 ?>
             </div>
         </div>
