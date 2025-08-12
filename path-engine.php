@@ -583,31 +583,37 @@ public function register_result_content($atts, $content = null) {
     $this->path_data[$path_id]['stations'] = $processed_stations;
 }
 
-    private function calculate_station_status($user_id, $atts, $previous_station_completed) {  
-        $node_id = $atts['station_node_id'];  
-        $atts['is_completed'] = $this->is_station_completed($user_id, $node_id, $atts);  
-    
-        $status = 'locked';  
-        $is_unlocked = false;  
+    private function calculate_station_status($user_id, $atts, $previous_station_completed) {
+    $node_id = $atts['station_node_id'];
+    $atts['is_completed'] = $this->is_station_completed($user_id, $node_id, $atts);
 
-        // Apply coach access filter  
-        $can_access = apply_filters('psych_path_can_view_station', true, $user_id, $atts);  
-        if (!$can_access) {  
-            $status = 'restricted';  
-            $is_unlocked = false;  
-        } elseif ($atts['is_completed']) {  
-            $status = 'completed';  
-            $is_unlocked = true;  
-        } elseif ($atts['unlock_trigger'] === 'independent' || $previous_station_completed) {  
-            $status = 'open';  
-            $is_unlocked = true;  
-        }  
+    // فیلتر دسترسی مربی یا هر شرط دیگری را اول اعمال کن
+    $can_access = apply_filters('psych_path_can_view_station', true, $user_id, $atts);
 
-        $atts['status'] = $status;  
-        $atts['is_unlocked'] = $is_unlocked;  
+    $status = 'locked';
+    $is_unlocked = false;
 
-        return $atts;  
-    }  
+    // شرط باز بودن: ایستگاه قبلی تکمیل شده باشد (یا مستقل باشد) و کاربر دسترسی داشته باشد
+    $is_ready_to_unlock = ($atts['unlock_trigger'] === 'independent' || $previous_station_completed);
+
+    if ($atts['is_completed']) {
+        $status = 'completed';
+        $is_unlocked = true;
+    } elseif (!$can_access) {
+        // اگر کاربر دسترسی ندارد، وضعیت همیشه قفل است
+        $status = 'locked';
+        $is_unlocked = false;
+    } elseif ($is_ready_to_unlock) {
+        // اگر دسترسی دارد و آماده باز شدن است
+        $status = 'open';
+        $is_unlocked = true;
+    }
+
+    $atts['status'] = $status;
+    $atts['is_unlocked'] = $is_unlocked;
+
+    return $atts;
+}
     
     private function is_station_completed($user_id, $node_id, $station_atts) {  
         $completed_stations = get_user_meta($user_id, PSYCH_PATH_META_COMPLETED, true) ?: [];  
@@ -1170,10 +1176,19 @@ public function ajax_complete_mission() {
         $result = $this->mark_station_as_completed($user_id, $node_id, $station_data, true);
         
         if ($result['success']) {
+            // Refresh station data to pass to the rendering function
+            $station_data['is_completed'] = true;
+            $station_data['status'] = 'completed';
+            $station_data['is_unlocked'] = true;
+
+            // Render the new content for the accordion
+            $new_inline_html = $this->render_inline_station_content($station_data);
+
             wp_send_json_success([
                 'message' => 'ماموریت با موفقیت تکمیل شد!',
                 'status' => 'completed',
-                'rewards' => $result['rewards_summary'] // ارسال آرایه پاداش‌ها
+                'rewards' => $result['rewards_summary'],
+                'new_html' => $new_inline_html
             ]);
         } else {
             // این حالت به ندرت اتفاق می‌افتد چون در ابتدا چک شده است
@@ -2834,6 +2849,14 @@ private function render_station_modal_javascript() {
                         $station.removeClass('open completed').addClass('locked');
                         $station.find('.psych-status-badge').removeClass('open').addClass('locked').html('<i class="fas fa-lock"></i> قفل');
                         $station.find('.psych-station-action-btn, .psych-accordion-action-btn, .psych-card-action-btn, .psych-list-action-btn').text('قفل').prop('disabled', true);
+                        
+                        // Auto-close accordion if it becomes locked
+                        if ($station.hasClass('psych-accordion-item')) {
+                            const $content = $station.find('.psych-accordion-content');
+                            if ($content.is(':visible')) {
+                                $content.slideUp(300);
+                            }
+                        }
                     }
                     
                     if (details.unlock_trigger === 'sequential') {
@@ -2863,13 +2886,20 @@ private function render_station_modal_javascript() {
                 .done(function(response) {
                     if (response.success) {
                         if (modal.is(':visible')) closeModal();
+
+                        const $stationElement = $pathContainer.find(`[data-station-node-id="${stationDetails.station_node_id}"]`);
+
+                        // If new HTML is provided (for accordion mode), refresh the content
+                        if (response.data.new_html) {
+                            $stationElement.find('.psych-accordion-mission-content').html(response.data.new_html);
+                        }
                         
-                        $pathContainer.find(`[data-station-node-id="${stationDetails.station_node_id}"]`).addClass('completed');
-                        
+                        $stationElement.addClass('completed');
                         updateAllUI($pathContainer);
                         showRewardsNotification(response.data.rewards);
                         
                     } else {
+                        // On failure, restore the button
                         $button.prop('disabled', false).html(originalHtml);
                         alert(response.data.message || 'خطا در تکمیل ماموریت.');
                     }
