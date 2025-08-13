@@ -32,6 +32,12 @@ if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
 
+require_once __DIR__ . '/includes/class-psych-installer.php';
+require_once __DIR__ . '/includes/class-psych-mission-registry.php';
+require_once __DIR__ . '/includes/missions/class-psych-mission-type.php';
+require_once __DIR__ . '/includes/class-psych-condition-evaluator.php';
+
+
 // Prevent multiple initializations
 if (defined('PSYCH_SYSTEM_LOADED')) {
     return;
@@ -857,6 +863,9 @@ final class Psych_Complete_System_Enhanced {
      * Activation hook
      */
     public function activate() {
+        // Run the new installer for our new tables
+        Psych_Installer::install();
+
         // Create database tables if needed
         $this->create_database_tables();
 

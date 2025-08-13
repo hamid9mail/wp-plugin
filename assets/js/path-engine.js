@@ -90,7 +90,16 @@ jQuery(document).ready(function($) {
         e.preventDefault();
         var button = $(this);
         var stationNode = button.closest('[data-station-id]'); // Works for both inline and modal
-        var nodeId = stationNode.data('station-id');
+        var stationData = stationNode.data('station-details');
+
+        if (!stationData || !stationData.missions || stationData.missions.length === 0) {
+            alert('Error: Mission data not found.');
+            return;
+        }
+
+        // For now, assume the button completes the first mission of the station.
+        // This will need to be made more specific when stations can have multiple visible missions.
+        var missionData = stationData.missions[0];
 
         button.prop('disabled', true).text('Processing...');
 
@@ -100,7 +109,8 @@ jQuery(document).ready(function($) {
             data: {
                 action: 'psych_path_complete_mission',
                 nonce: psych_path_ajax.nonce,
-                node_id: nodeId
+                station_id: stationData.id,
+                mission_id: missionData.mission_id
             },
             success: function(response) {
                 if (response.success) {
