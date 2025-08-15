@@ -1,0 +1,50 @@
+.myth-buster-admin-wrapper .tab-content {
+    display: none;
+    background: #fff;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-top: none;
+}
+.myth-buster-admin-wrapper .tab-content.active {
+    display: block;
+}
+.myth-buster-admin-wrapper .myth-set {
+    border: 1px solid #ccc;
+    padding: 10px 20px;
+    margin-bottom: 20px;
+    background: #f9f9f9;
+    border-radius: 4px;
+}
+.myth-buster-admin-wrapper .myth-set h3.handle {
+    cursor: move;
+    background: #f1f1f1;
+    padding: 8px;
+    margin: -10px -20px 10px -20px;
+    border-bottom: 1px solid #ccc;
+}
+.myth-buster-admin-wrapper .myth-item {
+    border: 1px solid #e0e0e0;
+    padding: 15px;
+    margin-top: 15px;
+    background: #fff;
+    border-radius: 3px;
+}
+.myth-buster-admin-wrapper textarea {
+    width: 100%;
+    min-height: 60px;
+}
+.myth-buster-admin-wrapper input.image-url {
+    width: 70%;
+}
+.myth-buster-admin-wrapper .remove-myth,
+.myth-buster-admin-wrapper .remove-set {
+    color: #a00;
+    cursor: pointer;
+    text-decoration: none;
+    float: right;
+    margin-left: 10px;
+}
+.myth-buster-admin-wrapper .remove-myth:hover,
+.myth-buster-admin-wrapper .remove-set:hover {
+    color: #f00;
+}
