@@ -34,7 +34,7 @@ class Psych_Advanced_Quiz_Module {
         add_action('wp_ajax_generate_pdf_report', array($this, 'generate_pdf_report_ajax')); // New for PDF export
 
         // Hook for Path Engine integration: Trigger mission completion
-        add_action('psych_quiz_completed', array($this, 'integrate_with_path_engine'), 10, 2);
+        add_action('psych_quiz_completed', array($this, 'integrate_with_path_engine'), 10, 5);
 
         // Integration with Coach Module for Response Mode
         add_action('psych_quiz_completed', array($this, 'handle_coach_response_submission'), 10, 3);
@@ -823,12 +823,6 @@ class Psych_Advanced_Quiz_Module {
         return ob_get_clean();
     }
 
-    // Integration with Path Engine (preserved)
-    public function integrate_with_path_engine($quiz_id, $score) {
-        // Assuming Path Engine has a function to complete mission
-        // Example: psych_path_complete_mission($quiz_id, $score);
-        // Add your Path Engine logic here
-    }
 
     // Shortcodes for Results and Analysis (preserved and expanded)
     public function quiz_result_shortcode($atts) {

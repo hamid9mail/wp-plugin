@@ -241,7 +241,8 @@ final class Psych_Complete_System_Enhanced {
             'path-engine.php' => 'PsychoCourse_Path_Engine',
             'interactive-content.php' => 'Psych_Interactive_Content_Module',
             'report-card.php' => 'Psych_Unified_Report_Card_Enhanced',
-            'dashboard-display.php' => 'Psych_Dashboard_Display_Enhanced'
+            'dashboard-display.php' => 'Psych_Dashboard_Display_Enhanced',
+            'personalization-module.php' => 'Psych_Personalization_Module'
         ];
 
         foreach ($modules_to_load as $file => $class) {
@@ -278,7 +279,8 @@ final class Psych_Complete_System_Enhanced {
             'path_engine' => 'PsychoCourse_Path_Engine',
             'interactive_content' => 'Psych_Interactive_Content_Module',
             'report_card' => 'Psych_Unified_Report_Card_Enhanced',
-            'dashboard' => 'Psych_Dashboard_Display_Enhanced'
+            'dashboard' => 'Psych_Dashboard_Display_Enhanced',
+            'personalization' => 'Psych_Personalization_Module'
         ];
 
         foreach ($initialization_order as $module_key => $class_name) {
