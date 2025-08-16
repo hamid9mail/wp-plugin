@@ -558,7 +558,6 @@ final class Psych_Coach_Module {
         ]);
         
         $coaches = get_users([
-            'role__in' => $this->coach_roles, 
             'orderby' => 'display_name'
         ]);
         ?>

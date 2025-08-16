@@ -36,6 +36,9 @@ class Psych_Advanced_Quiz_Module {
         // Hook for Path Engine integration: Trigger mission completion
         add_action('psych_quiz_completed', array($this, 'integrate_with_path_engine'), 10, 2);
 
+        // Integration with Coach Module for Response Mode
+        add_action('psych_quiz_completed', array($this, 'handle_coach_response_submission'), 10, 3);
+
         // Enqueue inline styles and scripts when shortcode is used
         add_action('wp_enqueue_scripts', array($this, 'enqueue_inline_assets'));
 
@@ -69,12 +72,33 @@ class Psych_Advanced_Quiz_Module {
     psych_gamification_add_points($user_id, 10, 'تکمیل کوئیز');
 
     // Trigger the hook
-    do_action('psych_quiz_completed', $user_id, $quiz_id, $score);
+    $station_node_id = sanitize_text_field($_POST['station_node_id'] ?? '');
+    do_action('psych_quiz_completed', $user_id, $quiz_id, $score, $responses, $station_node_id);
 
     wp_send_json_success(['message' => 'کوئیز با موفقیت تکمیل شد!', 'score' => $score]);
 }
 
+    public function integrate_with_path_engine($user_id, $quiz_id, $score, $responses, $station_node_id) {
+        if (empty($station_node_id) || !class_exists('PsychoCourse_Path_Engine')) {
+            return;
+        }
 
+        $path_engine = PsychoCourse_Path_Engine::get_instance();
+
+        // This is a simplified integration. We assume the station has some metadata
+        // defining the required score. e.g., 'quiz_required_score'.
+        // For now, we will just complete the station if a quiz is submitted.
+
+        // A more advanced implementation would fetch station data and check conditions.
+        // For example:
+        // $station_data = $path_engine->get_station_data($station_node_id);
+        // if ($score >= $station_data['required_score']) {
+        //     $path_engine->mark_station_as_completed($user_id, $station_node_id, $station_data);
+        // }
+
+        // For now, we just complete it.
+        $path_engine->public_mark_station_as_completed($user_id, $station_node_id, ['mission_type' => 'quiz']);
+    }
 
     public function activate() {
         global $wpdb;
@@ -146,6 +170,10 @@ class Psych_Advanced_Quiz_Module {
         add_shortcode('psych_export_pdf', array($this, 'export_pdf_shortcode')); // For PDF export
         // Attach previous competition quiz shortcode as a sub-module
         add_shortcode('psych_competition_quiz', array($this, 'competition_quiz_shortcode')); // Integrated previous quiz as sub-module
+
+        // Shortcodes for building quizzes
+        add_shortcode('quiz_question', array($this, 'capture_question_shortcode'));
+        add_shortcode('quiz_option', array($this, 'capture_option_shortcode'));
     }
 
     public function enqueue_inline_assets() {
@@ -475,26 +503,69 @@ class Psych_Advanced_Quiz_Module {
         wp_add_inline_script('psych-quiz-inline-js', $js);
     }
 
+    private $current_quiz_questions = [];
+    private $current_question_options = [];
+
+    public function capture_question_shortcode($atts, $content = null) {
+        $this->current_question_options = [];
+        do_shortcode($content); // This will trigger capture_option_shortcode
+
+        $question_data = shortcode_atts(array(
+            'id' => 'q' . (count($this->current_quiz_questions) + 1),
+            'type' => 'mcq',
+            'text' => '',
+            'subscale' => '',
+            'correct' => '',
+            'correct_order' => '',
+            'rows' => '',
+            'columns' => '',
+            'min' => 0,
+            'max' => 100,
+        ), $atts);
+
+        $question_data['options'] = $this->current_question_options;
+        $this->current_quiz_questions[] = $question_data;
+
+        return ''; // Return empty string as we are just capturing data
+    }
+
+    public function capture_option_shortcode($atts, $content = null) {
+        $option_data = shortcode_atts(array(
+            'correct' => 'false',
+            'value' => '',
+            'subscale' => '',
+            'score' => 1 // Default score for correct answers in ranking/dragdrop
+        ), $atts);
+
+        $option_data['text'] = do_shortcode($content);
+        $option_data['correct'] = filter_var($option_data['correct'], FILTER_VALIDATE_BOOLEAN);
+
+        $this->current_question_options[] = $option_data;
+
+        return ''; // Return empty string
+    }
+
     public function quiz_shortcode($atts, $content = null) {
         if (!is_user_logged_in()) {
             return '<p>لطفاً برای شرکت در این کوئیز وارد شوید.</p>';
         }
 
+        $this->current_quiz_questions = []; // Reset for each quiz instance
+
         $atts = shortcode_atts(array(
             'id' => 'default',
-            'type' => 'mcq',
             'title' => '',
             'lang' => 'fa',
-            'timer' => 0,
-            'ai' => 'false', // Optional AI parameter
+            'ai' => 'false',
+            'station_node_id' => ''
         ), $atts);
 
-        // Parse nested shortcodes for questions (expanded for subscales and values)
-        $questions = $this->parse_quiz_content($content);
+        do_shortcode($content); // This populates $this->current_quiz_questions
+        $questions = $this->current_quiz_questions;
 
         ob_start();
         ?>
-        <div class="quiz-container" data-quiz-id="<?php echo esc_attr($atts['id']); ?>" data-lang="<?php echo esc_attr($atts['lang']); ?>" data-ai="<?php echo esc_attr($atts['ai']); ?>" data-questions='<?php echo json_encode($questions); ?>'>
+        <div class="quiz-container" data-quiz-id="<?php echo esc_attr($atts['id']); ?>" data-lang="<?php echo esc_attr($atts['lang']); ?>" data-ai="<?php echo esc_attr($atts['ai']); ?>" data-questions='<?php echo esc_attr(json_encode($questions, JSON_UNESCAPED_UNICODE)); ?>'>
             <div class="quiz-title"><?php echo esc_html($atts['title']); ?></div>
             <div class="question"></div>
             <div class="timer"></div>
@@ -513,17 +584,6 @@ class Psych_Advanced_Quiz_Module {
         </div>
         <?php
         return ob_get_clean();
-    }
-
-    private function parse_quiz_content($content) {
-        // Expanded parsing for nested [quiz_question] and [quiz_option] with subscale and value
-        // This is a simplified parser; in real use, use do_shortcode or regex for full nested parsing
-        // For form builder, assume content includes form elements parsed into questions
-        // Example: Support for conditional forms can be added via JS logic, but keeping simple
-        $questions = array();
-        // Parsing logic here (e.g., using preg_match_all for [quiz_question] tags)
-        // Assume it returns array of questions with options including subscale, value, rows, columns for matrix, min/max for slider
-        return $questions; // Return array of questions
     }
 
     // AJAX Handlers (preserved and expanded)
@@ -625,31 +685,142 @@ class Psych_Advanced_Quiz_Module {
         return $output;
     }
 
-    // New AJAX for PDF Generation (using simple HTML to PDF via dompdf or similar; assume dompdf is included or use wp-pdf)
+    // New AJAX for PDF Generation
     public function generate_pdf_report_ajax() {
         $quiz_id = sanitize_text_field($_POST['quiz_id']);
         $user_id = get_current_user_id();
 
-        // Generate report content (similar to report card)
-        $report_content = $this->generate_report_content($quiz_id, $user_id);
+        // Generate report content
+        $report_content_html = $this->generate_report_content($quiz_id, $user_id);
 
-        // For PDF, use a simple method (e.g., require dompdf and generate)
-        // Note: In production, install dompdf via composer or include files
-        // For this code, simulate PDF creation and return URL
-        $pdf_file = WP_CONTENT_DIR . '/uploads/psych_report_' . $quiz_id . '_' . $user_id . '.pdf';
-        file_put_contents($pdf_file, $report_content); // Simplified; use real PDF lib
+        // --- PDF Generation ---
+        // DEVELOPER NOTE: To enable real PDF generation, a library like Dompdf or TCPDF is required.
+        // 1. Install the library (e.g., `composer require dompdf/dompdf`).
+        // 2. Include the autoload file: `require_once 'vendor/autoload.php';`
+        // 3. Uncomment and adapt the code below.
+        /*
+        try {
+            $options = new \Dompdf\Options();
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('isRemoteEnabled', true);
+            $options->set('defaultFont', 'dejavu sans'); // Important for Persian characters
 
-        $pdf_url = content_url() . '/uploads/psych_report_' . $quiz_id . '_' . $user_id . '.pdf';
-        wp_send_json_success(array('url' => $pdf_url));
+            $dompdf = new \Dompdf\Dompdf($options);
+            $dompdf->loadHtml($report_content_html);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+
+            // Instead of saving to a file, stream it to the user
+            $dompdf->stream("report-".$quiz_id.".pdf", array("Attachment" => false));
+            exit; // Stop WordPress from sending further output
+        } catch (Exception $e) {
+            wp_send_json_error('Error creating PDF: ' . $e->getMessage());
+        }
+        */
+
+        // Fallback: Save as a temporary HTML file and provide a link.
+        $upload_dir = wp_upload_dir();
+        $report_filename = 'psych-report-' . $quiz_id . '-' . $user_id . '-' . wp_rand(1000, 9999) . '.html';
+        $report_filepath = $upload_dir['path'] . '/' . $report_filename;
+        $report_url = $upload_dir['url'] . '/' . $report_filename;
+
+        if (file_put_contents($report_filepath, $report_content_html)) {
+            wp_send_json_success(array('url' => $report_url, 'is_pdf' => false));
+        } else {
+            wp_send_json_error(array('message' => 'Could not write report file.'));
+        }
     }
 
     private function generate_report_content($quiz_id, $user_id) {
         global $wpdb;
         $result = $wpdb->get_row($wpdb->prepare("SELECT * FROM $this->table_name WHERE quiz_id = %s AND user_id = %d", $quiz_id, $user_id));
+        $user_info = get_userdata($user_id);
 
-        if (!$result) return 'No results found.';
+        if (!$result || !$user_info) return '<html><body><p>نتیجه‌ای یافت نشد.</p></body></html>';
 
-        return "<html><body><h1>Report for Quiz $quiz_id</h1><p>Score: {$result->score}</p><p>Analysis: {$result->ai_analysis}</p></body></html>";
+        $responses = json_decode($result->responses, true);
+        $subscale_scores = [];
+
+        foreach ($responses as $question_id => $response) {
+            if (isset($response['subscale']) && !empty($response['subscale'])) {
+                if (!isset($subscale_scores[$response['subscale']])) {
+                    $subscale_scores[$response['subscale']] = 0;
+                }
+                $subscale_scores[$response['subscale']] += intval($response['score_value']);
+            }
+        }
+
+        ob_start();
+        ?>
+        <!DOCTYPE html>
+        <html dir="rtl" lang="fa-IR">
+        <head>
+            <meta charset="UTF-8">
+            <title>کارنامه آزمون <?php echo esc_html($quiz_id); ?></title>
+            <style>
+                body { font-family: "dejavu sans", "tahoma"; background: #f4f4f4; color: #333; direction: rtl; text-align: right; }
+                .report-container { max-width: 800px; margin: 20px auto; padding: 30px; background: #fff; border: 1px solid #ddd; box-shadow: 0 0 15px rgba(0,0,0,0.05); }
+                h1 { color: #007bff; text-align: center; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+                .user-info { margin-bottom: 20px; }
+                .section { margin-bottom: 30px; }
+                .section h2 { color: #333; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+                .score-summary { display: flex; justify-content: space-around; text-align: center; }
+                .score-item { padding: 15px; background: #f0f8ff; border-radius: 8px; }
+                .score-item .value { font-size: 24px; font-weight: bold; color: #007bff; }
+                .subscales ul { list-style: none; padding: 0; }
+                .subscales li { padding: 10px; border-bottom: 1px solid #f0f0f0; }
+                .subscales li:last-child { border-bottom: none; }
+                .ai-analysis { background: #fffbe6; padding: 15px; border-radius: 5px; border-right: 3px solid #ffc107; }
+            </style>
+        </head>
+        <body>
+            <div class="report-container">
+                <h1>کارنامه آزمون: <?php echo esc_html($quiz_id); ?></h1>
+                <div class="user-info">
+                    <p><strong>کاربر:</strong> <?php echo esc_html($user_info->display_name); ?></p>
+                    <p><strong>تاریخ:</strong> <?php echo date_i18n('Y/m/d'); ?></p>
+                </div>
+
+                <div class="section">
+                    <h2>خلاصه عملکرد</h2>
+                    <div class="score-summary">
+                        <div class="score-item">
+                            <span class="value"><?php echo (int) $result->score; ?></span>
+                            <p>امتیاز کل</p>
+                        </div>
+                        <div class="score-item">
+                            <span class="value"><?php echo (int) $result->correct_answers; ?></span>
+                            <p>پاسخ‌های صحیح</p>
+                        </div>
+                        <div class="score-item">
+                             <span class="value"><?php echo round($result->time_taken, 2); ?> ثانیه</span>
+                            <p>زمان صرف شده</p>
+                        </div>
+                    </div>
+                </div>
+
+                <?php if (!empty($subscale_scores)): ?>
+                <div class="section subscales">
+                    <h2>نمرات خرده‌مقیاس‌ها</h2>
+                    <ul>
+                        <?php foreach ($subscale_scores as $subscale => $score): ?>
+                            <li><strong><?php echo esc_html($subscale); ?>:</strong> <?php echo (int) $score; ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+                <?php endif; ?>
+
+                <?php if (!empty($result->ai_analysis)): ?>
+                <div class="section ai-analysis">
+                    <h2>تحلیل هوش مصنوعی</h2>
+                    <p><?php echo nl2br(esc_html($result->ai_analysis)); ?></p>
+                </div>
+                <?php endif; ?>
+            </div>
+        </body>
+        </html>
+        <?php
+        return ob_get_clean();
     }
 
     // Integration with Path Engine (preserved)
@@ -806,17 +977,18 @@ class Psych_Advanced_Quiz_Module {
         // For example, similar to quiz_shortcode but with competition features like leaderboard focus
         return $this->quiz_shortcode($atts, $content); // Simplified integration
     }
-	// Integration with Coach Module for Response Mode
-add_action('psych_quiz_completed', function($user_id, $quiz_id, $responses) {
-    $context = psych_path_get_viewing_context(); // From path-engine.php
-    if ($context['is_impersonating']) {
-        $student_id = $context['viewed_user_id'];
-        // Save responses under student_id instead of coach
-        update_user_meta($student_id, 'psych_quiz_responses_' . $quiz_id, $responses);
-        do_action('psych_coach_quiz_response_submitted', $context['real_user_id'], $student_id, $quiz_id);
-    }
-}, 10, 3);
 
+    public function handle_coach_response_submission($user_id, $quiz_id, $responses) {
+        if (function_exists('psych_path_get_viewing_context')) {
+            $context = psych_path_get_viewing_context(); // From path-engine.php
+            if ($context['is_impersonating']) {
+                $student_id = $context['viewed_user_id'];
+                // Save responses under student_id instead of coach
+                update_user_meta($student_id, 'psych_quiz_responses_' . $quiz_id, $responses);
+                do_action('psych_coach_quiz_response_submitted', $context['real_user_id'], $student_id, $quiz_id);
+            }
+        }
+    }
 }
 
 new Psych_Advanced_Quiz_Module();

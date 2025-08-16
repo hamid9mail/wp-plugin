@@ -1244,6 +1244,30 @@ private function mark_station_as_completed($user_id, $node_id, $station_data, $f
 }
 
 /**
+ * Public wrapper to allow external modules to complete a station.
+ */
+public function public_mark_station_as_completed($user_id, $node_id, $station_data) {
+    // A bit of a hack to get the full station data, as the external module might not have it.
+    // In a real scenario, the station data should be passed more robustly.
+    $found_station = null;
+    foreach ($this->path_data as $path_id => $path) {
+        foreach ($path['stations'] as $station) {
+            if ($station['station_node_id'] === $node_id) {
+                $found_station = $station;
+                break 2;
+            }
+        }
+    }
+
+    if ($found_station) {
+        return $this->mark_station_as_completed($user_id, $node_id, $found_station, true);
+    }
+
+    // Fallback if station data not pre-loaded
+    return $this->mark_station_as_completed($user_id, $node_id, $station_data, true);
+}
+
+/**
  * پردازش پاداش‌های ایستگاه
  */
 // فایل: path-engine.php
