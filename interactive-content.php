@@ -26,14 +26,14 @@ if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
 
-if (class_exists('Psych_Interactive_Content_Module_3')) {
+if (class_exists('Psych_Interactive_Content_Module')) {
     return;
 }
 
 /**
  * Enhanced Interactive Content Module Class
  */
-final class Psych_Interactive_Content_Module_3 {
+final class Psych_Interactive_Content_Module {
 
     private static $instance = null;
 
@@ -1060,4 +1060,4 @@ final class Psych_Interactive_Content_Module_3 {
 }
 
 // Initialize the enhanced module
-Psych_Interactive_Content_Module_3::get_instance();
+Psych_Interactive_Content_Module::get_instance();

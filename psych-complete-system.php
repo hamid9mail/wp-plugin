@@ -238,8 +238,8 @@ final class Psych_Complete_System_Enhanced {
         $modules_to_load = [
             'gamification-center.php' => 'Psych_Gamification_Center',
             'coach-module.php' => 'Psych_Coach_Module',
-            'path-engine.php' => 'PsychoCourse_Path_Engine_4',
-            'interactive-content.php' => 'Psych_Interactive_Content_Module_3',
+            'path-engine.php' => 'PsychoCourse_Path_Engine',
+            'interactive-content.php' => 'Psych_Interactive_Content_Module',
             'report-card.php' => 'Psych_Unified_Report_Card_Enhanced',
             'dashboard-display.php' => 'Psych_Dashboard_Display_Enhanced'
         ];
@@ -275,8 +275,8 @@ final class Psych_Complete_System_Enhanced {
         $initialization_order = [
             'gamification' => 'Psych_Gamification_Center',
             'coach' => 'Psych_Coach_Module',
-            'path_engine' => 'PsychoCourse_Path_Engine_4',
-            'interactive_content' => 'Psych_Interactive_Content_Module_3',
+            'path_engine' => 'PsychoCourse_Path_Engine',
+            'interactive_content' => 'Psych_Interactive_Content_Module',
             'report_card' => 'Psych_Unified_Report_Card_Enhanced',
             'dashboard' => 'Psych_Dashboard_Display_Enhanced'
         ];

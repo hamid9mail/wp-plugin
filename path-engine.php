@@ -1,76 +1,76 @@
-<?php  
-/**  
- * Plugin Name:       PsychoCourse Path Engine (Complete Display Modes Edition)  
- * Description:       موتور جامع مسیر رشد با حالت‌های نمایش مختلف: آکاردئون، نقشه گنج، کارت و تایم‌لاین  
- * Version:           12.4.0  
- * Author:            Hamid Hashem Matouri (Complete Display Modes)  
- * Text Domain:       psych-path-engine  
- */  
+<?php
+/**
+ * Plugin Name:       PsychoCourse Path Engine (Complete Display Modes Edition)
+ * Description:       موتور جامع مسیر رشد با حالت‌های نمایش مختلف: آکاردئون، نقشه گنج، کارت و تایم‌لاین
+ * Version:           12.4.0
+ * Author:            Hamid Hashem Matouri (Complete Display Modes)
+ * Text Domain:       psych-path-engine
+ */
 
-if (!defined('ABSPATH')) {  
-    exit; // Exit if accessed directly  
-}  
+if (!defined('ABSPATH')) {
+    exit; // Exit if accessed directly
+}
 
-if (class_exists('PsychoCourse_Path_Engine_4')) {  
-    return;  
-}  
+if (class_exists('PsychoCourse_Path_Engine')) {
+    return;
+}
 
-// =====================================================================  
-// GLOBAL HELPER FUNCTIONS (for compatibility with coach-module)  
-// =====================================================================  
+// =====================================================================
+// GLOBAL HELPER FUNCTIONS (for compatibility with coach-module)
+// =====================================================================
 
-if (!function_exists('psych_path_get_viewing_context')) {  
-    /**  
-     * Global function to get viewing context for coach module compatibility  
-     */  
-    function psych_path_get_viewing_context() {  
-        return PsychoCourse_Path_Engine_4::get_instance()->get_viewing_context();  
-    }  
-}  
+if (!function_exists('psych_path_get_viewing_context')) {
+    /**
+     * Global function to get viewing context for coach module compatibility
+     */
+    function psych_path_get_viewing_context() {
+        return PsychoCourse_Path_Engine::get_instance()->get_viewing_context();
+    }
+}
 
-/**  
- * Enhanced Path Engine Class with Multiple Display Modes  
- */  
-final class PsychoCourse_Path_Engine_4 {  
+/**
+ * Enhanced Path Engine Class with Multiple Display Modes
+ */
+final class PsychoCourse_Path_Engine {
 
-    private static $instance = null;  
-    private $path_data = [];  
-    private $is_shortcode_rendered = false;  
-    private $viewing_context = null;  
-    private $display_mode = 'timeline'; // Default display mode  
+    private static $instance = null;
+    private $path_data = [];
+    private $is_shortcode_rendered = false;
+    private $viewing_context = null;
+    private $display_mode = 'timeline'; // Default display mode
 
-    public static function get_instance() {  
-        if (null === self::$instance) {  
-            self::$instance = new self();  
-        }  
-        return self::$instance;  
-    }  
+    public static function get_instance() {
+        if (null === self::$instance) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
 
-    private function __construct() {  
-        $this->define_constants();  
-        $this->add_hooks();  
-        $this->init_viewing_context();  
-    }  
+    private function __construct() {
+        $this->define_constants();
+        $this->add_hooks();
+        $this->init_viewing_context();
+    }
 
-    private function define_constants() {  
-        define('PSYCH_PATH_VERSION', '12.4.0');  
-        define('PSYCH_PATH_META_COMPLETED', 'psych_path_completed_stations');  
-        define('PSYCH_PATH_META_UNLOCK_TIME', 'psych_path_station_unlock_time');  
-        define('PSYCH_PATH_AJAX_NONCE', 'psych_path_ajax_nonce');  
-        
-        // Referral System Constants  
-        define('PSYCH_PATH_REFERRAL_COOKIE', 'psych_referral_user_id');  
-        define('PSYCH_PATH_REFERRAL_USER_META_COUNT', 'psych_referral_count');  
-        define('PSYCH_PATH_REFERRED_BY_USER_META', 'referred_by_user_id');  
-        
-        // Feedback System Constants  
-        define('PSYCH_PATH_FEEDBACK_USER_META_COUNT', 'psych_feedback_received_count');  
-    }  
+    private function define_constants() {
+        define('PSYCH_PATH_VERSION', '12.4.0');
+        define('PSYCH_PATH_META_COMPLETED', 'psych_path_completed_stations');
+        define('PSYCH_PATH_META_UNLOCK_TIME', 'psych_path_station_unlock_time');
+        define('PSYCH_PATH_AJAX_NONCE', 'psych_path_ajax_nonce');
 
-    private function add_hooks() {  
-        // Core Shortcodes  
-        add_shortcode('psychocourse_path', [$this, 'render_path_shortcode']);  
-        add_shortcode('station', [$this, 'register_station_shortcode']);  
+        // Referral System Constants
+        define('PSYCH_PATH_REFERRAL_COOKIE', 'psych_referral_user_id');
+        define('PSYCH_PATH_REFERRAL_USER_META_COUNT', 'psych_referral_count');
+        define('PSYCH_PATH_REFERRED_BY_USER_META', 'referred_by_user_id');
+
+        // Feedback System Constants
+        define('PSYCH_PATH_FEEDBACK_USER_META_COUNT', 'psych_feedback_received_count');
+    }
+
+    private function add_hooks() {
+        // Core Shortcodes
+        add_shortcode('psychocourse_path', [$this, 'render_path_shortcode']);
+        add_shortcode('station', [$this, 'register_station_shortcode']);
 
         // Content Section Shortcodes
 add_shortcode('static_content', [$this, 'register_static_content']);
@@ -78,210 +78,211 @@ add_shortcode('mission_content', [$this, 'register_mission_content']);
 add_shortcode('result_content', [$this, 'register_result_content']);
 
 
-        // AJAX Handlers  
-        add_action('wp_ajax_psych_path_get_station_content', [$this, 'ajax_get_station_content']);  
-        add_action('wp_ajax_psych_path_complete_mission', [$this, 'ajax_complete_mission']);  
+        // AJAX Handlers
+        add_action('wp_ajax_psych_path_get_station_content', [$this, 'ajax_get_station_content']);
+        add_action('wp_ajax_psych_path_get_inline_station_content', [$this, 'ajax_get_inline_station_content']); // ⭐ جدید
+        add_action('wp_ajax_psych_path_complete_mission', [$this, 'ajax_complete_mission']);
 
-        // Assets and Footer Elements  
-        add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);  
-        add_action('wp_footer', [$this, 'render_footer_elements']);  
+        // Assets and Footer Elements
+        add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
+        add_action('wp_footer', [$this, 'render_footer_elements']);
 
-        // Integration Hooks  
-        add_action('gform_after_submission', [$this, 'handle_gform_submission'], 10, 2);  
-        add_action('psych_feedback_submitted', [$this, 'handle_feedback_submission'], 10, 2);   
+        // Integration Hooks
+        add_action('gform_after_submission', [$this, 'handle_gform_submission'], 10, 2);
+        add_action('psych_feedback_submitted', [$this, 'handle_feedback_submission'], 10, 2);
 
-        // Referral System Hooks  
-        add_action('init', [$this, 'capture_referral_code']);  
-        add_action('user_register', [$this, 'process_referral_on_registration'], 10, 1);  
-        
-        // Coach Module Integration  
-        add_action('init', [$this, 'sync_with_coach_module'], 5);  
-    }  
+        // Referral System Hooks
+        add_action('init', [$this, 'capture_referral_code']);
+        add_action('user_register', [$this, 'process_referral_on_registration'], 10, 1);
 
-    private function init_viewing_context() {  
-        // Initialize session if not started (compatibility with coach module)  
-        if (!session_id() && !headers_sent()) {  
-            @session_start();  
-        }  
-    }  
+        // Coach Module Integration
+        add_action('init', [$this, 'sync_with_coach_module'], 5);
+    }
 
-    /**  
-     * Get viewing context - compatible with coach module  
-     */  
-    public function get_viewing_context() {  
-        if ($this->viewing_context !== null) {  
-            return $this->viewing_context;  
-        }  
+    private function init_viewing_context() {
+        // Initialize session if not started (compatibility with coach module)
+        if (!session_id() && !headers_sent()) {
+            @session_start();
+        }
+    }
 
-        $real_user_id = isset($_SESSION['_seeas_real_user']) ? intval($_SESSION['_seeas_real_user']) : get_current_user_id();  
-        $viewed_user_id = get_current_user_id();  
-        
-        $this->viewing_context = [  
-            'is_impersonating' => ($real_user_id != $viewed_user_id && $real_user_id > 0),  
-            'real_user_id'     => $real_user_id,  
-            'viewed_user_id'   => $viewed_user_id,  
-        ];  
-        
-        return $this->viewing_context;  
-    }  
+    /**
+     * Get viewing context - compatible with coach module
+     */
+    public function get_viewing_context() {
+        if ($this->viewing_context !== null) {
+            return $this->viewing_context;
+        }
 
-    /**  
-     * Sync with coach module settings and permissions  
-     */  
-    public function sync_with_coach_module() {  
-        // Check if coach module is active  
-        if (class_exists('Psych_Coach_Module')) {  
-            // Add coach-specific filters and actions  
-            add_filter('psych_path_can_view_station', [$this, 'coach_station_access_filter'], 10, 3);  
-            add_action('psych_path_station_completed', [$this, 'notify_coach_on_completion'], 10, 3);  
-        }  
-    }  
+        $real_user_id = isset($_SESSION['_seeas_real_user']) ? intval($_SESSION['_seeas_real_user']) : get_current_user_id();
+        $viewed_user_id = get_current_user_id();
 
-    /**  
-     * Filter station access based on coach permissions  
-     */  
-    public function coach_station_access_filter($can_access, $user_id, $station_data) {  
-        $context = $this->get_viewing_context();  
-        
-        // If coach is impersonating, check their permissions  
-        if ($context['is_impersonating']) {  
-            $coach_id = $context['real_user_id'];  
-            $current_page_id = get_queried_object_id();  
-            
-            // Check if coach has access to this page (using coach module logic)  
-            if (class_exists('Psych_Coach_Module')) {  
-                $coach_allowed_pages = get_user_meta($coach_id, 'psych_coach_allowed_pages', true) ?: [];  
-                if (!user_can($coach_id, 'manage_options') && !in_array($current_page_id, (array)$coach_allowed_pages)) {  
-                    return false;  
-                }  
-            }  
-        }  
-        
-        return $can_access;  
-    }  
+        $this->viewing_context = [
+            'is_impersonating' => ($real_user_id != $viewed_user_id && $real_user_id > 0),
+            'real_user_id'     => $real_user_id,
+            'viewed_user_id'   => $viewed_user_id,
+        ];
 
-    /**  
-     * Notify coach when student completes a station  
-     */  
-    public function notify_coach_on_completion($user_id, $node_id, $station_data) {  
-        // Get assigned coach for any product  
-        global $wpdb;  
-        $coach_id = $wpdb->get_var($wpdb->prepare(  
-            "SELECT meta_value FROM {$wpdb->usermeta}   
-             WHERE user_id = %d AND meta_key LIKE %s LIMIT 1",  
-            $user_id, 'psych_assigned_coach_for_product_%'  
-        ));  
-        
-        if ($coach_id) {  
-            do_action('psych_coach_student_progress', $coach_id, $user_id, $node_id, $station_data);  
-        }  
-    }  
+        return $this->viewing_context;
+    }
 
-    // =====================================================================  
-    // SECTION 2: CORE PATH & STATION LOGIC WITH DISPLAY MODES  
-    // =====================================================================  
-    
-    public function render_path_shortcode($atts, $content = null) {  
-        $context = $this->get_viewing_context();  
-        $user_id = $context['viewed_user_id'];  
-        
-        if (!$user_id && !is_admin()) {  
-            return '<p>برای مشاهده این مسیر، لطفاً ابتدا وارد شوید.</p>';  
-        }  
+    /**
+     * Sync with coach module settings and permissions
+     */
+    public function sync_with_coach_module() {
+        // Check if coach module is active
+        if (class_exists('Psych_Coach_Module')) {
+            // Add coach-specific filters and actions
+            add_filter('psych_path_can_view_station', [$this, 'coach_station_access_filter'], 10, 3);
+            add_action('psych_path_station_completed', [$this, 'notify_coach_on_completion'], 10, 3);
+        }
+    }
 
-        // Parse shortcode attributes  
-        $shortcode_atts = shortcode_atts([  
-            'display_mode' => 'timeline', // timeline, accordion, treasure_map, cards, simple_list  
-            'theme' => 'default', // default, dark, minimal, colorful  
-            'show_progress' => 'true',  
-            'path_title' => ''  
-        ], $atts);  
+    /**
+     * Filter station access based on coach permissions
+     */
+    public function coach_station_access_filter($can_access, $user_id, $station_data) {
+        $context = $this->get_viewing_context();
 
-        $this->display_mode = sanitize_key($shortcode_atts['display_mode']);  
-        $this->is_shortcode_rendered = true;  
-        $path_id = uniqid('path_');  
-        $this->path_data[$path_id] = [  
-            'stations' => [],  
-            'display_mode' => $this->display_mode,  
-            'theme' => sanitize_key($shortcode_atts['theme']),  
-            'show_progress' => $shortcode_atts['show_progress'] === 'true',  
-            'path_title' => sanitize_text_field($shortcode_atts['path_title'])  
-        ];  
+        // If coach is impersonating, check their permissions
+        if ($context['is_impersonating']) {
+            $coach_id = $context['real_user_id'];
+            $current_page_id = get_queried_object_id();
 
-        // Process shortcode content  
-        do_shortcode($content);  
+            // Check if coach has access to this page (using coach module logic)
+            if (class_exists('Psych_Coach_Module')) {
+                $coach_allowed_pages = get_user_meta($coach_id, 'psych_coach_allowed_pages', true) ?: [];
+                if (!user_can($coach_id, 'manage_options') && !in_array($current_page_id, (array)$coach_allowed_pages)) {
+                    return false;
+                }
+            }
+        }
 
-        $this->process_stations($path_id, $user_id);  
+        return $can_access;
+    }
 
-        ob_start();  
-        ?>  
-        <div class="psych-path-container psych-display-<?php echo esc_attr($this->display_mode); ?> psych-theme-<?php echo esc_attr($shortcode_atts['theme']); ?>"   
-             id="<?php echo esc_attr($path_id); ?>"   
-             data-display-mode="<?php echo esc_attr($this->display_mode); ?>">  
-            
-            <?php if ($context['is_impersonating']) : ?>  
-                <div class="coach-path-notice">  
-                    <i class="fas fa-user-eye"></i>  
-                    در حال مشاهده مسیر به جای: <strong><?php echo esc_html(get_userdata($user_id)->display_name); ?></strong>  
-                </div>  
-            <?php endif; ?>  
+    /**
+     * Notify coach when student completes a station
+     */
+    public function notify_coach_on_completion($user_id, $node_id, $station_data) {
+        // Get assigned coach for any product
+        global $wpdb;
+        $coach_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT meta_value FROM {$wpdb->usermeta}
+             WHERE user_id = %d AND meta_key LIKE %s LIMIT 1",
+            $user_id, 'psych_assigned_coach_for_product_%'
+        ));
 
-            <?php if (!empty($shortcode_atts['path_title'])) : ?>  
-                <div class="psych-path-header">  
-                    <h2 class="psych-path-title"><?php echo esc_html($shortcode_atts['path_title']); ?></h2>  
-                </div>  
-            <?php endif; ?>  
+        if ($coach_id) {
+            do_action('psych_coach_student_progress', $coach_id, $user_id, $node_id, $station_data);
+        }
+    }
 
-            <?php if ($shortcode_atts['show_progress'] === 'true') : ?>  
-                <?php echo $this->render_progress_indicator($path_id); ?>  
-            <?php endif; ?>  
+    // =====================================================================
+    // SECTION 2: CORE PATH & STATION LOGIC WITH DISPLAY MODES
+    // =====================================================================
 
-            <?php echo $this->render_path_by_display_mode($path_id, $context); ?>  
-        </div>  
-        <?php  
-        return ob_get_clean();  
-    }  
+    public function render_path_shortcode($atts, $content = null) {
+        $context = $this->get_viewing_context();
+        $user_id = $context['viewed_user_id'];
 
-    private function render_progress_indicator($path_id) {  
-        $stations = $this->path_data[$path_id]['stations'];  
-        $total = count($stations);  
-        $completed = count(array_filter($stations, function($station) {  
-            return $station['is_completed'];  
-        }));  
-        $percentage = $total > 0 ? round(($completed / $total) * 100) : 0;  
+        if (!$user_id && !is_admin()) {
+            return '<p>برای مشاهده این مسیر، لطفاً ابتدا وارد شوید.</p>';
+        }
 
-        ob_start();  
-        ?>  
-        <div class="psych-progress-indicator">  
-            <div class="psych-progress-stats">  
-                <span class="psych-progress-text">پیشرفت: <?php echo $completed; ?> از <?php echo $total; ?> ایستگاه</span>  
-                <span class="psych-progress-percentage"><?php echo $percentage; ?>%</span>  
-            </div>  
-            <div class="psych-progress-bar">  
-                <div class="psych-progress-fill" style="width: <?php echo $percentage; ?>%"></div>  
-            </div>  
-        </div>  
-        <?php  
-        return ob_get_clean();  
-    }  
+        // Parse shortcode attributes
+        $shortcode_atts = shortcode_atts([
+            'display_mode' => 'timeline', // timeline, accordion, treasure_map, cards, simple_list
+            'theme' => 'default', // default, dark, minimal, colorful
+            'show_progress' => 'true',
+            'path_title' => ''
+        ], $atts);
 
-    private function render_path_by_display_mode($path_id, $context) {  
-        $stations = $this->path_data[$path_id]['stations'];  
-        
-        switch ($this->display_mode) {  
-            case 'accordion':  
-                return $this->render_accordion_mode($stations, $context);  
-            case 'treasure_map':  
-                return $this->render_treasure_map_mode($stations, $context);  
-            case 'cards':  
-                return $this->render_cards_mode($stations, $context);  
-            case 'simple_list':  
-                return $this->render_simple_list_mode($stations, $context);  
-            case 'timeline':  
-            default:  
-                return $this->render_timeline_mode($stations, $context);  
-        }  
-    }  
+        $this->display_mode = sanitize_key($shortcode_atts['display_mode']);
+        $this->is_shortcode_rendered = true;
+        $path_id = uniqid('path_');
+        $this->path_data[$path_id] = [
+            'stations' => [],
+            'display_mode' => $this->display_mode,
+            'theme' => sanitize_key($shortcode_atts['theme']),
+            'show_progress' => $shortcode_atts['show_progress'] === 'true',
+            'path_title' => sanitize_text_field($shortcode_atts['path_title'])
+        ];
+
+        // Process shortcode content
+        do_shortcode($content);
+
+        $this->process_stations($path_id, $user_id);
+
+        ob_start();
+        ?>
+        <div class="psych-path-container psych-display-<?php echo esc_attr($this->display_mode); ?> psych-theme-<?php echo esc_attr($shortcode_atts['theme']); ?>"
+             id="<?php echo esc_attr($path_id); ?>"
+             data-display-mode="<?php echo esc_attr($this->display_mode); ?>">
+
+            <?php if ($context['is_impersonating']) : ?>
+                <div class="coach-path-notice">
+                    <i class="fas fa-user-eye"></i>
+                    در حال مشاهده مسیر به جای: <strong><?php echo esc_html(get_userdata($user_id)->display_name); ?></strong>
+                </div>
+            <?php endif; ?>
+
+            <?php if (!empty($shortcode_atts['path_title'])) : ?>
+                <div class="psych-path-header">
+                    <h2 class="psych-path-title"><?php echo esc_html($shortcode_atts['path_title']); ?></h2>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($shortcode_atts['show_progress'] === 'true') : ?>
+                <?php echo $this->render_progress_indicator($path_id); ?>
+            <?php endif; ?>
+
+            <?php echo $this->render_path_by_display_mode($path_id, $context); ?>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    private function render_progress_indicator($path_id) {
+        $stations = $this->path_data[$path_id]['stations'];
+        $total = count($stations);
+        $completed = count(array_filter($stations, function($station) {
+            return $station['is_completed'];
+        }));
+        $percentage = $total > 0 ? round(($completed / $total) * 100) : 0;
+
+        ob_start();
+        ?>
+        <div class="psych-progress-indicator">
+            <div class="psych-progress-stats">
+                <span class="psych-progress-text">پیشرفت: <?php echo $completed; ?> از <?php echo $total; ?> ایستگاه</span>
+                <span class="psych-progress-percentage"><?php echo $percentage; ?>%</span>
+            </div>
+            <div class="psych-progress-bar">
+                <div class="psych-progress-fill" style="width: <?php echo $percentage; ?>%"></div>
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    private function render_path_by_display_mode($path_id, $context) {
+        $stations = $this->path_data[$path_id]['stations'];
+
+        switch ($this->display_mode) {
+            case 'accordion':
+                return $this->render_accordion_mode($stations, $context);
+            case 'treasure_map':
+                return $this->render_treasure_map_mode($stations, $context);
+            case 'cards':
+                return $this->render_cards_mode($stations, $context);
+            case 'simple_list':
+                return $this->render_simple_list_mode($stations, $context);
+            case 'timeline':
+            default:
+                return $this->render_timeline_mode($stations, $context);
+        }
+    }
 
     private function render_timeline_mode($stations, $context) {
     ob_start();
@@ -360,7 +361,7 @@ add_shortcode('result_content', [$this, 'register_result_content']);
 
                         <div class="psych-treasure-popup">
                             <h4><?php echo esc_html($station['title']); ?></h4>
-                            
+
                             <?php if ($context['is_impersonating']) : ?>
                                 <div class="coach-impersonation-indicator">
                                     <i class="fas fa-user-tie"></i> نمایش مربی
@@ -405,7 +406,7 @@ add_shortcode('result_content', [$this, 'register_result_content']);
 
                 <div class="psych-card-body">
                     <h3 class="psych-card-title"><?php echo esc_html($station['title']); ?></h3>
-                    
+
                     <?php if ($context['is_impersonating']) : ?>
                         <div class="coach-impersonation-indicator">
                             <i class="fas fa-user-tie"></i> نمایش مربی
@@ -442,7 +443,7 @@ add_shortcode('result_content', [$this, 'register_result_content']);
 
                 <div class="psych-list-content">
                     <h3 class="psych-list-title"><?php echo esc_html($station['title']); ?></h3>
-                    
+
                     <?php if ($context['is_impersonating']) : ?>
                         <div class="coach-impersonation-indicator">
                             <i class="fas fa-user-tie"></i> نمایش مربی
@@ -465,49 +466,49 @@ add_shortcode('result_content', [$this, 'register_result_content']);
 }
 
 
-    private function get_status_badge($status) {  
-        $badges = [  
-            'completed' => '<span class="psych-status-badge completed"><i class="fas fa-check"></i> تکمیل شده</span>',  
-            'open' => '<span class="psych-status-badge open"><i class="fas fa-unlock"></i> باز</span>',  
-            'locked' => '<span class="psych-status-badge locked"><i class="fas fa-lock"></i> قفل</span>',  
-            'restricted' => '<span class="psych-status-badge restricted"><i class="fas fa-ban"></i> محدود</span>'  
-        ];  
-        
-        return $badges[$status] ?? $badges['locked'];  
-    }  
+    private function get_status_badge($status) {
+        $badges = [
+            'completed' => '<span class="psych-status-badge completed"><i class="fas fa-check"></i> تکمیل شده</span>',
+            'open' => '<span class="psych-status-badge open"><i class="fas fa-unlock"></i> باز</span>',
+            'locked' => '<span class="psych-status-badge locked"><i class="fas fa-lock"></i> قفل</span>',
+            'restricted' => '<span class="psych-status-badge restricted"><i class="fas fa-ban"></i> محدود</span>'
+        ];
 
-    private function get_button_text($station) {  
-        if ($station['status'] === 'completed') {  
-            return 'مشاهده نتیجه';  
-        } elseif ($station['status'] === 'locked') {  
-            return 'قفل';  
-        } elseif ($station['status'] === 'restricted') {  
-            return 'دسترسی محدود';  
-        }  
-        return $station['mission_button_text'];  
-    }  
+        return $badges[$status] ?? $badges['locked'];
+    }
 
-    private function get_treasure_map_position($index, $total) {  
-        // Create a curved path for treasure map  
-        $angle = ($index / ($total - 1)) * 180; // 0 to 180 degrees  
-        $radius = 40; // 40% of container width  
-        
-        $x = 50 + $radius * cos(deg2rad($angle - 90)); // Center at 50%  
-        $y = 20 + ($index / ($total - 1)) * 60; // Vertical progression  
-        
-        return "left: {$x}%; top: {$y}%;";  
-    }  
+    private function get_button_text($station) {
+        if ($station['status'] === 'completed') {
+            return 'مشاهده نتیجه';
+        } elseif ($station['status'] === 'locked') {
+            return 'قفل';
+        } elseif ($station['status'] === 'restricted') {
+            return 'دسترسی محدود';
+        }
+        return $station['mission_button_text'];
+    }
 
-    public function register_station_shortcode($atts, $content = null) {  
-        if (!empty($this->path_data)) {  
-            $path_id = array_key_last($this->path_data);  
-            $this->path_data[$path_id]['stations'][] = [  
-                'atts' => $atts,  
-                'content' => $content,  
-            ];  
-        }  
-        return '';  
-    }  
+    private function get_treasure_map_position($index, $total) {
+        // Create a curved path for treasure map
+        $angle = ($index / ($total - 1)) * 180; // 0 to 180 degrees
+        $radius = 40; // 40% of container width
+
+        $x = 50 + $radius * cos(deg2rad($angle - 90)); // Center at 50%
+        $y = 20 + ($index / ($total - 1)) * 60; // Vertical progression
+
+        return "left: {$x}%; top: {$y}%;";
+    }
+
+    public function register_station_shortcode($atts, $content = null) {
+        if (!empty($this->path_data)) {
+            $path_id = array_key_last($this->path_data);
+            $this->path_data[$path_id]['stations'][] = [
+                'atts' => $atts,
+                'content' => $content,
+            ];
+        }
+        return '';
+    }
 public function register_static_content($atts, $content = null) {
     if (!empty($this->path_data)) {
         $path_id = array_key_last($this->path_data);
@@ -543,7 +544,7 @@ public function register_result_content($atts, $content = null) {
 
     private function process_stations($path_id, $user_id) {
     if (!isset($this->path_data[$path_id]) || !$user_id) return;
-    
+
     $raw_stations = $this->path_data[$path_id]['stations'];
     $processed_stations = [];
     $previous_station_completed = true;
@@ -568,7 +569,7 @@ public function register_result_content($atts, $content = null) {
         $atts['static_content'] = $station_data['static_content'] ?? '';
         $atts['mission_content'] = $station_data['mission_content'] ?? '';
         $atts['result_content'] = $station_data['result_content'] ?? '';
-        
+
         // مطمئن شو اگر آرایه اصلی داشت، مقدار gform_mode هم منتقل شود
         if (isset($station_data['atts']['gform_mode'])) {
             $atts['gform_mode'] = $station_data['atts']['gform_mode'];
@@ -614,128 +615,128 @@ public function register_result_content($atts, $content = null) {
 
     return $atts;
 }
-    
-    private function is_station_completed($user_id, $node_id, $station_atts) {  
-        $completed_stations = get_user_meta($user_id, PSYCH_PATH_META_COMPLETED, true) ?: [];  
-        if (isset($completed_stations[$node_id])) {  
-            return true;  
-        }  
-        
-        $completed_retroactively = false;  
-        $mission_type = $station_atts['mission_type'];  
-        $mission_target = $station_atts['mission_target'];  
 
-        switch ($mission_type) {  
-            case 'purchase':  
-                if (function_exists('wc_customer_bought_product')) {  
-                    $product_id = intval(str_replace('product_id:', '', $mission_target));  
-                    $user_obj = get_userdata($user_id);  
-                    if ($product_id > 0 && $user_obj && wc_customer_bought_product($user_obj->user_email, $user_id, $product_id)) {  
-                        $completed_retroactively = true;  
-                    }  
-                }  
-                break;  
-            case 'custom_test':  
-                if (function_exists('psych_user_has_completed_test')) {  
-                    $test_id = intval(str_replace('test_id:', '', $mission_target));  
-                    if ($test_id > 0 && psych_user_has_completed_test($user_id, $test_id)) {  
-                        $completed_retroactively = true;  
-                    }  
-                }  
-                break;  
-            case 'achieve_badge':  
-                 if (function_exists('psych_user_has_badge')) {  
-                    $badge_id = intval(str_replace('badge_id:', '', $mission_target));  
-                    if ($badge_id > 0 && psych_user_has_badge($user_id, $badge_id)) {  
-                        $completed_retroactively = true;  
-                    }  
-                }  
-                break;  
-            case 'gform':  
-                // Check for transient completion marker from gform submission  
-                $form_id = intval(str_replace('form_id:', '', $mission_target));  
-                if ($form_id > 0) {  
-                    $transient_key = "gform_complete_{$user_id}_{$form_id}";  
-                    $station_node_from_transient = get_transient($transient_key);  
-                    if ($station_node_from_transient === $station_atts['station_node_id']) {  
-                        $completed_retroactively = true;  
-                        delete_transient($transient_key); // Clean up   
-                    }  
-                }  
-                break;  
-        }  
+    private function is_station_completed($user_id, $node_id, $station_atts) {
+        $completed_stations = get_user_meta($user_id, PSYCH_PATH_META_COMPLETED, true) ?: [];
+        if (isset($completed_stations[$node_id])) {
+            return true;
+        }
 
-        if ($completed_retroactively) {  
-            $this->mark_station_as_completed($user_id, $node_id, $station_atts, false);  
-            return true;  
-        }  
+        $completed_retroactively = false;
+        $mission_type = $station_atts['mission_type'];
+        $mission_target = $station_atts['mission_target'];
 
-        return false;  
-    }  
+        switch ($mission_type) {
+            case 'purchase':
+                if (function_exists('wc_customer_bought_product')) {
+                    $product_id = intval(str_replace('product_id:', '', $mission_target));
+                    $user_obj = get_userdata($user_id);
+                    if ($product_id > 0 && $user_obj && wc_customer_bought_product($user_obj->user_email, $user_id, $product_id)) {
+                        $completed_retroactively = true;
+                    }
+                }
+                break;
+            case 'custom_test':
+                if (function_exists('psych_user_has_completed_test')) {
+                    $test_id = intval(str_replace('test_id:', '', $mission_target));
+                    if ($test_id > 0 && psych_user_has_completed_test($user_id, $test_id)) {
+                        $completed_retroactively = true;
+                    }
+                }
+                break;
+            case 'achieve_badge':
+                 if (function_exists('psych_user_has_badge')) {
+                    $badge_id = intval(str_replace('badge_id:', '', $mission_target));
+                    if ($badge_id > 0 && psych_user_has_badge($user_id, $badge_id)) {
+                        $completed_retroactively = true;
+                    }
+                }
+                break;
+            case 'gform':
+                // Check for transient completion marker from gform submission
+                $form_id = intval(str_replace('form_id:', '', $mission_target));
+                if ($form_id > 0) {
+                    $transient_key = "gform_complete_{$user_id}_{$form_id}";
+                    $station_node_from_transient = get_transient($transient_key);
+                    if ($station_node_from_transient === $station_atts['station_node_id']) {
+                        $completed_retroactively = true;
+                        delete_transient($transient_key); // Clean up
+                    }
+                }
+                break;
+        }
 
-    private function render_single_station_node($station, $context) {  
-        $status_class = $station['status'];  
-        $button_text = $this->get_button_text($station);  
-        $is_disabled = !$station['is_unlocked'];  
+        if ($completed_retroactively) {
+            $this->mark_station_as_completed($user_id, $node_id, $station_atts, false);
+            return true;
+        }
 
-        ob_start();  
-        ?>  
-        <div class="psych-timeline-item <?php echo esc_attr($status_class); ?>"   
-             data-station-node-id="<?php echo esc_attr($station['station_node_id']); ?>"  
-             data-station-details="<?php echo esc_attr(json_encode($station, JSON_UNESCAPED_UNICODE)); ?>">  
-            <div class="psych-timeline-icon">  
-                <i class="<?php echo esc_attr($station['is_completed'] ? 'fas fa-check-circle' : $station['icon']); ?>"></i>  
-            </div>  
-            <div class="psych-timeline-content">  
-                <h3 class="psych-station-title"><?php echo esc_html($station['title']); ?></h3>  
-                <?php if ($context['is_impersonating']) : ?>  
-                    <div class="coach-impersonation-indicator">  
-                        <i class="fas fa-user-tie"></i> نمایش مربی  
-                    </div>  
-                <?php endif; ?>  
-                <button class="psych-station-action-btn" <?php echo $is_disabled ? 'disabled' : ''; ?>>  
-                    <?php echo esc_html($button_text); ?>  
-                </button>  
-            </div>  
-        </div>  
-        <?php  
-        return ob_get_clean();  
-    }  
+        return false;
+    }
 
-    // =====================================================================  
-    // SECTION 3: AJAX & MISSION COMPLETION  
-    // =====================================================================  
+    private function render_single_station_node($station, $context) {
+        $status_class = $station['status'];
+        $button_text = $this->get_button_text($station);
+        $is_disabled = !$station['is_unlocked'];
 
-    public function ajax_get_station_content() {  
-        if (!check_ajax_referer(PSYCH_PATH_AJAX_NONCE, 'nonce', false)) {  
-            wp_send_json_error(['message' => 'نشست شما منقضی شده است. لطفاً صفحه را رفرش کنید.'], 403);  
-        }  
-        
-        $context = $this->get_viewing_context();  
-        $user_id = $context['viewed_user_id'];  
-        
-        if (!$user_id) {  
-            wp_send_json_error(['message' => 'کاربر نامعتبر.'], 401);  
-        }  
+        ob_start();
+        ?>
+        <div class="psych-timeline-item <?php echo esc_attr($status_class); ?>"
+             data-station-node-id="<?php echo esc_attr($station['station_node_id']); ?>"
+             data-station-details="<?php echo esc_attr(json_encode($station, JSON_UNESCAPED_UNICODE)); ?>">
+            <div class="psych-timeline-icon">
+                <i class="<?php echo esc_attr($station['is_completed'] ? 'fas fa-check-circle' : $station['icon']); ?>"></i>
+            </div>
+            <div class="psych-timeline-content">
+                <h3 class="psych-station-title"><?php echo esc_html($station['title']); ?></h3>
+                <?php if ($context['is_impersonating']) : ?>
+                    <div class="coach-impersonation-indicator">
+                        <i class="fas fa-user-tie"></i> نمایش مربی
+                    </div>
+                <?php endif; ?>
+                <button class="psych-station-action-btn" <?php echo $is_disabled ? 'disabled' : ''; ?>>
+                    <?php echo esc_html($button_text); ?>
+                </button>
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
 
-        $station_details = json_decode(stripslashes($_POST['station_data'] ?? ''), true);  
-        if (empty($station_details)) {  
-            wp_send_json_error(['message' => 'اطلاعات ایستگاه ناقص است.']);  
-        }  
+    // =====================================================================
+    // SECTION 3: AJAX & MISSION COMPLETION
+    // =====================================================================
 
-        // Validate station access  
-        $can_access = apply_filters('psych_path_can_view_station', true, $user_id, $station_details);  
-        if (!$can_access) {  
-            wp_send_json_error(['message' => 'شما مجاز به مشاهده این ایستگاه نیستید.'], 403);  
-        }  
+    public function ajax_get_station_content() {
+        if (!check_ajax_referer(PSYCH_PATH_AJAX_NONCE, 'nonce', false)) {
+            wp_send_json_error(['message' => 'نشست شما منقضی شده است. لطفاً صفحه را رفرش کنید.'], 403);
+        }
 
-        $content = base64_decode($station_details['raw_content_b64']);  
-        $is_completed = $this->is_station_completed($user_id, $station_details['station_node_id'], $station_details);  
-        
-        ob_start();  
-        $this->render_modal_content($content, $is_completed, $user_id, $station_details, $context);  
-        wp_send_json_success(['html' => ob_get_clean()]);  
-    }  
+        $context = $this->get_viewing_context();
+        $user_id = $context['viewed_user_id'];
+
+        if (!$user_id) {
+            wp_send_json_error(['message' => 'کاربر نامعتبر.'], 401);
+        }
+
+        $station_details = json_decode(stripslashes($_POST['station_data'] ?? ''), true);
+        if (empty($station_details)) {
+            wp_send_json_error(['message' => 'اطلاعات ایستگاه ناقص است.']);
+        }
+
+        // Validate station access
+        $can_access = apply_filters('psych_path_can_view_station', true, $user_id, $station_details);
+        if (!$can_access) {
+            wp_send_json_error(['message' => 'شما مجاز به مشاهده این ایستگاه نیستید.'], 403);
+        }
+
+        $content = base64_decode($station_details['raw_content_b64']);
+        $is_completed = $this->is_station_completed($user_id, $station_details['station_node_id'], $station_details);
+
+        ob_start();
+        $this->render_modal_content($content, $is_completed, $user_id, $station_details, $context);
+        wp_send_json_success(['html' => ob_get_clean()]);
+    }
 
     private function render_modal_content($content, $is_completed, $user_id, $station_details, $context) {
     // پشتیبانی از هر دو حالت $$...$$ و [shortcode] ... [/shortcode]
@@ -768,116 +769,97 @@ public function register_result_content($atts, $content = null) {
     }
 }
 
+    /**
+     * Inline content render
+     */
     private function render_inline_station_content($station) {
-    $content = base64_decode($station['raw_content_b64']);
-    
-    // پشتیبانی از هر دو حالت $$...$$ و [shortcode] ... [/shortcode]
-    preg_match('/(?:\$\$static_content\$\$|\[static_content\])(.*?)(?:\$\$\/static_content\$\$|\[\/static_content\])/s', $content, $static_matches);
-    preg_match('/(?:\$\$mission_content\$\$|\[mission_content\])(.*?)(?:\$\$\/mission_content\$\$|\[\/mission_content\])/s', $content, $mission_matches);
-    preg_match('/(?:\$\$result_content\$\$|\[result_content\])(.*?)(?:\$\$\/result_content\$\$|\[\/result_content\])/s', $content, $result_matches);
+        $content = base64_decode($station['raw_content_b64']);
 
-    $static_content = isset($static_matches[1]) ? trim($static_matches[1]) : '';
-    $mission_content = isset($mission_matches[1]) ? trim($mission_matches[1]) : '';
-    $result_content = isset($result_matches[1]) ? trim($result_matches[1]) : '';
+        preg_match('/(?:\$\$static_content\$\$|\[static_content\])(.*?)(?:\$\$\/static_content\$\$|\[\/static_content\])/s', $content, $static_matches);
+        preg_match('/(?:\$\$mission_content\$\$|\[mission_content\])(.*?)(?:\$\$\/mission_content\$\$|\[\/mission_content\])/s', $content, $mission_matches);
+        preg_match('/(?:\$\$result_content\$\$|\[result_content\])(.*?)(?:\$\$\/result_content\$\$|\[\/result_content\])/s', $content, $result_matches);
 
-    $context = $this->get_viewing_context();
-    $user_id = $context['viewed_user_id'];
+        $static_content = isset($static_matches[1]) ? trim($static_matches[1]) : '';
+        $mission_content = isset($mission_matches[1]) ? trim($mission_matches[1]) : '';
+        $result_content  = isset($result_matches[1]) ? trim($result_matches[1]) : '';
 
-    ob_start();
-    ?>
-    <div class="psych-inline-station-content">
-        
-        <?php // بررسی وضعیت دسترسی ایستگاه ?>
-        <?php if (!$station['is_unlocked']) : ?>
-            <div class="psych-locked-station-inline">
-                <div class="psych-lock-icon">
-                    <i class="fas fa-lock"></i>
+        $context = $this->get_viewing_context();
+        $user_id = $context['viewed_user_id'];
+
+        ob_start();
+        ?>
+        <div class="psych-inline-station-content">
+
+            <?php if (!$station['is_unlocked']) : ?>
+                <div class="psych-locked-station-inline">
+                    <div class="psych-lock-icon"><i class="fas fa-lock"></i></div>
+                    <div class="psych-lock-message">
+                        <h4>ایستگاه قفل است</h4>
+                        <p>برای باز کردن این ایستگاه، ابتدا ایستگاه‌های قبلی را تکمیل کنید.</p>
+                    </div>
                 </div>
-                <div class="psych-lock-message">
-                    <h4>ایستگاه قفل است</h4>
-                    <p>برای باز کردن این ایستگاه، ابتدا ایستگاه‌های قبلی را تکمیل کنید.</p>
-                </div>
-            </div>
-        
-        <?php else : ?>
-            
-            <?php // نمایش محتوای استاتیک (همیشه اگر وجود داشت) ?>
-            <?php if (!empty($static_content)) : ?>
-                <div class="psych-static-section">
-                    <?php echo do_shortcode($static_content); ?>
-                </div>
-            <?php endif; ?>
 
-            <?php // بررسی وضعیت تکمیل ایستگاه ?>
-            <?php if ($station['is_completed']) : ?>
-                <?php if (!empty($result_content)) : ?>
+            <?php else : ?>
+
+                <?php if (!empty($static_content)) : ?>
+                    <div class="psych-static-section"><?php echo do_shortcode($static_content); ?></div>
+                <?php endif; ?>
+
+                <?php if ($station['is_completed']) : ?>
                     <div class="psych-result-section">
                         <div class="psych-result-badge">
                             <i class="fas fa-check-circle"></i>
                             <span>تکمیل شده</span>
                         </div>
-                        <?php echo do_shortcode($result_content); ?>
+                        <?php echo !empty($result_content) ? do_shortcode($result_content) : '<p>این ماموریت تکمیل شده است.</p>'; ?>
                     </div>
                 <?php else : ?>
-                    <div class="psych-result-section">
-                        <div class="psych-result-badge">
-                            <i class="fas fa-check-circle"></i>
-                            <span>تکمیل شده</span>
+                    <?php if (!empty($mission_content)) : ?>
+                        <div class="psych-mission-section">
+                            <div class="psych-mission-instructions"><?php echo do_shortcode($mission_content); ?></div>
                         </div>
-                        <p>این ماموریت با موفقیت تکمیل شده است!</p>
+                    <?php endif; ?>
+                    <div class="psych-mission-actions">
+                        <?php echo $this->generate_mission_action_html($user_id, $station, $context); ?>
                     </div>
                 <?php endif; ?>
-            
-            <?php else : ?>
-                <?php // نمایش محتوای ماموریت (اگر انجام نشده) ?>
-                <?php if (!empty($mission_content)) : ?>
-                    <div class="psych-mission-section">
-                        <div class="psych-mission-instructions">
-                            <?php echo do_shortcode($mission_content); ?>
-                        </div>
-                    </div>
-                <?php endif; ?>
-                
-                <div class="psych-mission-actions">
-                    <?php echo $this->generate_mission_action_html($user_id, $station, $context); ?>
-                </div>
+
             <?php endif; ?>
-        
-        <?php endif; ?>
-    </div>
-    <?php
-    return ob_get_clean();
-}
+
+        </div>
+        <?php
+        return ob_get_clean();
+    }
 
 
 
 
-    private function generate_mission_action_html($user_id, $station_details, $context) {  
-        $type = $station_details['mission_type'];  
-        $target = $station_details['mission_target'];  
-        $output = "<div class='mission-action-wrapper'>";  
-        $can_complete = false;  
+    private function generate_mission_action_html($user_id, $station_details, $context) {
+        $type = $station_details['mission_type'];
+        $target = $station_details['mission_target'];
+        $output = "<div class='mission-action-wrapper'>";
+        $can_complete = false;
 
-        // Add coach impersonation notice if applicable  
-        if ($context['is_impersonating']) {  
-            $real_coach = get_userdata($context['real_user_id']);  
-            $output .= "<div class='coach-mission-notice'>  
-                          <i class='fas fa-info-circle'></i>   
-                          شما به عنوان مربی <strong>{$real_coach->display_name}</strong> در حال مشاهده این ماموریت هستید.  
-                        </div>";  
-        }  
+        // Add coach impersonation notice if applicable
+        if ($context['is_impersonating']) {
+            $real_coach = get_userdata($context['real_user_id']);
+            $output .= "<div class='coach-mission-notice'>
+                          <i class='fas fa-info-circle'></i>
+                          شما به عنوان مربی <strong>{$real_coach->display_name}</strong> در حال مشاهده این ماموریت هستید.
+                        </div>";
+        }
 
-        switch ($type) {  
-            case 'button_click':  
-                $can_complete = true;  
-                break;  
+        switch ($type) {
+            case 'button_click':
+                $can_complete = true;
+                break;
 
             case 'gform': {
     $form_id = intval(str_replace('form_id:', '', $target));
-    
+
     // گام ۱: خواندن حالت مود مورد نظر از آرایه (پیش‌فرض مکالمه‌ای)
     $gform_mode = !empty($station_details['gform_mode']) ? $station_details['gform_mode'] : 'conversational';
-    
+
     if ($form_id > 0 && function_exists('gravity_form')) {
         $output .= "<p>برای تکمیل این ماموریت، فرم زیر را ارسال کنید.</p>";
 
@@ -932,142 +914,168 @@ public function register_result_content($atts, $content = null) {
 
 
 
-            case 'purchase':  
-                if (function_exists('wc_get_product')) {  
-                    $product_id = intval(str_replace('product_id:', '', $target));  
-                    $product = wc_get_product($product_id);  
-                    if ($product) {  
-                        $user_obj = get_userdata($user_id);  
-                        if ($user_obj && wc_customer_bought_product($user_obj->user_email, $user_id, $product_id)) {  
-                             $output .= "<p>این محصول قبلاً خریداری شده است.</p>";  
-                             $can_complete = true;  
-                        } else {  
-                             $output .= "<p>برای تکمیل ماموریت، باید محصول زیر را خریداری کنید:</p>";  
-                             $output .= "<a href='" . esc_url($product->get_permalink()) . "' target='_blank' class='psych-mission-link-btn'>خرید " . esc_html($product->get_name()) . "</a>";  
-                             
-                             // Add coach referral if applicable  
-                             if ($context['is_impersonating']) {  
-                                 $coach_ref_url = add_query_arg('coach_ref', $context['real_user_id'], $product->get_permalink());  
-                                 $output .= "<p><small>لینک با ارجاع مربی: <a href='" . esc_url($coach_ref_url) . "' target='_blank'>کلیک کنید</a></small></p>";  
-                             }  
-                        }  
-                    } else {  
-                        $output .= "<p>خطا: محصول با شناسه مشخص شده یافت نشد.</p>";  
-                    }  
-                }  
-                break;  
+            case 'purchase':
+                if (function_exists('wc_get_product')) {
+                    $product_id = intval(str_replace('product_id:', '', $target));
+                    $product = wc_get_product($product_id);
+                    if ($product) {
+                        $user_obj = get_userdata($user_id);
+                        if ($user_obj && wc_customer_bought_product($user_obj->user_email, $user_id, $product_id)) {
+                             $output .= "<p>این محصول قبلاً خریداری شده است.</p>";
+                             $can_complete = true;
+                        } else {
+                             $output .= "<p>برای تکمیل ماموریت، باید محصول زیر را خریداری کنید:</p>";
+                             $output .= "<a href='" . esc_url($product->get_permalink()) . "' target='_blank' class='psych-mission-link-btn'>خرید " . esc_html($product->get_name()) . "</a>";
 
-            case 'custom_test':  
-                if (function_exists('psych_user_has_completed_test') && function_exists('psych_get_test_link')) {  
-                    $test_id = intval(str_replace('test_id:', '', $target));  
-                    if ($test_id > 0) {  
-                        if (psych_user_has_completed_test($user_id, $test_id)) {  
-                            $output .= "<p>این آزمون با موفقیت تکمیل شده است.</p>";  
-                            $can_complete = true;  
-                        } else {  
-                            $test_link = psych_get_test_link($test_id);  
-                            $output .= "<p>برای تکمیل این ماموریت، باید در آزمون زیر شرکت کنید:</p>";  
-                            $output .= "<a href='" . esc_url($test_link) . "' target='_blank' class='psych-mission-link-btn'>شروع آزمون</a>";  
-                        }  
-                    } else {  
-                        $output .= "<p>خطا: شناسه آزمون مشخص نشده است.</p>";  
-                    }  
-                } else {  
-                    $output .= "<p>خطا: ماژول آزمون‌های روانشناسی به درستی پیکربندی نشده است.</p>";  
-                }  
-                break;  
-            
-            case 'achieve_badge':  
-                if (function_exists('psych_user_has_badge') && function_exists('psych_get_badge_name')) {  
-                    $badge_id = intval(str_replace('badge_id:', '', $target));  
-                    if ($badge_id > 0) {  
-                        if (psych_user_has_badge($user_id, $badge_id)) {  
-                            $output .= "<p>تبریک! نشان مورد نیاز کسب شده است.</p>";  
-                            $can_complete = true;  
-                        } else {  
-                            $badge_name = psych_get_badge_name($badge_id);  
-                            $gamification_center_url = home_url('/gamification-center/');  
-                            $output .= "<p>برای تکمیل این ماموریت، باید نشان <strong>'" . esc_html($badge_name) . "'</strong> را کسب کنید.</p>";  
-                            $output .= "<a href='" . esc_url($gamification_center_url) . "' target='_blank' class='psych-mission-link-btn'>بررسی نحوه کسب نشان</a>";  
-                        }  
-                    } else {  
-                         $output .= "<p>خطا: شناسه نشان مشخص نشده است.</p>";  
-                    }  
-                } else {  
-                    $output .= "<p>خطا: ماژول گیمیفیکیشن (نشان‌ها) به درستی پیکربندی نشده است.</p>";  
-                }  
-                break;  
+                             // Add coach referral if applicable
+                             if ($context['is_impersonating']) {
+                                 $coach_ref_url = add_query_arg('coach_ref', $context['real_user_id'], $product->get_permalink());
+                                 $output .= "<p><small>لینک با ارجاع مربی: <a href='" . esc_url($coach_ref_url) . "' target='_blank'>کلیک کنید</a></small></p>";
+                             }
+                        }
+                    } else {
+                        $output .= "<p>خطا: محصول با شناسه مشخص شده یافت نشد.</p>";
+                    }
+                }
+                break;
 
-            case 'share':  
-                $share_url = home_url('/');  
-                if (strpos($target, 'url:') !== false) {  
-                    $share_url = esc_url(str_replace('url:', '', $target));  
-                }  
-                
-                // Add coach referral to share URL if applicable  
-                if ($context['is_impersonating']) {  
-                    $share_url = add_query_arg('coach_ref', $context['real_user_id'], $share_url);  
-                }  
-                
-                $share_text = urlencode("یک دوره فوق‌العاده پیدا کردم! " . $share_url);  
-                $telegram_link = "https://t.me/share/url?url=" . urlencode($share_url) . "&text=" . $share_text;  
-                $whatsapp_link = "https://api.whatsapp.com/send?text=" . $share_text;  
-                
-                $output .= "<p>برای تکمیل این ماموریت، این صفحه را با دوستانتان به اشتراک بگذارید:</p>";  
-                $output .= "<div class='psych-share-buttons'>";  
-                $output .= "<a href='{$telegram_link}' target='_blank' class='psych-share-btn telegram'><i class='fab fa-telegram-plane'></i> اشتراک در تلگرام</a>";  
-                $output .= "<a href='{$whatsapp_link}' target='_blank' class='psych-share-btn whatsapp'><i class='fab fa-whatsapp'></i> اشتراک در واتس‌اپ</a>";  
-                $output .= "</div>";  
-                $output .= "<p class='psych-share-notice' style='display:none; color: green; margin-top: 10px;'>عالی! اکنون می‌توانید ماموریت را تکمیل کنید.</p>";  
-                $can_complete = true;  
-                break;  
+            case 'custom_test':
+                if (function_exists('psych_user_has_completed_test') && function_exists('psych_get_test_link')) {
+                    $test_id = intval(str_replace('test_id:', '', $target));
+                    if ($test_id > 0) {
+                        if (psych_user_has_completed_test($user_id, $test_id)) {
+                            $output .= "<p>این آزمون با موفقیت تکمیل شده است.</p>";
+                            $can_complete = true;
+                        } else {
+                            $test_link = psych_get_test_link($test_id);
+                            $output .= "<p>برای تکمیل این ماموریت، باید در آزمون زیر شرکت کنید:</p>";
+                            $output .= "<a href='" . esc_url($test_link) . "' target='_blank' class='psych-mission-link-btn'>شروع آزمون</a>";
+                        }
+                    } else {
+                        $output .= "<p>خطا: شناسه آزمون مشخص نشده است.</p>";
+                    }
+                } else {
+                    $output .= "<p>خطا: ماژول آزمون‌های روانشناسی به درستی پیکربندی نشده است.</p>";
+                }
+                break;
 
-            case 'referral':  
-                $required_count = intval(str_replace('count:', '', $target));  
-                $current_count = (int) get_user_meta($user_id, PSYCH_PATH_REFERRAL_USER_META_COUNT, true);  
-                $referral_link = add_query_arg(PSYCH_PATH_REFERRAL_COOKIE, $user_id, home_url('/'));  
+            case 'achieve_badge':
+                if (function_exists('psych_user_has_badge') && function_exists('psych_get_badge_name')) {
+                    $badge_id = intval(str_replace('badge_id:', '', $target));
+                    if ($badge_id > 0) {
+                        if (psych_user_has_badge($user_id, $badge_id)) {
+                            $output .= "<p>تبریک! نشان مورد نیاز کسب شده است.</p>";
+                            $can_complete = true;
+                        } else {
+                            $badge_name = psych_get_badge_name($badge_id);
+                            $gamification_center_url = home_url('/gamification-center/');
+                            $output .= "<p>برای تکمیل این ماموریت، باید نشان <strong>'" . esc_html($badge_name) . "'</strong> را کسب کنید.</p>";
+                            $output .= "<a href='" . esc_url($gamification_center_url) . "' target='_blank' class='psych-mission-link-btn'>بررسی نحوه کسب نشان</a>";
+                        }
+                    } else {
+                         $output .= "<p>خطا: شناسه نشان مشخص نشده است.</p>";
+                    }
+                } else {
+                    $output .= "<p>خطا: ماژول گیمیفیکیشن (نشان‌ها) به درستی پیکربندی نشده است.</p>";
+                }
+                break;
 
-                $output .= "<p>تعداد دعوت‌های موفق: <strong>{$current_count} از {$required_count}</strong></p>";  
-                $output .= "<p>لینک دعوت اختصاصی:</p>";  
-                $output .= "<div class='psych-referral-box'>";  
-                $output .= "<input type='text' readonly value='" . esc_url($referral_link) . "' id='psych-referral-link-input-{$station_details['station_node_id']}'>";  
-                $output .= "<button class='psych-copy-btn' data-target='#psych-referral-link-input-{$station_details['station_node_id']}'>کپی</button>";  
-                $output .= "</div>";  
+            case 'share':
+                $share_url = home_url('/');
+                if (strpos($target, 'url:') !== false) {
+                    $share_url = esc_url(str_replace('url:', '', $target));
+                }
 
-                if ($current_count >= $required_count) {  
-                    $output .= "<p style='color:green;'>شما به حد نصاب دعوت رسیده‌اید!</p>";  
-                    $can_complete = true;  
-                }  
-                break;  
+                // Add coach referral to share URL if applicable
+                if ($context['is_impersonating']) {
+                    $share_url = add_query_arg('coach_ref', $context['real_user_id'], $share_url);
+                }
 
-            case 'feedback':  
-                 $required_count = intval(str_replace('count:', '', $target));  
-                 $current_count = (int) get_user_meta($user_id, PSYCH_PATH_FEEDBACK_USER_META_COUNT, true);  
-                 $feedback_link = add_query_arg(['for_user' => $user_id], home_url('/feedback-form/'));  
+                $share_text = urlencode("یک دوره فوق‌العاده پیدا کردم! " . $share_url);
+                $telegram_link = "https://t.me/share/url?url=" . urlencode($share_url) . "&text=" . $share_text;
+                $whatsapp_link = "https://api.whatsapp.com/send?text=" . $share_text;
 
-                 $output .= "<p>تعداد بازخوردهای دریافت شده: <strong>{$current_count} از {$required_count}</strong></p>";  
-                 $output .= "<p>این لینک را برای دوستانی که می‌خواهید از آنها بازخورد بگیرید، ارسال کنید:</p>";  
-                 $output .= "<div class='psych-referral-box'>";  
-                 $output .= "<input type='text' readonly value='" . esc_url($feedback_link) . "' id='psych-feedback-link-input-{$station_details['station_node_id']}'>";  
-                 $output .= "<button class='psych-copy-btn' data-target='#psych-feedback-link-input-{$station_details['station_node_id']}'>کپی</button>";  
-                 $output .= "</div>";  
+                $output .= "<p>برای تکمیل این ماموریت، این صفحه را با دوستانتان به اشتراک بگذارید:</p>";
+                $output .= "<div class='psych-share-buttons'>";
+                $output .= "<a href='{$telegram_link}' target='_blank' class='psych-share-btn telegram'><i class='fab fa-telegram-plane'></i> اشتراک در تلگرام</a>";
+                $output .= "<a href='{$whatsapp_link}' target='_blank' class='psych-share-btn whatsapp'><i class='fab fa-whatsapp'></i> اشتراک در واتس‌اپ</a>";
+                $output .= "</div>";
+                $output .= "<p class='psych-share-notice' style='display:none; color: green; margin-top: 10px;'>عالی! اکنون می‌توانید ماموریت را تکمیل کنید.</p>";
+                $can_complete = true;
+                break;
 
-                 if ($current_count >= $required_count) {  
-                     $output .= "<p style='color:green;'>شما به تعداد بازخورد مورد نیاز رسیده‌اید!</p>";  
-                     $can_complete = true;  
-                 }  
-                 break;  
-        }  
+            case 'referral':
+                $required_count = intval(str_replace('count:', '', $target));
+                $current_count = (int) get_user_meta($user_id, PSYCH_PATH_REFERRAL_USER_META_COUNT, true);
+                $referral_link = add_query_arg(PSYCH_PATH_REFERRAL_COOKIE, $user_id, home_url('/'));
 
-        if ($can_complete) {  
-            $disabled_attr = ($type === 'share') ? 'disabled' : '';  
-            $button_text = $context['is_impersonating'] ? 'تکمیل (نمایش مربی)' : 'تکمیل ماموریت';  
-            $output .= "<button class='psych-complete-mission-btn' {$disabled_attr}>{$button_text}</button>";  
-        }  
+                $output .= "<p>تعداد دعوت‌های موفق: <strong>{$current_count} از {$required_count}</strong></p>";
+                $output .= "<p>لینک دعوت اختصاصی:</p>";
+                $output .= "<div class='psych-referral-box'>";
+                $output .= "<input type='text' readonly value='" . esc_url($referral_link) . "' id='psych-referral-link-input-{$station_details['station_node_id']}'>";
+                $output .= "<button class='psych-copy-btn' data-target='#psych-referral-link-input-{$station_details['station_node_id']}'>کپی</button>";
+                $output .= "</div>";
 
-        $output .= "</div>";  
-        return $output;  
-    }  
+                if ($current_count >= $required_count) {
+                    $output .= "<p style='color:green;'>شما به حد نصاب دعوت رسیده‌اید!</p>";
+                    $can_complete = true;
+                }
+                break;
+
+            case 'feedback':
+                 $required_count = intval(str_replace('count:', '', $target));
+                 $current_count = (int) get_user_meta($user_id, PSYCH_PATH_FEEDBACK_USER_META_COUNT, true);
+                 $feedback_link = add_query_arg(['for_user' => $user_id], home_url('/feedback-form/'));
+
+                 $output .= "<p>تعداد بازخوردهای دریافت شده: <strong>{$current_count} از {$required_count}</strong></p>";
+                 $output .= "<p>این لینک را برای دوستانی که می‌خواهید از آنها بازخورد بگیرید، ارسال کنید:</p>";
+                 $output .= "<div class='psych-referral-box'>";
+                 $output .= "<input type='text' readonly value='" . esc_url($feedback_link) . "' id='psych-feedback-link-input-{$station_details['station_node_id']}'>";
+                 $output .= "<button class='psych-copy-btn' data-target='#psych-feedback-link-input-{$station_details['station_node_id']}'>کپی</button>";
+                 $output .= "</div>";
+
+                 if ($current_count >= $required_count) {
+                     $output .= "<p style='color:green;'>شما به تعداد بازخورد مورد نیاز رسیده‌اید!</p>";
+                     $can_complete = true;
+                 }
+                 break;
+        }
+
+        if ($can_complete) {
+            $disabled_attr = ($type === 'share') ? 'disabled' : '';
+            $button_text = $context['is_impersonating'] ? 'تکمیل (نمایش مربی)' : 'تکمیل ماموریت';
+            $output .= "<button class='psych-complete-mission-btn' {$disabled_attr}>{$button_text}</button>";
+        }
+
+        $output .= "</div>";
+        return $output;
+    }
+
+    /**
+     * AJAX: گرفتن HTML محتوای Inline ایستگاه
+     */
+    public function ajax_get_inline_station_content() {
+        if (!check_ajax_referer(PSYCH_PATH_AJAX_NONCE, 'nonce', false)) {
+            wp_send_json_error(['message' => 'نشست منقضی شده است'], 403);
+        }
+
+        $station_details = json_decode(stripslashes($_POST['station_data'] ?? ''), true);
+        $context = $this->get_viewing_context();
+        $user_id = $context['viewed_user_id'];
+
+        if (!$station_details || !$station_details['station_node_id']) {
+            wp_send_json_error(['message' => 'اطلاعات ایستگاه ناقص است']);
+        }
+
+        // محاسبه وضعیت جدید
+        $station_details = $this->calculate_station_status($user_id, $station_details, true);
+
+        ob_start();
+        echo $this->render_inline_station_content($station_details);
+        $html = ob_get_clean();
+
+        wp_send_json_success(['html' => $html, 'status' => $station_details['status']]);
+    }
 
     /**
  * AJAX handler برای تکمیل ماموریت - نسخه کامل و اصلاح شده
@@ -1077,17 +1085,17 @@ public function ajax_complete_mission() {
     if (!check_ajax_referer(PSYCH_PATH_AJAX_NONCE, 'nonce', false)) {
         wp_send_json_error(['message' => 'نشست شما منقضی شده است. لطفاً صفحه را رفرش کنید.'], 403);
     }
-    
+
     $context = $this->get_viewing_context();
     $user_id = $context['viewed_user_id'];
-    
+
     if (!$user_id) {
         wp_send_json_error(['message' => 'کاربر نامعتبر.'], 401);
     }
 
     $node_id = sanitize_key($_POST['node_id'] ?? '');
     $station_data = json_decode(stripslashes($_POST['station_data'] ?? ''), true);
-    
+
     if (!$node_id || !$station_data) {
         wp_send_json_error(['message' => 'اطلاعات ارسالی نامعتبر است.']);
     }
@@ -1174,7 +1182,7 @@ public function ajax_complete_mission() {
     // 4. اگر شرایط برقرار بود، ماموریت را تکمیل و پاداش‌ها را ارسال کن
     if ($condition_met) {
         $result = $this->mark_station_as_completed($user_id, $node_id, $station_data, true);
-        
+
         if ($result['success']) {
             // Refresh station data to pass to the rendering function
             $station_data['is_completed'] = true;
@@ -1221,14 +1229,14 @@ private function mark_station_as_completed($user_id, $node_id, $station_data, $f
         'completed_by_coach' => $this->get_viewing_context()['is_impersonating']
     ];
     update_user_meta($user_id, PSYCH_PATH_META_COMPLETED, $completed);
-    
+
     $rewards_summary = [];
     if ($fire_rewards) {
         $rewards_summary = $this->process_rewards($user_id, $station_data);
     }
 
     do_action('psych_path_station_completed', $user_id, $node_id, $station_data);
-    
+
     return [
         'success' => true,
         'rewards_summary' => $rewards_summary
@@ -1292,103 +1300,103 @@ private function process_rewards($user_id, $station_data) {
     return $rewards_summary;
 }
 
-    // =====================================================================  
-    // SECTION 4: INTEGRATION HANDLERS (GForm, Referral, Feedback)  
-    // =====================================================================  
+    // =====================================================================
+    // SECTION 4: INTEGRATION HANDLERS (GForm, Referral, Feedback)
+    // =====================================================================
 
-    public function handle_gform_submission($entry, $form) {  
-        if (!class_exists('GFForms')) return;  
-        
-        $station_node_id = '';  
-        foreach ($form['fields'] as $field) {  
-            if (isset($field->inputName) && $field->inputName === 'station_node_id_hidden' ||   
-                isset($field->label) && $field->label === 'station_node_id_hidden') {  
-                $station_node_id = rgar($entry, (string) $field->id);  
-                break;  
-            }  
-        }  
+    public function handle_gform_submission($entry, $form) {
+        if (!class_exists('GFForms')) return;
 
-        if (empty($station_node_id)) return;  
-        
-        $user_id = $entry['created_by'] ?? get_current_user_id();  
-        if (!$user_id) return;  
-        
-        // Set transient for retroactive completion check  
-        $transient_key = "gform_complete_{$user_id}_{$form['id']}";  
-        set_transient($transient_key, $station_node_id, DAY_IN_SECONDS);  
-        
-        // Fire action for other integrations  
-        do_action('psych_path_gform_station_completed', $user_id, $station_node_id, $form['id'], $entry);  
-    }  
-    
-    public function handle_feedback_submission($feedback_giver_id, $user_id_receiving_feedback) {  
-        $count = (int) get_user_meta($user_id_receiving_feedback, PSYCH_PATH_FEEDBACK_USER_META_COUNT, true);  
-        $count++;  
-        update_user_meta($user_id_receiving_feedback, PSYCH_PATH_FEEDBACK_USER_META_COUNT, $count);  
-        
-        // Fire action for other integrations  
-        do_action('psych_path_feedback_count_updated', $user_id_receiving_feedback, $count, $feedback_giver_id);  
-    }  
-    
-    public function capture_referral_code() {  
-        if (isset($_GET[PSYCH_PATH_REFERRAL_COOKIE])) {  
-            $referrer_id = absint($_GET[PSYCH_PATH_REFERRAL_COOKIE]);  
-            if (get_userdata($referrer_id)) {  
-                // Set secure cookie  
-                $cookie_options = [  
-                    'expires' => time() + (30 * DAY_IN_SECONDS),  
-                    'path' => COOKIEPATH,  
-                    'domain' => COOKIE_DOMAIN,  
-                    'secure' => is_ssl(),  
-                    'httponly' => true,  
-                    'samesite' => 'Strict'  
-                ];  
-                
-                if (PHP_VERSION_ID >= 70300) {  
-                    setcookie(PSYCH_PATH_REFERRAL_COOKIE, $referrer_id, $cookie_options);  
-                } else {  
-                    setcookie(PSYCH_PATH_REFERRAL_COOKIE, $referrer_id, $cookie_options['expires'],   
-                             $cookie_options['path'], $cookie_options['domain'],   
-                             $cookie_options['secure'], $cookie_options['httponly']);  
-                }  
-            }  
-        }  
-    }  
+        $station_node_id = '';
+        foreach ($form['fields'] as $field) {
+            if (isset($field->inputName) && $field->inputName === 'station_node_id_hidden' ||
+                isset($field->label) && $field->label === 'station_node_id_hidden') {
+                $station_node_id = rgar($entry, (string) $field->id);
+                break;
+            }
+        }
 
-    public function process_referral_on_registration($new_user_id) {  
-        if (isset($_COOKIE[PSYCH_PATH_REFERRAL_COOKIE])) {  
-            $referrer_id = absint($_COOKIE[PSYCH_PATH_REFERRAL_COOKIE]);  
-            
-            if (get_userdata($referrer_id)) {  
-                // Store who referred the new user  
-                update_user_meta($new_user_id, PSYCH_PATH_REFERRED_BY_USER_META, $referrer_id);  
+        if (empty($station_node_id)) return;
 
-                // Increment the referrer's count  
-                $count = (int) get_user_meta($referrer_id, PSYCH_PATH_REFERRAL_USER_META_COUNT, true);  
-                $count++;  
-                update_user_meta($referrer_id, PSYCH_PATH_REFERRAL_USER_META_COUNT, $count);  
-                
-                // Clear the cookie  
-                setcookie(PSYCH_PATH_REFERRAL_COOKIE, '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN);  
-                
-                // Fire action for other integrations  
-                do_action('psych_path_referral_successful', $referrer_id, $new_user_id, $count);  
-            }  
-        }  
-    }  
+        $user_id = $entry['created_by'] ?? get_current_user_id();
+        if (!$user_id) return;
 
-    // =====================================================================  
-    // SECTION 5: ASSETS & FOOTER ELEMENTS  
-    // =====================================================================  
+        // Set transient for retroactive completion check
+        $transient_key = "gform_complete_{$user_id}_{$form['id']}";
+        set_transient($transient_key, $station_node_id, DAY_IN_SECONDS);
 
-    public function enqueue_assets() {  
-        if ($this->is_shortcode_rendered) {  
-            wp_enqueue_style('font-awesome-psych-path', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css', [], '6.4.0');  
-            wp_enqueue_script('jquery');  
+        // Fire action for other integrations
+        do_action('psych_path_gform_station_completed', $user_id, $station_node_id, $form['id'], $entry);
+    }
+
+    public function handle_feedback_submission($feedback_giver_id, $user_id_receiving_feedback) {
+        $count = (int) get_user_meta($user_id_receiving_feedback, PSYCH_PATH_FEEDBACK_USER_META_COUNT, true);
+        $count++;
+        update_user_meta($user_id_receiving_feedback, PSYCH_PATH_FEEDBACK_USER_META_COUNT, $count);
+
+        // Fire action for other integrations
+        do_action('psych_path_feedback_count_updated', $user_id_receiving_feedback, $count, $feedback_giver_id);
+    }
+
+    public function capture_referral_code() {
+        if (isset($_GET[PSYCH_PATH_REFERRAL_COOKIE])) {
+            $referrer_id = absint($_GET[PSYCH_PATH_REFERRAL_COOKIE]);
+            if (get_userdata($referrer_id)) {
+                // Set secure cookie
+                $cookie_options = [
+                    'expires' => time() + (30 * DAY_IN_SECONDS),
+                    'path' => COOKIEPATH,
+                    'domain' => COOKIE_DOMAIN,
+                    'secure' => is_ssl(),
+                    'httponly' => true,
+                    'samesite' => 'Strict'
+                ];
+
+                if (PHP_VERSION_ID >= 70300) {
+                    setcookie(PSYCH_PATH_REFERRAL_COOKIE, $referrer_id, $cookie_options);
+                } else {
+                    setcookie(PSYCH_PATH_REFERRAL_COOKIE, $referrer_id, $cookie_options['expires'],
+                             $cookie_options['path'], $cookie_options['domain'],
+                             $cookie_options['secure'], $cookie_options['httponly']);
+                }
+            }
+        }
+    }
+
+    public function process_referral_on_registration($new_user_id) {
+        if (isset($_COOKIE[PSYCH_PATH_REFERRAL_COOKIE])) {
+            $referrer_id = absint($_COOKIE[PSYCH_PATH_REFERRAL_COOKIE]);
+
+            if (get_userdata($referrer_id)) {
+                // Store who referred the new user
+                update_user_meta($new_user_id, PSYCH_PATH_REFERRED_BY_USER_META, $referrer_id);
+
+                // Increment the referrer's count
+                $count = (int) get_user_meta($referrer_id, PSYCH_PATH_REFERRAL_USER_META_COUNT, true);
+                $count++;
+                update_user_meta($referrer_id, PSYCH_PATH_REFERRAL_USER_META_COUNT, $count);
+
+                // Clear the cookie
+                setcookie(PSYCH_PATH_REFERRAL_COOKIE, '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN);
+
+                // Fire action for other integrations
+                do_action('psych_path_referral_successful', $referrer_id, $new_user_id, $count);
+            }
+        }
+    }
+
+    // =====================================================================
+    // SECTION 5: ASSETS & FOOTER ELEMENTS
+    // =====================================================================
+
+    public function enqueue_assets() {
+        if ($this->is_shortcode_rendered) {
+            wp_enqueue_style('font-awesome-psych-path', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css', [], '6.4.0');
+            wp_enqueue_script('jquery');
 			        wp_enqueue_script('canvas-confetti', 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js', [], '1.9.3', true);
 
-        }  
-    }  
+        }
+    }
     public function psych_convo_gform_assets() {
     ?>
     <style>
@@ -1466,16 +1474,16 @@ private function process_rewards($user_id, $station_data) {
 
 
 
-        public function render_footer_elements() {  
-        if ($this->is_shortcode_rendered) {  
-            $this->render_station_modal_html_and_css();  
-            $this->render_station_modal_javascript();  
-        }  
-    }  
+        public function render_footer_elements() {
+        if ($this->is_shortcode_rendered) {
+            $this->render_station_modal_html_and_css();
+            $this->render_station_modal_javascript();
+        }
+    }
 
-    private function render_station_modal_html_and_css() {  
-        ?>  
-        <!-- Enhanced Modal with Multiple Display Modes -->  
+    private function render_station_modal_html_and_css() {
+        ?>
+        <!-- Enhanced Modal with Multiple Display Modes -->
         <div class="psych-modal-overlay" id="psych-station-modal" style="display: none;">
         <div class="psych-modal-container">
             <button class="psych-modal-close" title="بستن" aria-label="بستن">
@@ -1488,14 +1496,14 @@ private function process_rewards($user_id, $station_data) {
             <div class="psych-modal-content"></div>
         </div>
     </div>
-    <div id="psych-toast-container"></div>  
+    <div id="psych-toast-container"></div>
 
-        <style>  
-            /* ================================================================= */  
-            /* Enhanced CSS with Mobile-First Approach & Multiple Display Modes */  
-            /* ================================================================= */  
-            
-            /* CSS Variables for Theming (Modern Standard) */  
+        <style>
+            /* ================================================================= */
+            /* Enhanced CSS with Mobile-First Approach & Multiple Display Modes */
+            /* ================================================================= */
+
+            /* CSS Variables for Theming (Modern Standard) */
             /* ================================================================= */
 /* PSYCH PATH ENGINE - COMPLETE CSS STYLES */
 /* ================================================================= */
@@ -2677,7 +2685,7 @@ private function process_rewards($user_id, $station_data) {
     .psych-cards {
         grid-template-columns: repeat(2, 1fr);
     }
-    
+
     .psych-path-container {
         padding: 32px;
     }
@@ -2688,7 +2696,7 @@ private function process_rewards($user_id, $station_data) {
     .psych-cards {
         grid-template-columns: repeat(3, 1fr);
     }
-    
+
     .psych-path-container {
         padding: 40px;
     }
@@ -2699,18 +2707,18 @@ private function process_rewards($user_id, $station_data) {
     .psych-timeline::before {
         left: 20px;
     }
-    
+
     .psych-timeline-item {
         width: calc(100% - 60px);
         margin-left: 60px !important;
         margin-right: 0 !important;
     }
-    
+
     .psych-timeline-item::before {
         left: -50px !important;
         right: auto !important;
     }
-    
+
     .psych-timeline-icon {
         left: -70px !important;
         right: auto !important;
@@ -2723,12 +2731,12 @@ private function process_rewards($user_id, $station_data) {
         margin: 16px;
         max-width: calc(100vw - 32px);
     }
-    
+
     .psych-modal-title {
         font-size: 18px;
         padding: 20px 16px 12px;
     }
-    
+
     .psych-modal-content {
         padding: 16px;
     }
@@ -2768,7 +2776,7 @@ private function process_rewards($user_id, $station_data) {
     .psych-station-action-btn {
         display: none !important;
     }
-    
+
     .psych-timeline-item,
     .psych-card-item,
     .psych-list-item {
@@ -2778,9 +2786,9 @@ private function process_rewards($user_id, $station_data) {
     }
 }
 
-        </style>  
-        <?php  
-    }  
+        </style>
+        <?php
+    }
 
     // فایل: path-engine.php
 
@@ -2795,6 +2803,7 @@ private function render_station_modal_javascript() {
             const modalContent = $('.psych-modal-content');
             let currentStationDetails = null;
             let currentPathContainer = null;
+            let currentButton = null;
 
             function showModal() { modal.fadeIn(300); $('body').addClass('modal-open').css('overflow', 'hidden'); }
             function closeModal() { modal.fadeOut(300); $('body').removeClass('modal-open').css('overflow', ''); }
@@ -2816,7 +2825,7 @@ private function render_station_modal_javascript() {
                     }
                 });
             }
-            
+
             function updateAllUI($pathContainer) {
                 if (!$pathContainer || !$pathContainer.length) return;
 
@@ -2826,7 +2835,7 @@ private function render_station_modal_javascript() {
                 });
 
                 let previousStationCompleted = true;
-                
+
                 $pathContainer.find('[data-station-node-id]').each(function() {
                     const $station = $(this);
                     const details = $station.data('station-details') || {};
@@ -2849,8 +2858,7 @@ private function render_station_modal_javascript() {
                         $station.removeClass('open completed').addClass('locked');
                         $station.find('.psych-status-badge').removeClass('open').addClass('locked').html('<i class="fas fa-lock"></i> قفل');
                         $station.find('.psych-station-action-btn, .psych-accordion-action-btn, .psych-card-action-btn, .psych-list-action-btn').text('قفل').prop('disabled', true);
-                        
-                        // Auto-close accordion if it becomes locked
+
                         if ($station.hasClass('psych-accordion-item')) {
                             const $content = $station.find('.psych-accordion-content');
                             if ($content.is(':visible')) {
@@ -2858,7 +2866,7 @@ private function render_station_modal_javascript() {
                             }
                         }
                     }
-                    
+
                     if (details.unlock_trigger === 'sequential') {
                         previousStationCompleted = userCompletedStations[nodeId] || false;
                     }
@@ -2889,17 +2897,17 @@ private function render_station_modal_javascript() {
 
                         const $stationElement = $pathContainer.find(`[data-station-node-id="${stationDetails.station_node_id}"]`);
 
-                        // If new HTML is provided (for accordion mode), refresh the content
                         if (response.data.new_html) {
                             $stationElement.find('.psych-accordion-mission-content').html(response.data.new_html);
                         }
-                        
+
                         $stationElement.addClass('completed');
                         updateAllUI($pathContainer);
                         showRewardsNotification(response.data.rewards);
-                        
+
+                        $(document).trigger('psych_mission_completed', [stationDetails.station_node_id, $button]);
+
                     } else {
-                        // On failure, restore the button
                         $button.prop('disabled', false).html(originalHtml);
                         alert(response.data.message || 'خطا در تکمیل ماموریت.');
                     }
@@ -2914,12 +2922,13 @@ private function render_station_modal_javascript() {
                 e.preventDefault();
                 const $button = $(this);
                 if ($button.is(':disabled')) return;
-                
+
+                currentButton = $button;
                 currentPathContainer = $button.closest('.psych-path-container');
                 currentStationDetails = $button.closest('[data-station-node-id]').data('station-details');
-                
+
                 if (!currentStationDetails) return;
-                
+
                 modalTitle.text(currentStationDetails.title);
                 modalContent.html('<div class="psych-loading-spinner"></div>');
                 showModal();
@@ -2937,30 +2946,60 @@ private function render_station_modal_javascript() {
             $('body').on('click', '.psych-complete-mission-btn', function(e) {
                 e.preventDefault();
                 if ($(this).is(':disabled')) return;
-                
+
                 let details;
                 let container;
+                let button = $(this);
 
                 if (modal.is(':visible')) {
                     details = currentStationDetails;
                     container = currentPathContainer;
                 } else {
-                    details = $(this).closest('[data-station-node-id]').data('station-details');
-                    container = $(this).closest('.psych-path-container');
+                    details = button.closest('[data-station-node-id]').data('station-details');
+                    container = button.closest('.psych-path-container');
                 }
 
                 if (details && container && container.length) {
-                    completeMission(details, $(this), container);
+                    completeMission(details, button, container);
                 }
             });
-            
-            $('body').on('click', '.psych-accordion-header', function(e) { 
+
+            $('body').on('click', '.psych-accordion-header', function(e) {
                 if ($(e.target).is('button, a')) return;
                 $(this).closest('.psych-accordion-item').find('.psych-accordion-content').slideToggle(300);
             });
-            
+
             $('.psych-modal-close, .psych-modal-overlay').on('click', function(e) { if (e.target === this) closeModal(); });
             $(document).on('keydown', function(e) { if (e.key === "Escape" && modal.is(':visible')) closeModal(); });
+
+            $(document).on('psych_mission_completed', function(e, missionId, buttonEl) {
+                var $stationItem = buttonEl.closest('.psych-accordion-item');
+                if(modal.is(':visible') && currentButton) {
+                    $stationItem = currentButton.closest('.psych-accordion-item');
+                }
+
+                if (!$stationItem || !$stationItem.length) return;
+
+                var $nextStation = $stationItem.next('.psych-accordion-item');
+
+                if ($nextStation.length) {
+                    var stationData = $nextStation.data('station-details');
+
+                    $.post('<?php echo admin_url('admin-ajax.php'); ?>', {
+                        action: 'psych_path_get_inline_station_content',
+                        nonce: '<?php echo wp_create_nonce(PSYCH_PATH_AJAX_NONCE); ?>',
+                        station_data: JSON.stringify(stationData)
+                    }, function(res) {
+                        if (res.success) {
+                            $nextStation.find('.psych-accordion-mission-content').html(res.data.html);
+                            $nextStation.removeClass('locked').addClass(res.data.status);
+                        } else {
+                            alert(res.data.message || 'خطا در بروزرسانی ایستگاه');
+                        }
+                    });
+                }
+            });
+
         });
         </script>
         <?php
@@ -2968,5 +3007,5 @@ private function render_station_modal_javascript() {
 }
 
 // Initialize the enhanced class
-PsychoCourse_Path_Engine_4::get_instance();
+PsychoCourse_Path_Engine::get_instance();
 ?>

@@ -286,6 +286,7 @@ final class Psych_Coach_Module {
         // SECTION 2: ADMIN & DASHBOARD
         add_action('admin_menu', [$this, 'add_coach_management_page']);
         add_action('admin_notices', [$this, 'show_admin_notices']);
+        add_action('wp_ajax_psych_coach_get_students', [$this, 'ajax_get_students_list']);
 
         // SECTION 3: USER PROFILE & ACCESS CONTROL
         add_action('show_user_profile', [$this, 'add_coach_access_control_fields']);
@@ -299,6 +300,7 @@ final class Psych_Coach_Module {
         add_shortcode('user_product_codes', [$this, 'shortcode_user_codes_list']);
         add_shortcode('coach_search_by_code', [$this, 'shortcode_coach_search_by_code']);
         add_shortcode('psych_user_dashboard', [$this, 'shortcode_user_dashboard']);
+        add_shortcode('psych_coach_page', [$this, 'render_coach_page_shortcode']);
 
         // SECTION 5: INTEGRATIONS & DATA HANDLING
         add_action('wp_enqueue_scripts', [$this, 'enqueue_frontend_assets']);
@@ -520,14 +522,33 @@ final class Psych_Coach_Module {
         }
     }
 
+    public function ajax_get_students_list() {
+        if (!current_user_can('manage_options') || !check_ajax_referer('coach_student_filter_nonce', 'nonce', false)) {
+            wp_send_json_error(['message' => 'خطای امنیتی.']);
+        }
+
+        $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
+        $coach_id = isset($_POST['coach_id']) ? intval($_POST['coach_id']) : 0;
+
+        if (!$product_id || !$coach_id) {
+            wp_send_json_error(['message' => 'لطفا دوره و مربی را انتخاب کنید.']);
+        }
+
+        $this->student_list_table = new Psych_Coach_Student_List_Table($product_id, $coach_id);
+        $this->student_list_table->prepare_items();
+
+        ob_start();
+        $this->student_list_table->display();
+        $html = ob_get_clean();
+
+        wp_send_json_success(['html' => $html]);
+    }
+
     public function render_coach_management_page() {
         // The list table object is already instantiated in init_student_list_table
         if ($this->student_list_table) {
             $this->student_list_table->process_bulk_action();
         }
-        
-        $selected_product_id = $this->student_list_table ? $this->student_list_table->product_id : 0;
-        $selected_coach_id = $this->student_list_table ? $this->student_list_table->coach_id : 0;
         
         $products = wc_get_products([
             'limit' => -1, 
@@ -552,45 +573,35 @@ final class Psych_Coach_Module {
                 </ol>
             </div>
             
-            <form method="get">
-                <input type="hidden" name="page" value="<?php echo esc_attr($_REQUEST['page']); ?>">
+            <form id="coach-student-filter-form">
+                <?php wp_nonce_field('coach_student_filter_nonce', 'coach_student_filter_nonce'); ?>
                 <div class="psych-filters">
-                    <select name="product_id" required>
+                    <select name="product_id" id="psych-product-id" required>
                         <option value="">-- انتخاب دوره/تست --</option>
                         <?php foreach ($products as $product) : ?>
-                            <option value="<?php echo esc_attr($product->get_id()); ?>" 
-                                    <?php selected($selected_product_id, $product->get_id()); ?>>
+                            <option value="<?php echo esc_attr($product->get_id()); ?>">
                                 <?php echo esc_html($product->get_name()); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
                     
-                    <select name="coach_id" required>
+                    <select name="coach_id" id="psych-coach-id" required>
                         <option value="">-- انتخاب مربی --</option>
                         <?php foreach ($coaches as $coach) : ?>
-                            <option value="<?php echo esc_attr($coach->ID); ?>" 
-                                    <?php selected($selected_coach_id, $coach->ID); ?>>
+                            <option value="<?php echo esc_attr($coach->ID); ?>">
                                 <?php echo esc_html($coach->display_name); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
                     
-                    <?php submit_button('نمایش دانشجویان', 'primary', 'filter_action', false); ?>
+                    <button type="submit" id="filter-students-btn" class="button button-primary">نمایش دانشجویان</button>
                 </div>
             </form>
             
-            <?php if ($selected_product_id && $selected_coach_id && $this->student_list_table) : ?>
-                <form method="post">
-                     <input type="hidden" name="page" value="<?php echo esc_attr($_REQUEST['page']); ?>">
-                     <input type="hidden" name="product_id" value="<?php echo esc_attr($selected_product_id); ?>">
-                     <input type="hidden" name="coach_id" value="<?php echo esc_attr($selected_coach_id); ?>">
-                    <?php
-                    $this->student_list_table->prepare_items();
-                    $this->student_list_table->search_box('جستجو (نام، ایمیل، موبایل)', 'student_search');
-                    $this->student_list_table->display();
-                    ?>
-                </form>
-            <?php endif; ?>
+            <div id="student-list-container">
+                <!-- Student list table will be loaded here via AJAX -->
+                <p class="initial-message">برای شروع، یک دوره و یک مربی را انتخاب کرده و روی دکمه "نمایش دانشجویان" کلیک کنید.</p>
+            </div>
         </div>
         <?php
     }
@@ -828,6 +839,87 @@ final class Psych_Coach_Module {
                     <?php echo $this->render_notebook_section($user_id); ?>
                 </div>
             </div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    public function render_coach_page_shortcode($atts, $content = null) {
+        $context = $this->get_viewing_context();
+        if ($context['is_impersonating'] || !is_user_logged_in()) {
+            return '<p>برای مشاهده این صفحه باید به عنوان مربی وارد شوید.</p>';
+        }
+
+        $coach_id = get_current_user_id();
+        $user_obj = get_userdata($coach_id);
+        if (!$user_obj || empty(array_intersect($this->coach_roles, (array)$user_obj->roles))) {
+            return '<!-- Content only visible to coaches -->';
+        }
+
+        $atts = shortcode_atts([
+            'product_id' => 0,
+        ], $atts, 'psych_coach_page');
+
+        $product_id = intval($atts['product_id']);
+
+        global $wpdb;
+        $meta_key_pattern = 'psych_assigned_coach_for_product_%';
+        if ($product_id > 0) {
+            $meta_key_pattern = 'psych_assigned_coach_for_product_' . $product_id;
+        }
+
+        $assigned_students_meta = $wpdb->get_results($wpdb->prepare(
+            "SELECT user_id, meta_key FROM {$wpdb->usermeta} WHERE meta_key LIKE %s AND meta_value = %d",
+            $meta_key_pattern, $coach_id
+        ));
+
+        if (empty($assigned_students_meta)) {
+            return '<p>در حال حاضر هیچ دانشجویی به شما تخصیص داده نشده است.</p>';
+        }
+
+        $students = [];
+        foreach ($assigned_students_meta as $meta) {
+            $user_info = get_userdata($meta->user_id);
+            if ($user_info) {
+                $product_id_from_key = (int) str_replace('psych_assigned_coach_for_product_', '', $meta->meta_key);
+                $students[] = [
+                    'user' => $user_info,
+                    'product_id' => $product_id_from_key,
+                    'product_name' => get_the_title($product_id_from_key) ?: 'نامشخص'
+                ];
+            }
+        }
+
+        usort($students, function($a, $b) {
+            return strcmp($a['user']->display_name, $b['user']->display_name);
+        });
+
+        ob_start();
+        ?>
+        <div class="psych-coach-student-list">
+            <h3>لیست دانشجویان شما</h3>
+            <table class="coach-students-table">
+                <thead>
+                    <tr>
+                        <th>نام دانشجو</th>
+                        <th>دوره/محصول</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($students as $student_data) : ?>
+                        <tr>
+                            <td><?php echo esc_html($student_data['user']->display_name); ?></td>
+                            <td><?php echo esc_html($student_data['product_name']); ?></td>
+                            <td>
+                                <a href="<?php echo esc_url(add_query_arg('seeas', $student_data['user']->ID)); ?>" class="button-impersonate">
+                                    مشاهده به جای کاربر
+                                </a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
         <?php
         return ob_get_clean();
@@ -1098,9 +1190,56 @@ final class Psych_Coach_Module {
                     width: 100%;
                 }
             }
+            #student-list-container .initial-message {
+                padding: 20px;
+                background: #f0f0f0;
+                border: 1px solid #ddd;
+                text-align: center;
+            }
+            #student-list-container .spinner {
+                visibility: visible !important;
+                float: none;
+                margin: 20px auto;
+                display: block;
+            }
         ";
         
         wp_add_inline_style('wp-admin', $css);
+
+        $js = "
+        jQuery(document).ready(function($) {
+            $('#coach-student-filter-form').on('submit', function(e) {
+                e.preventDefault();
+
+                const container = $('#student-list-container');
+                const button = $('#filter-students-btn');
+                const originalButtonText = button.html();
+
+                container.html('<div class=\"spinner is-active\"></div>');
+                button.html('در حال بارگذاری...').prop('disabled', true);
+
+                const data = {
+                    action: 'psych_coach_get_students',
+                    nonce: $('#coach_student_filter_nonce').val(),
+                    product_id: $('#psych-product-id').val(),
+                    coach_id: $('#psych-coach-id').val()
+                };
+
+                $.post(ajaxurl, data, function(response) {
+                    if (response.success) {
+                        container.html(response.data.html);
+                    } else {
+                        container.html('<div class=\"notice notice-error\"><p>' + response.data.message + '</p></div>');
+                    }
+                }).fail(function() {
+                    container.html('<div class=\"notice notice-error\"><p>خطای ناشناخته در ارتباط با سرور.</p></div>');
+                }).always(function() {
+                    button.html(originalButtonText).prop('disabled', false);
+                });
+            });
+        });
+        ";
+        wp_add_inline_script('jquery-core', $js);
     }
 }
 
