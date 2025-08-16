@@ -630,7 +630,7 @@ final class Psych_Coach_Module {
                         <option value="">-- انتخاب مربی --</option>
                         <?php foreach ($coaches as $coach) : ?>
                             <option value="<?php echo esc_attr($coach->ID); ?>">
-                                <?php echo esc_html($coach->display_name); ?>
+                                <?php echo esc_html($coach->display_name . ' (' . $coach->user_email . ')'); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>

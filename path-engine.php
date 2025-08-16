@@ -1069,13 +1069,17 @@ public function register_result_content($atts, $content = null) {
 
         // محاسبه وضعیت جدید
         $station_details = $this->calculate_station_status($user_id, $station_details, true);
-        $station_details['is_unlocked'] = true; // Force unlock for this specific AJAX context
 
         ob_start();
         echo $this->render_inline_station_content($station_details);
         $html = ob_get_clean();
 
-        wp_send_json_success(['html' => $html, 'status' => $station_details['status']]);
+        // Send back the full updated station data along with the HTML
+        wp_send_json_success([
+            'html' => $html,
+            'status' => $station_details['status'],
+            'station_data' => $station_details
+        ]);
     }
 
     /**
@@ -3007,7 +3011,7 @@ private function render_station_modal_javascript() {
 
                 var $nextStation = $stationItem.next('.psych-accordion-item');
 
-                if ($nextStation.length) {
+                if ($nextStation.length && $nextStation.hasClass('locked')) {
                     var stationData = $nextStation.data('station-details');
 
                     $.post('<?php echo admin_url('admin-ajax.php'); ?>', {
@@ -3016,8 +3020,16 @@ private function render_station_modal_javascript() {
                         station_data: JSON.stringify(stationData)
                     }, function(res) {
                         if (res.success) {
+                            // Update the data attribute with the fresh data from the server
+                            $nextStation.data('station-details', res.data.station_data);
+                            $nextStation.attr('data-station-details', JSON.stringify(res.data.station_data));
+
+                            // Replace the content
                             $nextStation.find('.psych-accordion-mission-content').html(res.data.html);
-                            $nextStation.removeClass('locked').addClass(res.data.status);
+
+                            // Update the status class and badge
+                            $nextStation.removeClass('locked completed').addClass(res.data.status);
+                            $nextStation.find('.psych-status-badge').removeClass('locked').addClass(res.data.status).html('<i class="fas fa-unlock"></i> باز');
                         } else {
                             alert(res.data.message || 'خطا در بروزرسانی ایستگاه');
                         }
