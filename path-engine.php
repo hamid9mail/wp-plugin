@@ -1069,6 +1069,7 @@ public function register_result_content($atts, $content = null) {
 
         // محاسبه وضعیت جدید
         $station_details = $this->calculate_station_status($user_id, $station_details, true);
+        $station_details['is_unlocked'] = true; // Force unlock for this specific AJAX context
 
         ob_start();
         echo $this->render_inline_station_content($station_details);

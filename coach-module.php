@@ -287,6 +287,7 @@ final class Psych_Coach_Module {
         add_action('admin_menu', [$this, 'add_coach_management_page']);
         add_action('admin_notices', [$this, 'show_admin_notices']);
         add_action('wp_ajax_psych_coach_get_students', [$this, 'ajax_get_students_list']);
+        add_action('wp_ajax_psych_coach_bulk_assign', [$this, 'ajax_bulk_assign']);
 
         // SECTION 3: USER PROFILE & ACCESS CONTROL
         add_action('show_user_profile', [$this, 'add_coach_access_control_fields']);
@@ -542,6 +543,47 @@ final class Psych_Coach_Module {
         $html = ob_get_clean();
 
         wp_send_json_success(['html' => $html]);
+    }
+
+    public function ajax_bulk_assign() {
+        if (!current_user_can('manage_options') || !check_ajax_referer('coach_student_filter_nonce', 'nonce', false)) {
+            wp_send_json_error(['message' => 'خطای امنیتی.']);
+        }
+
+        $student_ids = isset($_POST['student_ids']) ? array_map('intval', $_POST['student_ids']) : [];
+        $action = isset($_POST['action2']) && $_POST['action2'] !== '-1' ? sanitize_key($_POST['action2']) : (isset($_POST['action']) && $_POST['action'] !== '-1' ? sanitize_key($_POST['action']) : '');
+        $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
+        $coach_id = isset($_POST['coach_id']) ? intval($_POST['coach_id']) : 0;
+
+        if (empty($student_ids) || empty($action) || !$product_id || !$coach_id) {
+            wp_send_json_error(['message' => 'اطلاعات ناقص است. لطفاً دانشجو و عملیات مورد نظر را انتخاب کنید.']);
+        }
+
+        $meta_key = 'psych_assigned_coach_for_product_' . $product_id;
+        $success_count = 0;
+
+        foreach ($student_ids as $student_id) {
+            if (!get_userdata($student_id)) continue;
+
+            if ('assign' === $action) {
+                update_user_meta($student_id, $meta_key, $coach_id);
+                do_action('psych_coach_student_assigned', $student_id, $coach_id, $product_id);
+                $success_count++;
+            }
+
+            if ('unassign' === $action && get_user_meta($student_id, $meta_key, true) == $coach_id) {
+                delete_user_meta($student_id, $meta_key);
+                do_action('psych_coach_student_unassigned', $student_id, $coach_id, $product_id);
+                $success_count++;
+            }
+        }
+
+        if ($success_count > 0) {
+            $message = sprintf('%d دانشجو با موفقیت پردازش شد.', $success_count);
+            wp_send_json_success(['message' => $message]);
+        } else {
+            wp_send_json_error(['message' => 'هیچ تغییری اعمال نشد. ممکن است دانشجویان قبلاً به مربی دیگری تخصیص داده شده باشند.']);
+        }
     }
 
     public function render_coach_management_page() {
@@ -1207,6 +1249,7 @@ final class Psych_Coach_Module {
 
         $js = "
         jQuery(document).ready(function($) {
+            // Handle the main filter form submission
             $('#coach-student-filter-form').on('submit', function(e) {
                 e.preventDefault();
 
@@ -1228,12 +1271,49 @@ final class Psych_Coach_Module {
                     if (response.success) {
                         container.html(response.data.html);
                     } else {
-                        container.html('<div class=\"notice notice-error\"><p>' + response.data.message + '</p></div>');
+                        container.html('<div class=\"notice notice-error is-dismissible\"><p>' + response.data.message + '</p></div>');
                     }
                 }).fail(function() {
-                    container.html('<div class=\"notice notice-error\"><p>خطای ناشناخته در ارتباط با سرور.</p></div>');
+                    container.html('<div class=\"notice notice-error is-dismissible\"><p>خطای ناشناخته در ارتباط با سرور.</p></div>');
                 }).always(function() {
                     button.html(originalButtonText).prop('disabled', false);
+                });
+            });
+
+            // Handle the bulk actions form submission using event delegation
+            $('#student-list-container').on('submit', 'form', function(e) {
+                e.preventDefault();
+
+                const form = $(this);
+                const container = $('#student-list-container');
+                const filterButton = $('#filter-students-btn');
+
+                // Add a spinner to the bulk action button
+                form.find('.button.action').after('<span class=\"spinner is-active\" style=\"float:none; vertical-align: middle;\"></span>').prop('disabled', true);
+
+                let formData = form.serialize();
+                // Add product_id and coach_id from the main filter form
+                formData += '&product_id=' + $('#psych-product-id').val();
+                formData += '&coach_id=' + $('#psych-coach-id').val();
+                formData += '&action=psych_coach_bulk_assign';
+                formData += '&nonce=' + $('#coach_student_filter_nonce').val();
+
+                $.post(ajaxurl, formData, function(response) {
+                    // Remove the old notice if it exists
+                    $('.psych-bulk-notice').remove();
+
+                    let noticeClass = response.success ? 'notice-success' : 'notice-error';
+                    let noticeMessage = response.success ? response.data.message : response.data.message;
+
+                    // Display a new notice
+                    $('#coach-student-filter-form').after('<div class=\"notice ' + noticeClass + ' is-dismissible psych-bulk-notice\"><p>' + noticeMessage + '</p></div>');
+
+                    // Refresh the list
+                    filterButton.trigger('submit');
+
+                }).fail(function() {
+                    $('.psych-bulk-notice').remove();
+                    $('#coach-student-filter-form').after('<div class=\"notice notice-error is-dismissible psych-bulk-notice\"><p>خطای ناشناخته در ارتباط با سرور.</p></div>');
                 });
             });
         });
