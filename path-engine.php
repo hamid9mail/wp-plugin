@@ -558,9 +558,12 @@ public function register_result_content($atts, $content = null) {
             'mission_type'        => 'button_click', // button_click, gform, purchase, ...
             'mission_target'      => '',
             'mission_button_text' => 'مشاهده ماموریت',
-            'rewards'             => '', // add_points:10|award_badge:5|send_sms:template_name
-            'notification_text'   => '', // Custom notification text
-            'gform_mode'          => '', // ← اضافه کن! مقدار پیش‌فرض خالی (خودت میتوانی conversational کنی)
+            'rewards'             => '',
+            'notification_text'   => '',
+            'unlock_condition'    => '', // e.g., has_badge:pro|min_points:500
+            'relation'            => 'AND', // AND or OR
+            'user_meta_value'     => '', // for use with user_meta_key in unlock_condition
+            'gform_mode'          => ''
         ], $station_data['atts']);
 
         // فارغ از اینکه ایستگاه چه نوعی است، این خصوصیت انتقال پیدا می‌کند
@@ -586,36 +589,104 @@ public function register_result_content($atts, $content = null) {
 }
 
     private function calculate_station_status($user_id, $atts, $previous_station_completed) {
-    $node_id = $atts['station_node_id'];
-    $atts['is_completed'] = $this->is_station_completed($user_id, $node_id, $atts);
+        $node_id = $atts['station_node_id'];
+        $atts['is_completed'] = $this->is_station_completed($user_id, $node_id, $atts);
 
-    // فیلتر دسترسی مربی یا هر شرط دیگری را اول اعمال کن
-    $can_access = apply_filters('psych_path_can_view_station', true, $user_id, $atts);
+        // New: Check for custom unlock conditions
+        $custom_conditions_met = $this->check_unlock_conditions($user_id, $atts);
 
-    $status = 'locked';
-    $is_unlocked = false;
+        // Original access filter (for coaches, etc.)
+        $can_access = apply_filters('psych_path_can_view_station', true, $user_id, $atts);
 
-    // شرط باز بودن: ایستگاه قبلی تکمیل شده باشد (یا مستقل باشد) و کاربر دسترسی داشته باشد
-    $is_ready_to_unlock = ($atts['unlock_trigger'] === 'independent' || $previous_station_completed);
-
-    if ($atts['is_completed']) {
-        $status = 'completed';
-        $is_unlocked = true;
-    } elseif (!$can_access) {
-        // اگر کاربر دسترسی ندارد، وضعیت همیشه قفل است
         $status = 'locked';
         $is_unlocked = false;
-    } elseif ($is_ready_to_unlock) {
-        // اگر دسترسی دارد و آماده باز شدن است
-        $status = 'open';
-        $is_unlocked = true;
+
+        // An station is ready to be unlocked if its trigger is met (sequential or independent)
+        $is_ready_to_unlock = ($atts['unlock_trigger'] === 'independent' || $previous_station_completed);
+
+        if ($atts['is_completed']) {
+            $status = 'completed';
+            $is_unlocked = true;
+        } elseif (!$can_access) {
+            $status = 'restricted'; // A more descriptive status for this case
+            $is_unlocked = false;
+        } elseif ($is_ready_to_unlock && $custom_conditions_met) {
+            // It's ready AND it meets custom conditions
+            $status = 'open';
+            $is_unlocked = true;
+        } else {
+            // It's either not ready sequentially, or it doesn't meet custom conditions
+            $status = 'locked';
+            $is_unlocked = false;
+        }
+
+        $atts['status'] = $status;
+        $atts['is_unlocked'] = $is_unlocked;
+
+        return $atts;
     }
 
-    $atts['status'] = $status;
-    $atts['is_unlocked'] = $is_unlocked;
+    private function check_unlock_conditions($user_id, $station_atts) {
+        if (empty($station_atts['unlock_condition'])) {
+            return true; // No conditions, so it's met by default
+        }
 
-    return $atts;
-}
+        $conditions_string = $station_atts['unlock_condition'];
+        $relation = strtoupper($station_atts['relation'] ?? 'AND');
+        $conditions = explode('|', $conditions_string);
+
+        $results = [];
+
+        foreach ($conditions as $condition) {
+            $parts = explode(':', $condition, 2);
+            $key = trim($parts[0]);
+            $value = trim($parts[1] ?? '');
+            $result = false;
+
+            switch ($key) {
+                case 'has_badge':
+                    if (function_exists('psych_user_has_badge')) {
+                        $result = psych_user_has_badge($user_id, $value);
+                    }
+                    break;
+                case 'missing_badge':
+                    if (function_exists('psych_user_has_badge')) {
+                        $result = !psych_user_has_badge($user_id, $value);
+                    }
+                    break;
+                case 'min_points':
+                    $points = (int) get_user_meta($user_id, 'psych_total_points', true);
+                    $result = ($points >= (int)$value);
+                    break;
+                case 'max_points':
+                    $points = (int) get_user_meta($user_id, 'psych_total_points', true);
+                    $result = ($points <= (int)$value);
+                    break;
+                case 'user_level':
+                     if (function_exists('psych_gamification_get_user_level')) {
+                        $level = psych_gamification_get_user_level($user_id);
+                        $result = (is_array($level) && strtolower($level['name']) === strtolower($value));
+                    }
+                    break;
+                case 'user_meta_key':
+                    $meta_value = get_user_meta($user_id, $value, true);
+                    $check_value = $station_atts['user_meta_value'] ?? '';
+                    $result = ($meta_value == $check_value);
+                    break;
+            }
+            $results[] = $result;
+        }
+
+        if (empty($results)) {
+            return true; // No valid conditions found
+        }
+
+        if ($relation === 'OR') {
+            return in_array(true, $results, true);
+        } else { // AND is the default
+            return !in_array(false, $results, true);
+        }
+    }
 
     private function is_station_completed($user_id, $node_id, $station_atts) {
         $completed_stations = get_user_meta($user_id, PSYCH_PATH_META_COMPLETED, true) ?: [];
