@@ -242,7 +242,8 @@ final class Psych_Complete_System_Enhanced {
             'interactive-content.php' => 'Psych_Interactive_Content_Module',
             'report-card.php' => 'Psych_Unified_Report_Card_Enhanced',
             'dashboard-display.php' => 'Psych_Dashboard_Display_Enhanced',
-            'personalization-module.php' => 'Psych_Personalization_Module'
+            'personalization-module.php' => 'Psych_Personalization_Module',
+            'admin-dashboard-module.php' => 'Psych_Admin_Dashboard_Module'
         ];
 
         foreach ($modules_to_load as $file => $class) {
@@ -280,7 +281,8 @@ final class Psych_Complete_System_Enhanced {
             'interactive_content' => 'Psych_Interactive_Content_Module',
             'report_card' => 'Psych_Unified_Report_Card_Enhanced',
             'dashboard' => 'Psych_Dashboard_Display_Enhanced',
-            'personalization' => 'Psych_Personalization_Module'
+            'personalization' => 'Psych_Personalization_Module',
+            'admin_dashboard' => 'Psych_Admin_Dashboard_Module'
         ];
 
         foreach ($initialization_order as $module_key => $class_name) {
@@ -290,6 +292,11 @@ final class Psych_Complete_System_Enhanced {
                         $this->modules[$module_key] = $class_name::get_instance();
                     } else {
                         $this->modules[$module_key] = new $class_name();
+                    }
+
+                    // Call init method if it exists
+                    if (method_exists($this->modules[$module_key], 'init')) {
+                        $this->modules[$module_key]->init();
                     }
                     
                     do_action("psych_{$module_key}_initialized", $this->modules[$module_key]);
