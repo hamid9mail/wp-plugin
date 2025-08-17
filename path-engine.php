@@ -1158,23 +1158,25 @@ public function register_result_content($atts, $content = null) {
  * AJAX handler برای تکمیل ماموریت - نسخه کامل و اصلاح شده
  */
 public function ajax_complete_mission() {
-    // 1. بررسی‌های امنیتی و اعتبارسنجی اولیه
+    // 1. Security and initial validation
     if (!check_ajax_referer(PSYCH_PATH_AJAX_NONCE, 'nonce', false)) {
-        wp_send_json_error(['message' => 'نشست شما منقضی شده است. لطفاً صفحه را رفرش کنید.'], 403);
+        wp_send_json_error(['message' => 'Session expired. Please refresh the page.'], 403);
     }
 
     $context = $this->get_viewing_context();
     $user_id = $context['viewed_user_id'];
 
     if (!$user_id) {
-        wp_send_json_error(['message' => 'کاربر نامعتبر.'], 401);
+        wp_send_json_error(['message' => 'Invalid user.'], 401);
     }
 
     $node_id = sanitize_key($_POST['node_id'] ?? '');
     $station_data = json_decode(stripslashes($_POST['station_data'] ?? ''), true);
+    // New: Get custom rewards from the button click
+    $custom_rewards = isset($_POST['custom_rewards']) ? sanitize_text_field($_POST['custom_rewards']) : null;
 
     if (!$node_id || !$station_data) {
-        wp_send_json_error(['message' => 'اطلاعات ارسالی نامعتبر است.']);
+        wp_send_json_error(['message' => 'Invalid data sent.']);
     }
 
     // 2. بررسی اینکه ماموریت قبلاً تکمیل نشده باشد
@@ -1258,7 +1260,7 @@ public function ajax_complete_mission() {
 
     // 4. اگر شرایط برقرار بود، ماموریت را تکمیل و پاداش‌ها را ارسال کن
     if ($condition_met) {
-        $result = $this->mark_station_as_completed($user_id, $node_id, $station_data, true);
+        $result = $this->mark_station_as_completed($user_id, $node_id, $station_data, true, $custom_rewards);
 
         if ($result['success']) {
             // Refresh station data to pass to the rendering function
@@ -1294,7 +1296,7 @@ public function ajax_complete_mission() {
  */
 // فایل: path-engine.php
 
-private function mark_station_as_completed($user_id, $node_id, $station_data, $fire_rewards = true) {
+private function mark_station_as_completed($user_id, $node_id, $station_data, $fire_rewards = true, $custom_rewards = null) {
     $completed = get_user_meta($user_id, PSYCH_PATH_META_COMPLETED, true) ?: [];
     if (isset($completed[$node_id])) {
         return ['success' => false];
@@ -1309,7 +1311,8 @@ private function mark_station_as_completed($user_id, $node_id, $station_data, $f
 
     $rewards_summary = [];
     if ($fire_rewards) {
-        $rewards_summary = $this->process_rewards($user_id, $station_data);
+        // Pass the custom rewards string to the processor
+        $rewards_summary = $this->process_rewards($user_id, $station_data, $custom_rewards);
     }
 
     do_action('psych_path_station_completed', $user_id, $node_id, $station_data);
@@ -1349,13 +1352,16 @@ public function public_mark_station_as_completed($user_id, $node_id, $station_da
  */
 // فایل: path-engine.php
 
-private function process_rewards($user_id, $station_data) {
-    if (empty($station_data['rewards'])) {
+private function process_rewards($user_id, $station_data, $custom_rewards = null) {
+    // Use custom rewards from button if available, otherwise use station's default rewards
+    $rewards_string = !empty($custom_rewards) ? $custom_rewards : ($station_data['rewards'] ?? '');
+
+    if (empty($rewards_string)) {
         return [];
     }
 
     $rewards_summary = [];
-    $rewards = explode('|', $station_data['rewards']);
+    $rewards = explode('|', $rewards_string);
     $custom_notification = $station_data['notification_text'] ?? null;
 
     foreach ($rewards as $reward) {
@@ -2971,6 +2977,11 @@ private function render_station_modal_javascript() {
             formData.append('nonce', '<?php echo wp_create_nonce(PSYCH_PATH_AJAX_NONCE); ?>');
             formData.append('node_id', stationDetails.station_node_id);
             formData.append('station_data', JSON.stringify(stationDetails));
+
+            // New: Add custom rewards from button if it exists
+            if (button.hasAttribute('data-rewards')) {
+                formData.append('custom_rewards', button.getAttribute('data-rewards'));
+            }
 
             fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
                 .then(response => response.json())
