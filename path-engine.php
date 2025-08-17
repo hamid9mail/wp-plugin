@@ -559,6 +559,7 @@ public function register_result_content($atts, $content = null) {
             'mission_target'      => '',
             'mission_button_text' => 'مشاهده ماموریت',
             'rewards'             => '', // add_points:10|award_badge:5|send_sms:template_name
+            'notification_text'   => '', // Custom notification text
             'gform_mode'          => '', // ← اضافه کن! مقدار پیش‌فرض خالی (خودت میتوانی conversational کنی)
         ], $station_data['atts']);
 
@@ -1284,6 +1285,7 @@ private function process_rewards($user_id, $station_data) {
 
     $rewards_summary = [];
     $rewards = explode('|', $station_data['rewards']);
+    $custom_notification = $station_data['notification_text'] ?? null;
 
     foreach ($rewards as $reward) {
         $parts = explode(':', $reward, 2);
@@ -1296,7 +1298,7 @@ private function process_rewards($user_id, $station_data) {
                 if (function_exists('psych_gamification_add_points')) {
                     $points = intval($value);
                     if ($points > 0) {
-                        psych_gamification_add_points($user_id, $points, $reason);
+                        psych_gamification_add_points($user_id, $points, $reason, $custom_notification);
                         $rewards_summary['points'] = $points;
                     }
                 }
@@ -1306,7 +1308,7 @@ private function process_rewards($user_id, $station_data) {
                 if (function_exists('psych_award_badge_to_user') && function_exists('psych_get_badge_name')) {
                     $badge_id = intval($value);
                     if ($badge_id > 0) {
-                        psych_award_badge_to_user($user_id, $badge_id);
+                        psych_award_badge_to_user($user_id, $badge_id, $custom_notification);
                         $rewards_summary['badge'] = psych_get_badge_name($badge_id);
                     }
                 }
