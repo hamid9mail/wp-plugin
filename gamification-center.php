@@ -297,12 +297,6 @@ final class Psych_Gamification_Center {
     public function add_admin_menu() {
         // The main page is now a submenu of the main system.
         add_submenu_page('psych-system', 'مرکز گیمیفیکیشن', 'گیمیفیکیشن', 'manage_options', $this->admin_page_slug, [$this, 'render_admin_page']);
-
-        // These are now submenus of the gamification page itself, which is fine.
-        add_submenu_page($this->admin_page_slug, 'سطوح', 'سطوح', 'manage_options', $this->admin_page_slug . '_levels', [$this, 'render_levels_page']);
-        add_submenu_page($this->admin_page_slug, 'نشان‌ها', 'نشان‌ها', 'manage_options', $this->admin_page_slug . '_badges', [$this, 'render_badges_page']);
-        add_submenu_page($this->admin_page_slug, 'قالب‌های پیامک', 'قالب‌های پیامک', 'manage_options', $this->admin_page_slug . '_sms', [$this, 'render_sms_templates_page']);
-        add_submenu_page($this->admin_page_slug, 'اعطای دستی', 'اعطای دستی', 'manage_options', $this->admin_page_slug . '_manual', [$this, 'render_manual_award_page']);
     }
 
     public function render_admin_page() {
@@ -313,26 +307,42 @@ final class Psych_Gamification_Center {
         $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'overview';
         ?>
         <div class="wrap psych-admin-wrap">
-            <h1><i class="dashicons-before dashicons-star-filled"></i> مرکز گیمیفیکیشن (Enhanced Integration)</h1>
-            <p>مدیریت جامع سیستم گیمیفیکیشن با پشتیبانی کامل از Coach Module، Path Engine و Interactive Content</p>
+            <h1><i class="dashicons-before dashicons-star-filled"></i> مرکز گیمیفیکیشن</h1>
             
             <nav class="nav-tab-wrapper">
                 <a href="?page=<?php echo $this->admin_page_slug; ?>&tab=overview" class="nav-tab <?php echo $active_tab == 'overview' ? 'nav-tab-active' : ''; ?>">نمای کلی</a>
-                <a href="?page=<?php echo $this->admin_page_slug; ?>&tab=settings" class="nav-tab <?php echo $active_tab == 'settings' ? 'nav-tab-active' : ''; ?>">تنظیمات</a>
+                <a href="?page=<?php echo $this->admin_page_slug; ?>&tab=settings" class="nav-tab <?php echo $active_tab == 'settings' ? 'nav-tab-active' : ''; ?>">تنظیمات عمومی</a>
+                <a href="?page=<?php echo $this->admin_page_slug; ?>&tab=levels" class="nav-tab <?php echo $active_tab == 'levels' ? 'nav-tab-active' : ''; ?>">سطوح</a>
+                <a href="?page=<?php echo $this->admin_page_slug; ?>&tab=badges" class="nav-tab <?php echo $active_tab == 'badges' ? 'nav-tab-active' : ''; ?>">نشان‌ها</a>
+                <a href="?page=<?php echo $this->admin_page_slug; ?>&tab=sms_templates" class="nav-tab <?php echo $active_tab == 'sms_templates' ? 'nav-tab-active' : ''; ?>">قالب‌های پیامک</a>
+                <a href="?page=<?php echo $this->admin_page_slug; ?>&tab=manual_award" class="nav-tab <?php echo $active_tab == 'manual_award' ? 'nav-tab-active' : ''; ?>">اعطای دستی</a>
                 <a href="?page=<?php echo $this->admin_page_slug; ?>&tab=stats" class="nav-tab <?php echo $active_tab == 'stats' ? 'nav-tab-active' : ''; ?>">آمار</a>
             </nav>
 
-            <div class="tab-content">
+            <div class="tab-content" style="margin-top: 20px;">
                 <?php
                 switch ($active_tab) {
-                    case 'overview':
-                        $this->render_overview_tab();
-                        break;
                     case 'settings':
                         $this->render_settings_tab();
                         break;
+                    case 'levels':
+                        $this->render_levels_page();
+                        break;
+                    case 'badges':
+                        $this->render_badges_page();
+                        break;
+                    case 'sms_templates':
+                        $this->render_sms_templates_page();
+                        break;
+                    case 'manual_award':
+                        $this->render_manual_award_page();
+                        break;
                     case 'stats':
                         $this->render_stats_tab();
+                        break;
+                    case 'overview':
+                    default:
+                        $this->render_overview_tab();
                         break;
                 }
                 ?>
