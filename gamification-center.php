@@ -304,7 +304,10 @@ final class Psych_Gamification_Center {
     // =====================================================================
 
     public function add_admin_menu() {
-        add_menu_page('مرکز گیمیفیکیشن', 'گیمیفیکیشن', 'manage_options', $this->admin_page_slug, [$this, 'render_admin_page'], 'dashicons-star-filled', 56);
+        // The main page is now a submenu of the main system.
+        add_submenu_page('psych-system', 'مرکز گیمیفیکیشن', 'گیمیفیکیشن', 'manage_options', $this->admin_page_slug, [$this, 'render_admin_page']);
+
+        // These are now submenus of the gamification page itself, which is fine.
         add_submenu_page($this->admin_page_slug, 'سطوح', 'سطوح', 'manage_options', $this->admin_page_slug . '_levels', [$this, 'render_levels_page']);
         add_submenu_page($this->admin_page_slug, 'نشان‌ها', 'نشان‌ها', 'manage_options', $this->admin_page_slug . '_badges', [$this, 'render_badges_page']);
         add_submenu_page($this->admin_page_slug, 'اعطای دستی', 'اعطای دستی', 'manage_options', $this->admin_page_slug . '_manual', [$this, 'render_manual_award_page']);

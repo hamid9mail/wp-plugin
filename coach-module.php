@@ -488,14 +488,13 @@ final class Psych_Coach_Module {
     // =====================================================================
 
     public function add_coach_management_page() {
-        $hook = add_menu_page(
-            'مدیریت مربیان', 
-            'مدیریت مربیان', 
-            'manage_options', 
-            'psych-coach-management', 
-            [$this, 'render_coach_management_page'], 
-            'dashicons-groups', 
-            30
+        $hook = add_submenu_page(
+            'psych-system', // Parent slug
+            'مدیریت مربیان', // Page title
+            'مدیریت مربیان', // Menu title
+            'manage_options', // Capability
+            'psych-coach-management', // Menu slug
+            [$this, 'render_coach_management_page'] // Callback function
         );
         add_action("load-{$hook}", [$this, 'init_student_list_table']);
     }
@@ -600,7 +599,6 @@ final class Psych_Coach_Module {
         ]);
         
         $coaches = get_users([
-            'role__in' => $this->coach_roles,
             'orderby' => 'display_name'
         ]);
         ?>
