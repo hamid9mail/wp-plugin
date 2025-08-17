@@ -1320,10 +1320,11 @@ private function process_rewards($user_id, $station_data) {
                 }
                 break;
 
+            case 'unlock_station': // Alias for activate_station
             case 'activate_station':
                 if (!empty($value)) {
-                    $rewards_summary['next_station_message'] = "ایستگاه بعدی برای شما فعال شد!";
-                    $rewards_summary['unlocked_station_id'] = $value;
+                    $rewards_summary['next_station_message'] = "ایستگاه " . $value . " برای شما فعال شد!";
+                    $rewards_summary['unlocked_station_id'] = sanitize_key($value);
                 }
                 break;
         }
@@ -2915,7 +2916,15 @@ private function render_station_modal_javascript() {
                         stationItem.classList.add('completed');
                         psych_update_all_ui(pathContainer);
                         psych_show_rewards_notification(response.data.rewards);
+
+                        // Unlock next sequential station
                         psych_refresh_next_station(stationItem);
+
+                        // Unlock a specific station if defined in rewards
+                        if (response.data.rewards && response.data.rewards.unlocked_station_id) {
+                            psych_force_unlock_station(response.data.rewards.unlocked_station_id);
+                        }
+
                     } else {
                         button.disabled = false;
                         button.innerHTML = originalHtml;
@@ -3055,6 +3064,34 @@ private function render_station_modal_javascript() {
                             nextStation.classList.remove('locked');
                             nextStation.classList.add(res.data.status);
                             nextStation.querySelector('.psych-status-badge').outerHTML = res.data.html.match(/<span class="psych-status-badge[^>]*>.*?<\/span>/)[0] || '';
+                        }
+                    });
+            }
+        }
+
+        function psych_force_unlock_station(stationId) {
+            if (!stationId) return;
+            const stationToUnlock = document.querySelector(`[data-station-node-id="${stationId}"]`);
+
+            if (stationToUnlock && stationToUnlock.matches('.psych-accordion-item') && stationToUnlock.classList.contains('locked')) {
+                const stationData = stationToUnlock.getAttribute('data-station-details');
+
+                const formData = new FormData();
+                formData.append('action', 'psych_path_get_inline_station_content');
+                formData.append('nonce', '<?php echo wp_create_nonce(PSYCH_PATH_AJAX_NONCE); ?>');
+                formData.append('station_data', stationData);
+
+                fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+                    .then(response => response.json())
+                    .then(res => {
+                        if (res.success) {
+                            stationToUnlock.setAttribute('data-station-details', JSON.stringify(res.data.station_data));
+                            const contentArea = stationToUnlock.querySelector('.psych-accordion-mission-content');
+                            if(contentArea) contentArea.innerHTML = res.data.html;
+                            stationToUnlock.classList.remove('locked');
+                            stationToUnlock.classList.add(res.data.status);
+                             const statusBadge = stationToUnlock.querySelector('.psych-status-badge');
+                            if(statusBadge) statusBadge.outerHTML = res.data.html.match(/<span class="psych-status-badge[^>]*>.*?<\/span>/)[0] || '';
                         }
                     });
             }
