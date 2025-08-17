@@ -22,14 +22,8 @@ if (!defined('PSYCH_SYSTEM_LOADED')) {
  */
 final class Psych_Admin_Dashboard_Module {
 
-    /**
-     * Single instance of the class
-     */
     private static $instance = null;
 
-    /**
-     * Get single instance of the class
-     */
     public static function get_instance() {
         if (is_null(self::$instance)) {
             self::$instance = new self();
@@ -37,45 +31,37 @@ final class Psych_Admin_Dashboard_Module {
         return self::$instance;
     }
 
-    /**
-     * Constructor
-     */
     private function __construct() {
-        // This is a placeholder. The main system will call the init method.
+        // Hooks are initialized in the init() method, called by the main plugin loader.
     }
 
-    /**
-     * Initialize hooks
-     */
     public function init() {
         add_action('admin_menu', [$this, 'add_admin_submenu_page'], 99);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_scripts']);
         add_action('wp_ajax_psych_search_users', [$this, 'ajax_search_users']);
         add_action('wp_ajax_psych_get_user_dashboard_data', [$this, 'ajax_get_user_dashboard_data']);
-        add_action('wp_ajax_psych_mark_station_complete', [$this, 'ajax_mark_station_status']);
-        add_action('wp_ajax_psych_mark_station_incomplete', [$this, 'ajax_mark_station_status']);
+        add_action('wp_ajax_psych_mark_station_status', [$this, 'ajax_mark_station_status']);
         add_action('wp_ajax_psych_admin_update_points', [$this, 'ajax_admin_update_points']);
         add_action('wp_ajax_psych_admin_toggle_badge', [$this, 'ajax_admin_toggle_badge']);
         add_action('wp_ajax_psych_admin_save_note', [$this, 'ajax_admin_save_note']);
     }
 
-    /**
-     * Add the submenu page under the main plugin menu.
-     */
     public function add_admin_submenu_page() {
-        add_submenu_page(
-            'psych-system', // Parent slug
-            'داشبورد کاربر', // Page title
-            'داشبورد کاربر', // Menu title
-            'manage_options', // Capability
-            'psych-user-dashboard', // Menu slug
-            [$this, 'render_dashboard_page'] // Callback function
+        $hook = add_submenu_page(
+            'psych-system',
+            'داشبورد کاربر',
+            'داشبورد کاربر',
+            'manage_options',
+            'psych-user-dashboard',
+            [$this, 'render_dashboard_page']
         );
+
+        // We use the hook to conditionally load scripts only on our page.
+        add_action('load-' . $hook, function() {
+            // You can add any page-specific logic here if needed in the future.
+        });
     }
 
-    /**
-     * Render the main dashboard page content.
-     */
     public function render_dashboard_page() {
         ?>
         <div class="wrap psych-admin-dashboard">
@@ -83,7 +69,7 @@ final class Psych_Admin_Dashboard_Module {
             <p>در این صفحه می‌توانید اطلاعات یک کاربر خاص را مشاهده و مدیریت کنید.</p>
 
             <div class="psych-admin-card">
-                <h3>جستجوی کاربر</h3>
+                <h3><span class="dashicons dashicons-search"></span> جستجوی کاربر</h3>
                 <p>برای شروع، کاربر مورد نظر را با نام، ایمیل یا شناسه کاربری جستجو کنید.</p>
                 <input type="text" id="psych-user-search-input" placeholder="جستجو..." style="width: 100%; max-width: 400px; padding: 8px;">
                 <div id="psych-user-search-results"></div>
@@ -105,21 +91,23 @@ final class Psych_Admin_Dashboard_Module {
         <?php
     }
 
-    /**
-     * Enqueue scripts and styles for the admin dashboard.
-     */
     public function enqueue_admin_scripts($hook) {
-        // The hook for a submenu page is toplevel_page_{parent_slug}_page_{submenu_slug}
-        // Our parent slug is 'psych-system'
+        // The hook for a submenu page is toplevel_page_slug_page_submenu_slug
+        // The correct hook is `psych-system_page_psych-user-dashboard`
+        // But WordPress can sometimes use the translated menu title. A more robust way is to use the value from add_submenu_page.
+        // However, for this fix, we will use the correct slug-based hook.
         if ('psych-system_page_psych-user-dashboard' !== $hook) {
-            return;
+             // A fallback for different environments
+            if (strpos($hook, 'psych-user-dashboard') === false) {
+                 return;
+            }
         }
 
         wp_enqueue_script(
             'psych-admin-dashboard-js',
             plugin_dir_url(__FILE__) . 'assets/admin-dashboard.js',
             ['jquery'],
-            defined('PSYCH_SYSTEM_VERSION') ? PSYCH_SYSTEM_VERSION : '1.0.0',
+            defined('PSYCH_SYSTEM_VERSION') ? PSYCH_SYSTEM_VERSION : '1.0.1', // Bump version
             true
         );
 
@@ -129,9 +117,6 @@ final class Psych_Admin_Dashboard_Module {
         ]);
     }
 
-    /**
-     * Handle the AJAX request for searching users.
-     */
     public function ajax_search_users() {
         check_ajax_referer('psych_user_dashboard_nonce', 'nonce');
         if (!current_user_can('manage_options')) wp_send_json_error(['message' => 'دسترسی غیرمجاز.']);
@@ -149,19 +134,12 @@ final class Psych_Admin_Dashboard_Module {
         ]);
 
         $users_found = array_map(function($user) {
-            return [
-                'id'           => $user->ID,
-                'display_name' => $user->display_name,
-                'email'        => $user->user_email,
-            ];
+            return ['id' => $user->ID, 'display_name' => $user->display_name, 'email' => $user->user_email];
         }, $user_query->get_results());
 
         wp_send_json_success($users_found);
     }
 
-    /**
-     * AJAX handler to get all data for a selected user's dashboard.
-     */
     public function ajax_get_user_dashboard_data() {
         check_ajax_referer('psych_user_dashboard_nonce', 'nonce');
         if (!current_user_can('manage_options')) wp_send_json_error(['message' => 'دسترسی غیرمجاز.']);
@@ -171,27 +149,18 @@ final class Psych_Admin_Dashboard_Module {
             wp_send_json_error(['message' => 'کاربر یافت نشد.']);
         }
 
-        // Path Progress Data
-        $completed_stations_raw = get_user_meta($user_id, 'psych_path_completed_stations', true) ?: [];
-        $path_progress_html = $this->render_path_progress_tab($completed_stations_raw);
-
-        // Gamification Data
-        $gamification_html = $this->render_gamification_tab($user_id);
-
-        // Details Data
-        $details_html = $this->render_details_tab($user_id);
-
         wp_send_json_success([
             'userName' => $user_data->display_name . ' (' . $user_data->user_email . ')',
             'tabs' => [
-                'path_progress' => $path_progress_html,
-                'gamification' => $gamification_html,
-                'details' => $details_html
+                'path_progress' => $this->render_path_progress_tab($user_id),
+                'gamification' => $this->render_gamification_tab($user_id),
+                'details' => $this->render_details_tab($user_id)
             ]
         ]);
     }
 
-    private function render_path_progress_tab($completed_stations_raw) {
+    private function render_path_progress_tab($user_id) {
+        $completed_stations_raw = get_user_meta($user_id, 'psych_path_completed_stations', true) ?: [];
         $html = '<h4>ایستگاه‌های تکمیل شده</h4>';
         if (!empty($completed_stations_raw)) {
             $html .= '<ul class="psych-station-list">';
