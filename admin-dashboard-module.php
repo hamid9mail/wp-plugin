@@ -109,7 +109,9 @@ final class Psych_Admin_Dashboard_Module {
      * Enqueue scripts and styles for the admin dashboard.
      */
     public function enqueue_admin_scripts($hook) {
-        if ('روان-گستر_page_psych-user-dashboard' !== $hook) {
+        // The hook for a submenu page is toplevel_page_{parent_slug}_page_{submenu_slug}
+        // Our parent slug is 'psych-system'
+        if ('psych-system_page_psych-user-dashboard' !== $hook) {
             return;
         }
 
