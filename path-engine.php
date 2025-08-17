@@ -2909,6 +2909,33 @@ private function render_station_modal_javascript() {
                 $pathContainer.find('.psych-progress-fill').css('width', `${percentage}%`);
             }
 
+            function refreshNextStation($stationItem) {
+                if (!$stationItem || !$stationItem.length) return;
+
+                var $nextStation = $stationItem.next('.psych-accordion-item');
+
+                if ($nextStation.length && $nextStation.hasClass('locked')) {
+                    var stationData = $nextStation.data('station-details');
+
+                    $.post('<?php echo admin_url('admin-ajax.php'); ?>', {
+                        action: 'psych_path_get_inline_station_content',
+                        nonce: '<?php echo wp_create_nonce(PSYCH_PATH_AJAX_NONCE); ?>',
+                        station_data: JSON.stringify(stationData)
+                    }, function(res) {
+                        if (res.success) {
+                            $nextStation.data('station-details', res.data.station_data);
+                            $nextStation.attr('data-station-details', JSON.stringify(res.data.station_data));
+                            $nextStation.find('.psych-accordion-mission-content').html(res.data.html);
+                            $nextStation.removeClass('locked').addClass(res.data.status);
+                            $nextStation.find('.psych-status-badge').removeClass('locked').addClass(res.data.status).html('<i class="fas fa-unlock"></i> باز');
+                        } else {
+                            // Silently fail is better than alert
+                            console.error('Failed to refresh next station:', res.data.message);
+                        }
+                    });
+                }
+            }
+
             function completeMission(stationDetails, $button, $pathContainer) {
                 const originalHtml = $button.html();
                 const spinner = '<span class="psych-loading-spinner" style="width:16px; height:16px; border-width:2px; display:inline-block; vertical-align:middle; margin-right:8px; border-style:solid; border-radius:50%; border-color:currentColor; border-top-color:transparent; animation:spin 1s linear infinite;"></span>';
@@ -2934,7 +2961,8 @@ private function render_station_modal_javascript() {
                         updateAllUI($pathContainer);
                         showRewardsNotification(response.data.rewards);
 
-                        $(document).trigger('psych_mission_completed', [stationDetails.station_node_id, $button]);
+                        // Directly call the refresh function for the completed station's item
+                        refreshNextStation($stationElement);
 
                     } else {
                         $button.prop('disabled', false).html(originalHtml);
@@ -3001,41 +3029,6 @@ private function render_station_modal_javascript() {
             $('.psych-modal-close, .psych-modal-overlay').on('click', function(e) { if (e.target === this) closeModal(); });
             $(document).on('keydown', function(e) { if (e.key === "Escape" && modal.is(':visible')) closeModal(); });
 
-            $(document).on('psych_mission_completed', function(e, missionId, buttonEl) {
-                var $stationItem = buttonEl.closest('.psych-accordion-item');
-                if(modal.is(':visible') && currentButton) {
-                    $stationItem = currentButton.closest('.psych-accordion-item');
-                }
-
-                if (!$stationItem || !$stationItem.length) return;
-
-                var $nextStation = $stationItem.next('.psych-accordion-item');
-
-                if ($nextStation.length && $nextStation.hasClass('locked')) {
-                    var stationData = $nextStation.data('station-details');
-
-                    $.post('<?php echo admin_url('admin-ajax.php'); ?>', {
-                        action: 'psych_path_get_inline_station_content',
-                        nonce: '<?php echo wp_create_nonce(PSYCH_PATH_AJAX_NONCE); ?>',
-                        station_data: JSON.stringify(stationData)
-                    }, function(res) {
-                        if (res.success) {
-                            // Update the data attribute with the fresh data from the server
-                            $nextStation.data('station-details', res.data.station_data);
-                            $nextStation.attr('data-station-details', JSON.stringify(res.data.station_data));
-
-                            // Replace the content
-                            $nextStation.find('.psych-accordion-mission-content').html(res.data.html);
-
-                            // Update the status class and badge
-                            $nextStation.removeClass('locked completed').addClass(res.data.status);
-                            $nextStation.find('.psych-status-badge').removeClass('locked').addClass(res.data.status).html('<i class="fas fa-unlock"></i> باز');
-                        } else {
-                            alert(res.data.message || 'خطا در بروزرسانی ایستگاه');
-                        }
-                    });
-                }
-            });
 
         });
         </script>

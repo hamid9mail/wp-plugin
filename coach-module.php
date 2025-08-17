@@ -600,6 +600,7 @@ final class Psych_Coach_Module {
         ]);
         
         $coaches = get_users([
+            'role__in' => $this->coach_roles,
             'orderby' => 'display_name'
         ]);
         ?>
@@ -744,7 +745,7 @@ final class Psych_Coach_Module {
                     <option value="">-- انتخاب دانشجو --</option>
                     <?php foreach ($assigned_students as $student) : ?>
                         <option value="<?php echo esc_attr($student->ID); ?>">
-                            <?php echo esc_html($student->display_name); ?>
+                            <?php echo esc_html($student->display_name . ' (' . $student->user_email . ')'); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
