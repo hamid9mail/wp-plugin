@@ -1316,7 +1316,26 @@ final class Psych_Gamification_Center {
         return '
         .psych-admin-wrap {
             background: #f9f9f9;
-            padding: 20px 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .psych-admin-wrap .form-table {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .psych-admin-wrap .form-table th {
+            width: 220px;
+            padding: 20px;
+        }
+        .psych-admin-wrap .form-table td {
+            padding: 15px 10px;
+        }
+        .psych-admin-wrap .form-table input[type="text"],
+        .psych-admin-wrap .form-table input[type="number"] {
+            width: 100%;
+            max-width: 450px;
         }
         
         .psych-dashboard-cards {
