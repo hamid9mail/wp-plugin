@@ -65,23 +65,31 @@ final class PsychoCourse_Path_Engine {
 
         // Feedback System Constants
         define('PSYCH_PATH_FEEDBACK_USER_META_COUNT', 'psych_feedback_received_count');
+
+        // New: Approval System Constants
+        define('PSYCH_PATH_META_AWAITING_APPROVAL', 'psych_path_awaiting_approval');
     }
 
     private function add_hooks() {
         // Core Shortcodes
         add_shortcode('psychocourse_path', [$this, 'render_path_shortcode']);
         add_shortcode('station', [$this, 'register_station_shortcode']);
+        add_shortcode('mission_action_link', [$this, 'render_mission_action_link_shortcode']);
 
         // Content Section Shortcodes
-add_shortcode('static_content', [$this, 'register_static_content']);
-add_shortcode('mission_content', [$this, 'register_mission_content']);
-add_shortcode('result_content', [$this, 'register_result_content']);
+        add_shortcode('static_content', [$this, 'register_static_content']);
+        add_shortcode('mission_content', [$this, 'register_mission_content']);
+        add_shortcode('result_content', [$this, 'register_result_content']);
 
 
         // AJAX Handlers
         add_action('wp_ajax_psych_path_get_station_content', [$this, 'ajax_get_station_content']);
-        add_action('wp_ajax_psych_path_get_inline_station_content', [$this, 'ajax_get_inline_station_content']); // ⭐ جدید
+        add_action('wp_ajax_psych_path_get_inline_station_content', [$this, 'ajax_get_inline_station_content']);
         add_action('wp_ajax_psych_path_complete_mission', [$this, 'ajax_complete_mission']);
+        add_action('wp_ajax_psych_path_coach_approve_mission', [$this, 'ajax_coach_approve_mission']);
+
+        // Page template for actor-based missions
+        add_action('template_redirect', [$this, 'handle_actor_mission_page']);
 
         // Assets and Footer Elements
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
@@ -554,15 +562,17 @@ public function register_result_content($atts, $content = null) {
             'station_node_id'     => 'st_' . $path_id . '_' . ($index + 1),
             'title'               => 'ایستگاه بدون عنوان',
             'icon'                => 'fas fa-flag',
-            'unlock_trigger'      => 'sequential', // sequential, independent
-            'mission_type'        => 'button_click', // button_click, gform, purchase, ...
+            'unlock_trigger'      => 'sequential',
+            'mission_type'        => 'button_click',
             'mission_target'      => '',
             'mission_button_text' => 'مشاهده ماموریت',
             'rewards'             => '',
             'notification_text'   => '',
-            'unlock_condition'    => '', // e.g., has_badge:pro|min_points:500
-            'relation'            => 'AND', // AND or OR
-            'user_meta_value'     => '', // for use with user_meta_key in unlock_condition
+            'unlock_condition'    => '',
+            'relation'            => 'AND',
+            'user_meta_value'     => '',
+            'mission_actor'       => 'user', // New: user, coach, guest, any_user
+            'needs_approval'      => 'false', // New: true or false
             'gform_mode'          => ''
         ], $station_data['atts']);
 
@@ -592,30 +602,30 @@ public function register_result_content($atts, $content = null) {
         $node_id = $atts['station_node_id'];
         $atts['is_completed'] = $this->is_station_completed($user_id, $node_id, $atts);
 
-        // New: Check for custom unlock conditions
-        $custom_conditions_met = $this->check_unlock_conditions($user_id, $atts);
+        // New: Check if the station is awaiting approval
+        $awaiting_approval_stations = get_user_meta($user_id, PSYCH_PATH_META_AWAITING_APPROVAL, true) ?: [];
+        $is_awaiting_approval = isset($awaiting_approval_stations[$node_id]);
 
-        // Original access filter (for coaches, etc.)
+        $custom_conditions_met = $this->check_unlock_conditions($user_id, $atts);
         $can_access = apply_filters('psych_path_can_view_station', true, $user_id, $atts);
+        $is_ready_to_unlock = ($atts['unlock_trigger'] === 'independent' || $previous_station_completed);
 
         $status = 'locked';
         $is_unlocked = false;
 
-        // An station is ready to be unlocked if its trigger is met (sequential or independent)
-        $is_ready_to_unlock = ($atts['unlock_trigger'] === 'independent' || $previous_station_completed);
-
         if ($atts['is_completed']) {
             $status = 'completed';
             $is_unlocked = true;
+        } elseif ($is_awaiting_approval) {
+            $status = 'awaiting_approval';
+            $is_unlocked = true; // It's unlocked, but in a pending state
         } elseif (!$can_access) {
-            $status = 'restricted'; // A more descriptive status for this case
+            $status = 'restricted';
             $is_unlocked = false;
         } elseif ($is_ready_to_unlock && $custom_conditions_met) {
-            // It's ready AND it meets custom conditions
             $status = 'open';
             $is_unlocked = true;
         } else {
-            // It's either not ready sequentially, or it doesn't meet custom conditions
             $status = 'locked';
             $is_unlocked = false;
         }
@@ -1260,23 +1270,47 @@ public function ajax_complete_mission() {
 
     // 4. اگر شرایط برقرار بود، ماموریت را تکمیل و پاداش‌ها را ارسال کن
     if ($condition_met) {
-        $result = $this->mark_station_as_completed($user_id, $node_id, $station_data, true, $custom_rewards);
+        // New: Check if the mission needs approval
+        if (isset($station_data['needs_approval']) && $station_data['needs_approval'] === 'true') {
+            $awaiting_approval = get_user_meta($user_id, PSYCH_PATH_META_AWAITING_APPROVAL, true) ?: [];
+            $awaiting_approval[$node_id] = [
+                'submitted_at' => current_time('mysql'),
+                'submission_data' => [], // Placeholder for future data like form entries
+            ];
+            update_user_meta($user_id, PSYCH_PATH_META_AWAITING_APPROVAL, $awaiting_approval);
 
-        if ($result['success']) {
-            // Refresh station data to pass to the rendering function
-            $station_data['is_completed'] = true;
-            $station_data['status'] = 'completed';
-            $station_data['is_unlocked'] = true;
-
-            // Render the new content for the accordion
-            $new_inline_html = $this->render_inline_station_content($station_data);
+            // Notify the coach
+            do_action('psych_path_station_awaiting_approval', $user_id, $node_id, $station_data);
 
             wp_send_json_success([
-                'message' => 'ماموریت با موفقیت تکمیل شد!',
-                'status' => 'completed',
-                'rewards' => $result['rewards_summary'],
-                'new_html' => $new_inline_html
+                'message' => 'ماموریت شما برای تایید ارسال شد.',
+                'status' => 'awaiting_approval',
             ]);
+
+        } else {
+            // Original completion logic
+            $result = $this->mark_station_as_completed($user_id, $node_id, $station_data, true, $custom_rewards);
+
+            if ($result['success']) {
+                $station_data['is_completed'] = true;
+                $station_data['status'] = 'completed';
+                $station_data['is_unlocked'] = true;
+                $new_inline_html = $this->render_inline_station_content($station_data);
+
+                wp_send_json_success([
+                    'message' => 'ماموریت با موفقیت تکمیل شد!',
+                    'status' => 'completed',
+                    'rewards' => $result['rewards_summary'],
+                    'new_html' => $new_inline_html
+                ]);
+            } else {
+                wp_send_json_success([
+                    'message' => 'این ماموریت قبلاً تکمیل شده بود.',
+                    'status' => 'already_completed',
+                    'rewards' => []
+                ]);
+            }
+        }
         } else {
             // این حالت به ندرت اتفاق می‌افتد چون در ابتدا چک شده است
             wp_send_json_success([
