@@ -306,10 +306,10 @@ class Psych_Advanced_Quiz_Module {
                         if (question.type === "mcq") {
                             const shuffledOptions = shuffleArray(question.options);
                             shuffledOptions.forEach(opt => {
-                                const btn = $("<button>").text(opt.text).data("subscale", opt.subscale).data("value", opt.value).on("click", function() {
+                                const btn = $("<button>").text(opt.text).data("scoring", opt.scoring).data("value", opt.value).on("click", function() {
                                     if (isProcessingAnswer) return;
                                     isProcessingAnswer = true;
-                                    selectAnswer(opt.value, question, opt.subscale, opt.value);
+                                    selectAnswer(opt, question); // Pass the whole option object
                                 });
                                 optionsElement.append(btn);
                             });
@@ -398,14 +398,24 @@ class Psych_Advanced_Quiz_Module {
                         dropZone.append(item);
                     }
 
-                    function selectAnswer(selected, question, subscale, value) {
+                    function selectAnswer(selectedOption, question) {
                         clearInterval(timerInterval);
                         const timeTaken = (performance.now() - startTime) / 1000;
                         totalTime += timeTaken;
-                        const isCorrect = selected === question.correct;
-                        score += isCorrect ? 1 : 0;
-                        incorrectCount += isCorrect ? 0 : 1;
-                        responses[question.id] = { value: selected, correct: isCorrect, subscale: subscale, score_value: value };
+                        const isCorrect = selectedOption.correct;
+
+                        if(isCorrect) {
+                            score++;
+                        } else {
+                            incorrectCount++;
+                        }
+
+                        // The important change: pass the full scoring object
+                        responses[question.id] = {
+                            value: selectedOption.text,
+                            correct: isCorrect,
+                            scoring: selectedOption.scoring // This passes {'scale_a': 3, 'scale_b': -1}
+                        };
 
                         feedbackElement.text(isCorrect ? texts.correct : texts.incorrect + question.correct).addClass(isCorrect ? "correct" : "incorrect");
 
@@ -512,33 +522,69 @@ class Psych_Advanced_Quiz_Module {
 
         $question_data = shortcode_atts(array(
             'id' => 'q' . (count($this->current_quiz_questions) + 1),
-            'type' => 'mcq',
+            'type' => 'mcq', // mcq, likert, matrix, ranking, etc.
             'text' => '',
-            'subscale' => '',
-            'correct' => '',
-            'correct_order' => '',
-            'rows' => '',
-            'columns' => '',
-            'min' => 0,
-            'max' => 100,
+            'subscale' => '', // Legacy, for simple questions
+            'correct' => '', // For mcq
+            'scale' => '5', // For likert
+            'rows' => '', // For matrix
+            'columns' => '', // For matrix
+            'correct_order' => '', // For ranking
         ), $atts);
 
         $question_data['options'] = $this->current_question_options;
+
+        // Process attributes specific to question types
+        if ($question_data['type'] === 'matrix') {
+            $question_data['rows'] = array_map('trim', explode(',', $question_data['rows']));
+            $question_data['columns'] = array_map('trim', explode(',', $question_data['columns']));
+        }
+        if ($question_data['type'] === 'ranking') {
+            $question_data['correct_order'] = array_map('trim', explode(',', $question_data['correct_order']));
+        }
+
         $this->current_quiz_questions[] = $question_data;
 
         return ''; // Return empty string as we are just capturing data
     }
 
     public function capture_option_shortcode($atts, $content = null) {
-        $option_data = shortcode_atts(array(
+        $atts = shortcode_atts(array(
             'correct' => 'false',
             'value' => '',
-            'subscale' => '',
-            'score' => 1 // Default score for correct answers in ranking/dragdrop
+            'subscale' => '',    // Legacy support for single subscale
+            'score' => 1,         // Legacy support for single score
+            'scoring' => ''       // New complex scoring attribute, e.g., "scale_a:3,scale_b:-1"
         ), $atts);
 
+        $option_data = [];
         $option_data['text'] = do_shortcode($content);
-        $option_data['correct'] = filter_var($option_data['correct'], FILTER_VALIDATE_BOOLEAN);
+        // Use the content as the value if 'value' attribute is not set, for simplicity
+        $option_data['value'] = !empty($atts['value']) ? $atts['value'] : $option_data['text'];
+        $option_data['correct'] = filter_var($atts['correct'], FILTER_VALIDATE_BOOLEAN);
+
+        // Prioritize the new 'scoring' attribute
+        if (!empty($atts['scoring'])) {
+            $scoring_array = [];
+            $pairs = explode(',', $atts['scoring']);
+            foreach ($pairs as $pair) {
+                $parts = explode(':', $pair);
+                if (count($parts) === 2) {
+                    $scale = trim($parts[0]);
+                    $value = intval(trim($parts[1]));
+                    if (!empty($scale)) {
+                        $scoring_array[$scale] = $value;
+                    }
+                }
+            }
+            $option_data['scoring'] = $scoring_array;
+        } else {
+            // Fallback to legacy 'subscale' and 'score' attributes for backward compatibility
+            $option_data['scoring'] = [];
+            if (!empty($atts['subscale'])) {
+                $option_data['scoring'][trim($atts['subscale'])] = intval($atts['score']);
+            }
+        }
 
         $this->current_question_options[] = $option_data;
 
@@ -592,28 +638,57 @@ class Psych_Advanced_Quiz_Module {
         $quiz_id = sanitize_text_field($_POST['quiz_id']);
         $user_id = get_current_user_id();
         $username = wp_get_current_user()->display_name;
-        $score = intval($_POST['score']);
-        $correct = $score; // Simplified
-        $incorrect = count(json_decode($_POST['responses'], true)) - $score;
         $time_taken = floatval($_POST['time_taken']);
-        $responses = sanitize_textarea_field($_POST['responses']);
-        $use_ai = $_POST['ai'] === 'true';
+        $use_ai = isset($_POST['ai']) && $_POST['ai'] === 'true';
 
-        // Delete previous entry
+        $responses_json = stripslashes($_POST['responses']);
+        $responses = json_decode($responses_json, true);
+
+        $subscale_scores = [];
+        $correct_answers = 0;
+
+        // New processing loop for complex scoring
+        if (is_array($responses)) {
+            foreach ($responses as $answer) {
+                if (isset($answer['correct']) && $answer['correct']) {
+                    $correct_answers++;
+                }
+                if (!empty($answer['scoring']) && is_array($answer['scoring'])) {
+                    foreach ($answer['scoring'] as $scale => $value) {
+                        if (!isset($subscale_scores[$scale])) {
+                            $subscale_scores[$scale] = 0;
+                        }
+                        $subscale_scores[$scale] += intval($value);
+                    }
+                }
+            }
+        }
+
+        // The main score is the count of correct answers
+        $total_score = $correct_answers;
+        $incorrect_answers = count($responses) - $correct_answers;
+
+        $results_to_store = [
+            'raw_responses' => $responses,
+            'calculated_subscales' => $subscale_scores,
+            'total_score' => $total_score,
+        ];
+
+        // Delete previous entry for this user and quiz
         $wpdb->delete($this->table_name, array('quiz_id' => $quiz_id, 'user_id' => $user_id));
 
-        $ai_analysis = $use_ai ? $this->generate_ai_analysis($responses) : '';
+        $ai_analysis = $use_ai ? $this->generate_ai_analysis(json_encode($results_to_store)) : '';
 
-        // Insert new
+        // Insert new results
         $wpdb->insert($this->table_name, array(
             'quiz_id' => $quiz_id,
             'user_id' => $user_id,
             'username' => $username,
-            'score' => $score,
-            'correct_answers' => $correct,
-            'incorrect_answers' => $incorrect,
+            'score' => $total_score,
+            'correct_answers' => $correct_answers,
+            'incorrect_answers' => $incorrect_answers,
             'time_taken' => $time_taken,
-            'responses' => $responses,
+            'responses' => json_encode($results_to_store),
             'ai_analysis' => $ai_analysis,
         ));
 
@@ -738,17 +813,8 @@ class Psych_Advanced_Quiz_Module {
 
         if (!$result || !$user_info) return '<html><body><p>نتیجه‌ای یافت نشد.</p></body></html>';
 
-        $responses = json_decode($result->responses, true);
-        $subscale_scores = [];
-
-        foreach ($responses as $question_id => $response) {
-            if (isset($response['subscale']) && !empty($response['subscale'])) {
-                if (!isset($subscale_scores[$response['subscale']])) {
-                    $subscale_scores[$response['subscale']] = 0;
-                }
-                $subscale_scores[$response['subscale']] += intval($response['score_value']);
-            }
-        }
+        $stored_results = json_decode($result->responses, true);
+        $subscale_scores = isset($stored_results['calculated_subscales']) ? $stored_results['calculated_subscales'] : [];
 
         ob_start();
         ?>
@@ -865,14 +931,17 @@ class Psych_Advanced_Quiz_Module {
         $atts = shortcode_atts(array('quiz_id' => '', 'subscale' => ''), $atts);
         global $wpdb;
         $user_id = get_current_user_id();
-        $result = $wpdb->get_row($wpdb->prepare("SELECT responses FROM $this->table_name WHERE quiz_id = %s AND user_id = %d", $atts['quiz_id'], $user_id));
-        $responses = json_decode($result->responses, true);
+        $result_json = $wpdb->get_var($wpdb->prepare("SELECT responses FROM $this->table_name WHERE quiz_id = %s AND user_id = %d", $atts['quiz_id'], $user_id));
 
-        $subscale_scores = array_filter($responses, function($resp) use ($atts) {
-            return $resp['subscale'] === $atts['subscale'];
-        });
-        $total = array_sum(array_column($subscale_scores, 'score_value'));
-        return "Subscale {$atts['subscale']}: $total";
+        if (!$result_json) return '0';
+
+        $results = json_decode($result_json, true);
+
+        if (isset($results['calculated_subscales'][$atts['subscale']])) {
+            return $results['calculated_subscales'][$atts['subscale']];
+        }
+
+        return '0';
     }
 
     public function quiz_answer_shortcode($atts) {

@@ -573,7 +573,7 @@ public function register_result_content($atts, $content = null) {
             'user_meta_value'     => '',
             'mission_actor'       => 'user', // New: user, coach, guest, any_user
             'needs_approval'      => 'false', // New: true or false
-            'gform_mode'          => ''
+            'gform_mode'          => 'default' // Add gform_mode: default, conversational, ultimate
         ], $station_data['atts']);
 
         // فارغ از اینکه ایستگاه چه نوعی است، این خصوصیت انتقال پیدا می‌کند
@@ -719,9 +719,11 @@ public function register_result_content($atts, $content = null) {
                 }
                 break;
             case 'custom_test':
-                if (function_exists('psych_user_has_completed_test')) {
-                    $test_id = intval(str_replace('test_id:', '', $mission_target));
-                    if ($test_id > 0 && psych_user_has_completed_test($user_id, $test_id)) {
+                // New generic mission type completed by setting a user meta flag.
+                // mission_target should be "meta_key:your_meta_key_name"
+                if (strpos($mission_target, 'meta_key:') === 0) {
+                    $meta_key = str_replace('meta_key:', '', $mission_target);
+                    if (!empty($meta_key) && get_user_meta($user_id, $meta_key, true)) {
                         $completed_retroactively = true;
                     }
                 }
@@ -937,61 +939,48 @@ public function register_result_content($atts, $content = null) {
                 break;
 
             case 'gform': {
-    $form_id = intval(str_replace('form_id:', '', $target));
+                $form_id = intval(str_replace('form_id:', '', $target));
+                if ($form_id > 0 && function_exists('gravity_form')) {
 
-    // گام ۱: خواندن حالت مود مورد نظر از آرایه (پیش‌فرض مکالمه‌ای)
-    $gform_mode = !empty($station_details['gform_mode']) ? $station_details['gform_mode'] : 'conversational';
+                    $gform_mode = $station_details['gform_mode'] ?? 'default';
 
-    if ($form_id > 0 && function_exists('gravity_form')) {
-        $output .= "<p>برای تکمیل این ماموریت، فرم زیر را ارسال کنید.</p>";
+                    // Always add the hidden field for tracking, regardless of mode. This fixes the completion bug.
+                    add_filter('gform_pre_render_' . $form_id, function($form) use ($station_details) {
+                        // Ensure no duplicate hidden fields exist
+                        $field_exists = false;
+                        foreach ($form['fields'] as $field) {
+                            if (isset($field->inputName) && $field->inputName === 'station_node_id_hidden') {
+                                $field_exists = true;
+                                break;
+                            }
+                        }
+                        if (!$field_exists) {
+                            $hidden_field = new GF_Field_Hidden();
+                            $hidden_field->id = rand(1000, 9999);
+                            $hidden_field->inputName = 'station_node_id_hidden';
+                            $hidden_field->defaultValue = $station_details['station_node_id'];
+                            $form['fields'][] = $hidden_field;
+                        }
+                        return $form;
+                    }, 10, 1);
 
-        if ($gform_mode === 'conversational') {
-            // فقط در حالت مکالمه‌ای فیلتر و کلاس و Hidden Field و استایل ویژه اضافه کن
-            add_filter('gform_pre_render_' . $form_id, function($form) use ($station_details) {
-                // افزودن کلاس روان‌شناسی مکالمه‌ای
-                if (strpos($form['cssClass'], 'psych-convo-gform') === false) {
-                    $form['cssClass'] .= ' psych-convo-gform';
-                }
-                // حذف hidden قبلی
-                foreach ($form['fields'] as $i => $field) {
-                    if (
-                        (isset($field->inputName) && $field->inputName === 'station_node_id_hidden') ||
-                        (isset($field->label) && $field->label === 'station_node_id_hidden')
-                    ) {
-                        unset($form['fields'][$i]);
+                    // Conditionally apply display filters based on gform_mode
+                    if ($gform_mode === 'conversational') {
+                        add_filter('gform_pre_render_' . $form_id, [$this, 'psych_convo_gform_assets_filter'], 11, 1);
+                    } elseif ($gform_mode === 'ultimate') {
+                        add_filter('gform_pre_render_' . $form_id, [$this, 'filter_ultimate_conversational_gform'], 10, 1);
+                        add_filter('gform_pre_validation_' . $form_id, [$this, 'filter_ultimate_conversational_gform'], 10, 1);
+                        add_filter('gform_pre_submission_filter_' . $form_id, [$this, 'filter_ultimate_conversational_gform'], 10, 1);
                     }
+
+                    // Render the form. The filters will modify it as needed.
+                    $output .= gravity_form($form_id, false, false, false, null, true, 1, false);
+
+                } else {
+                    $output .= "<p>خطا: شناسه فرم گرویتی مشخص نیست یا افزونه فعال نیست.</p>";
                 }
-                // افزودن hidden مخصوص
-                $form['fields'][] = new GF_Field_Hidden([
-                    'id' => 999,
-                    'label' => 'station_node_id_hidden',
-                    'inputName' => 'station_node_id_hidden',
-                    'defaultValue' => $station_details['station_node_id'],
-                ]);
-                return $form;
-            });
-
-            // استایل و اسکریپت فقط اگر فرم مکالمه‌ای بود
-            add_action('wp_footer', [$this, 'psych_convo_gform_assets'], 11);
-        }
-
-        // نمایش فرم؛ تنها در حالت مکالمه‌ای کلاس و استایل اضافه می‌شود
-        $output .= gravity_form(
-            $form_id,
-            false,  // نمایش عنوان
-            false,  // نمایش توضیح
-            false,  // نمایش خطا
-            null,   // آرگومان پیش‌فرض فیلدهای سفارشی
-            true,   // AJAX
-            1,      // تب پیش‌فرض
-            false   // حالت ریترن
-        );
-
-    } else {
-        $output .= "<p>خطا: شناسه فرم گرویتی مشخص نیست یا افزونه فعال نیست.</p>";
-    }
-    break;
-}
+                break;
+            }
 
 
 
@@ -1540,80 +1529,64 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
 
         }
     }
-    public function psych_convo_gform_assets() {
-    ?>
-    <style>
-    /* فقط روی فرم‌هایی با این کلاس اعمال می‌شود */
-    .psych-convo-gform .gform_body > .gform_page { display: none; }
-    .psych-convo-gform .gform_body > .gform_page.active { display: block; }
-    .psych-convo-gform .gform_page_footer { display: flex; gap:8px; justify-content:flex-end; margin-top:24px; }
-    .psych-convo-gform .psych-gform-progress {
-        width:100%;background:#f2f2f2;border-radius:8px;overflow:hidden;margin-bottom:24px;height:8px;position:relative;
-    }
-    .psych-convo-gform .psych-gform-progress-bar {
-        background: linear-gradient(90deg,#1a73e8,#43e97b); height:100%; border-radius:8px; transition:.3s;width:0%;
-    }
-    .psych-convo-gform .psych-gform-pagenum {
-        margin-bottom:16px;font-weight:bold;text-align:center;
-    }
-    </style>
-    <script>
-    jQuery(function($){
-        var $forms = $(".psych-convo-gform");
-        $forms.each(function(){
-            var $form = $(this);
-            var $pages = $form.find(".gform_page");
-            if ($pages.length < 2) return;
+    public function psych_convo_gform_assets_filter($form) {
+        // Add the CSS class to the form
+        if (strpos($form['cssClass'], 'psych-convo-gform') === false) {
+            $form['cssClass'] .= ' psych-convo-gform';
+        }
 
-            // progress bar + page label only once
-            if ($form.find(".psych-gform-progress").length==0) {
-                $form.find(".gform_body").prepend('<div class="psych-gform-pagenum"></div><div class="psych-gform-progress"><div class="psych-gform-progress-bar"></div></div>');
+        // Add the assets to the footer
+        add_action('wp_footer', function() {
+            ?>
+            <style>
+            .psych-convo-gform .gform_body > .gform_page { display: none; }
+            .psych-convo-gform .gform_body > .gform_page.active { display: block; }
+            .psych-convo-gform .gform_page_footer { display: flex; gap:8px; justify-content:flex-end; margin-top:24px; }
+            .psych-convo-gform .psych-gform-progress {
+                width:100%;background:#f2f2f2;border-radius:8px;overflow:hidden;margin-bottom:24px;height:8px;position:relative;
             }
-
-            let idx = 0, total = $pages.length;
-            showPage(idx);
-
-            function showPage(i){
-                $pages.removeClass("active").eq(i).addClass("active");
-                var progress = Math.floor(100 * (i+1)/total);
-                $form.find(".psych-gform-progress-bar").css("width", progress+"%");
-                $form.find(".psych-gform-pagenum").text('سوال '+toPersian(i+1)+' از '+toPersian(total));
-                $pages.find(".gform_page_footer").hide();
-                if ($form.find(".psych-gform-nav").length == 0) {
-                    $form.find(".gform_body").append(`
-                        <div class="psych-gform-nav" style="display:flex;gap:8px;justify-content:center;">
-                            <button type="button" class="psych-gform-prev" style="display:none">قبلی</button>
-                            <button type="button" class="psych-gform-next">بعدی</button>
-                            <button type="submit" class="psych-gform-submit" style="display:none">پایان</button>
-                        </div>
-                    `);
-                }
-                $form.find(".psych-gform-prev").toggle(i>0);
-                $form.find(".psych-gform-next").toggle(i<total-1);
-                $form.find(".psych-gform-submit").toggle(i==total-1);
+            .psych-convo-gform .psych-gform-progress-bar {
+                background: linear-gradient(90deg,#1a73e8,#43e97b); height:100%; border-radius:8px; transition:.3s;width:0%;
             }
-
-            // nav handlers
-            $form.off('click.psych').on('click.psych','.psych-gform-next',function(e){
-                e.preventDefault();
-                idx = Math.min(idx+1,total-1); showPage(idx);
+            .psych-convo-gform .psych-gform-pagenum { margin-bottom:16px;font-weight:bold;text-align:center; }
+            </style>
+            <script>
+            jQuery(function($){
+                var $forms = $(".psych-convo-gform");
+                $forms.each(function(){
+                    var $form = $(this);
+                    var $pages = $form.find(".gform_page");
+                    if ($pages.length < 2) return;
+                    if ($form.find(".psych-gform-progress").length==0) {
+                        $form.find(".gform_body").prepend('<div class="psych-gform-pagenum"></div><div class="psych-gform-progress"><div class="psych-gform-progress-bar"></div></div>');
+                    }
+                    let idx = 0, total = $pages.length;
+                    function showPage(i){
+                        $pages.removeClass("active").eq(i).addClass("active");
+                        var progress = Math.floor(100 * (i+1)/total);
+                        $form.find(".psych-gform-progress-bar").css("width", progress+"%");
+                        $form.find(".psych-gform-pagenum").text('سوال '+toPersian(i+1)+' از '+toPersian(total));
+                        $pages.find(".gform_page_footer").hide();
+                        if ($form.find(".psych-gform-nav").length == 0) {
+                            $form.find(".gform_body").append(`<div class="psych-gform-nav" style="display:flex;gap:8px;justify-content:center;"><button type="button" class="psych-gform-prev" style="display:none">قبلی</button><button type="button" class="psych-gform-next">بعدی</button><button type="submit" class="psych-gform-submit" style="display:none">پایان</button></div>`);
+                        }
+                        $form.find(".psych-gform-prev").toggle(i>0);
+                        $form.find(".psych-gform-next").toggle(i<total-1);
+                        $form.find(".psych-gform-submit").toggle(i==total-1);
+                    }
+                    $form.off('click.psych').on('click.psych','.psych-gform-next',function(e){ e.preventDefault(); idx = Math.min(idx+1,total-1); showPage(idx); });
+                    $form.on('click.psych','.psych-gform-prev',function(e){ e.preventDefault(); idx = Math.max(idx-1,0); showPage(idx); });
+                    $form.on('click.psych input.psych','input[type=radio],input[type=checkbox]',function(){ if (idx<total-1) { setTimeout(()=>{$form.find('.psych-gform-next').trigger('click');},170);} });
+                    function toPersian(n){ return n.toString().replace(/\d/g, d=>'۰۱۲۳۴۵۶۷۸۹'[d]); }
+                    showPage(idx);
+                });
             });
-            $form.on('click.psych','.psych-gform-prev',function(e){
-                e.preventDefault();
-                idx = Math.max(idx-1,0); showPage(idx);
-            });
-
-            $form.on('click.psych input.psych','input[type=radio],input[type=checkbox]',function(){
-                if (idx<total-1) { setTimeout(()=>{$form.find('.psych-gform-next').trigger('click');},170);}
-            });
-
-            // تبدیل اعداد به فارسی
-            function toPersian(n){ return n.toString().replace(/\d/g, d=>'۰۱۲۳۴۵۶۷۸۹'[d]); }
+            </script>
+            <?php
         });
-    });
-    </script>
-    <?php
-}
+
+        return $form;
+    }
 
 
 
@@ -3239,6 +3212,137 @@ private function render_station_modal_javascript() {
     </script>
     <?php
 }
+}
+
+    public function filter_ultimate_conversational_gform( $form ) {
+        // Add a filter to inject the conversational JS and CSS in the footer
+        add_action( 'wp_footer', function() use ( $form ) {
+            ?>
+            <style>
+            .modern-form-container {
+                background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+                padding: 30px; margin: 30px auto; max-width: 800px; border: 1px solid rgba(0, 0, 0, 0.05);
+                position: relative; overflow: hidden;
+            }
+            .modern-form-container::before {
+                content: ''; position: absolute;top:0;left:0; width:100%;height:6px;
+                background:linear-gradient(to right, #2196F3, #03A9F4, #00BCD4);
+            }
+            .modern-form-container .gform_wrapper {margin:0;padding:0;}
+            .conv-navigation {margin:20px 0;display:flex;gap:10px;justify-content:center;}
+            .conv-button {
+                background: #2196F3; color: white; border: none; padding: 12px 24px;
+                border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.2s;
+            }
+            .conv-button:hover {
+                background: #0d8bf2; transform: translateY(-2px); box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+            }
+            .conversational-form .gform_footer {display:none !important;}
+            .conversational-form.final-step .gform_footer {display:flex !important;margin-top:20px;justify-content: center;}
+            .conversational-form.final-step .gform_footer input[type="submit"] {
+                background: #2196F3;color:white;border:none;padding:12px 30px;border-radius:8px;cursor:pointer;font-weight:bold;transition:all 0.2s;box-shadow:0 4px 6px rgba(0, 0, 0, 0.1);}
+            .conversational-form.final-step .gform_footer input[type="submit"]:hover {
+                transform:translateY(-2px);box-shadow:0 6px 10px rgba(0,0,0,0.15);background:#0d8bf2;}
+            .gform_wrapper.conversational-form .gfield_animation {animation: fadeSlideIn 0.4s ease-out;}
+            @keyframes fadeSlideIn {from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+            .conv-progress-container {margin-bottom:30px;padding:10px;border-radius:10px;background:rgba(240,240,240,0.6);}
+            .conv-progress-bar {height:8px;background:linear-gradient(to right,#2196F3,#03A9F4);border-radius:10px;transition:width 0.3s;box-shadow:0 1px 3px rgba(0,0,0,0.1);}
+            .conv-progress-info {display:flex;justify-content:space-between;margin-top:8px;font-size:14px;color:#666;}
+            .conv-form-header {margin-bottom:30px;text-align:center;animation: fadeIn 0.7s;}
+            .conv-form-title {font-size:28px;font-weight:bold;color:#333;margin-bottom:10px;}
+            .conv-form-description {font-size:16px;color:#666;line-height:1.5;}
+            @keyframes fadeIn {from{opacity:0;}to{opacity:1;}}
+            .gfield_html, .gsection {background:#f4f9fd;border-radius:8px;padding:18px;margin-bottom:12px;}
+            .gfield_html {color:#3173c7;}
+            .gsection .gsection_title {font-weight:bold;color:#306195;font-size:18px;}
+            </style>
+            <script>
+            (function($){
+                $(document).on('gform_post_render', function(event, formId){
+                    if(formId == <?php echo $form['id']; ?>) {
+                        const wrapper = $('#gform_wrapper_' + formId);
+                        if (!wrapper.parent().hasClass('modern-form-container')) {
+                            wrapper.wrap('<div class="modern-form-container"></div>');
+                        }
+                        wrapper.addClass('conversational-form');
+                        if ('<?php echo esc_js($form['title']); ?>' || '<?php echo esc_js($form['description']); ?>') {
+                            if (wrapper.find('.conv-form-header').length === 0) {
+                                const formHeader = $('<div class="conv-form-header"></div>');
+                                if ('<?php echo esc_js($form['title']); ?>') { formHeader.append('<h2 class="conv-form-title"><?php echo esc_js($form['title']); ?></h2>'); }
+                                if ('<?php echo esc_js($form['description']); ?>') { formHeader.append('<div class="conv-form-description"><?php echo esc_js($form['description']); ?></div>'); }
+                                wrapper.prepend(formHeader);
+                            }
+                        }
+                        const allFields = wrapper.find('.gfield').filter(function(){
+                            const $f = $(this);
+                            return !($f.hasClass('gform_hidden') || $f.hasClass('hidden_label') || $f.hasClass('gfield_visibility_hidden') || $f.hasClass('gfield--type-hidden') || $f.hasClass('gform_validation_container') || $f.css('display') === 'none' || $f.is(':hidden'));
+                        });
+                        if (allFields.length === 0) return;
+                        let steps = [], currentGroup = [];
+                        allFields.each(function(i, field){
+                            const $f = $(field);
+                            const isInteractive = $f.find('input:not([type="hidden"]), select, textarea').not('.gfield_consent input').length > 0;
+                            currentGroup.push($f);
+                            if(isInteractive) { steps.push(currentGroup); currentGroup = [];}
+                        });
+                        if(currentGroup.length > 0) steps.push(currentGroup);
+                        let currentStep = 0;
+                        const totalSteps = steps.length;
+                        if (wrapper.find('.conv-progress-container').length == 0) {
+                            const progressContainer = $('<div class="conv-progress-container"></div>');
+                            progressContainer.append('<div class="conv-progress-bar"></div>');
+                            progressContainer.append('<div class="conv-progress-info"><span class="conv-step-current">۱</span><span class="conv-step-total">از ' + convertToPersianNumbers(totalSteps) + '</span></div>');
+                            wrapper.prepend(progressContainer);
+                        }
+                        function updateProgressBar(){
+                            wrapper.find('.conv-step-total').text('از ' + convertToPersianNumbers(totalSteps));
+                            wrapper.find('.conv-step-current').text(convertToPersianNumbers(currentStep+1));
+                            wrapper.find('.conv-progress-bar').css('width', (((currentStep+1)/totalSteps)*100) + '%');
+                        }
+                        function convertToPersianNumbers(n) { return n.toString().replace(/\d/g, d=>'۰۱۲۳۴۵۶۷۸۹'[d]); }
+                        function showStep(n){
+                            allFields.hide();
+                            (steps[n] || []).forEach($f => $f.show().addClass('gfield_animation') );
+                            updateProgressBar();
+                            $('html, body').animate({ scrollTop: wrapper.parent('.modern-form-container').offset().top-50 }, 300);
+                        }
+                        if (wrapper.find('.conv-navigation').length === 0) { wrapper.append('<div class="conv-navigation"></div>'); } else { wrapper.find('.conv-navigation').empty(); }
+                        function updateNavigation(){
+                            const nav = wrapper.find('.conv-navigation').empty();
+                            if(currentStep > 0){
+                                nav.append($('<button type="button" class="conv-button conv-prev"> →قبلی</button>').on('click', function(){ gotoStep(currentStep-1); }));
+                            }
+                            if(currentStep < totalSteps-1){
+                                nav.append($('<button type="button" class="conv-button conv-next">بعدی ←</button>').on('click', function(){ gotoStep(currentStep+1); }));
+                                wrapper.removeClass('final-step');
+                            } else {
+                                wrapper.addClass('final-step');
+                            }
+                            updateProgressBar();
+                        }
+                        function gotoStep(n){
+                            if(n < 0 || n >= totalSteps) return;
+                            currentStep = n;
+                            showStep(currentStep);
+                            updateNavigation();
+                        }
+                        steps.forEach((group, groupIndex) => {
+                            group.forEach($f => {
+                                $f.find('input[type="radio"], input[type="checkbox"]').on('change', () => {
+                                    setTimeout(() => { if(groupIndex === currentStep && currentStep < totalSteps-1) gotoStep(currentStep+1); }, 350);
+                                });
+                            });
+                        });
+                        showStep(0);
+                        updateNavigation();
+                    }
+                });
+            })(jQuery);
+            </script>
+            <?php
+        });
+        return $form;
+    }
 }
 
 // Initialize the enhanced class
