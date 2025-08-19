@@ -3212,7 +3212,6 @@ private function render_station_modal_javascript() {
     </script>
     <?php
 }
-}
 
     public function filter_ultimate_conversational_gform( $form ) {
         // Add a filter to inject the conversational JS and CSS in the footer
