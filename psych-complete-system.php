@@ -461,30 +461,9 @@ final class Psych_Complete_System_Enhanced {
         if ($this->should_load_frontend_assets()) {
             wp_enqueue_script('jquery');
 
-            wp_enqueue_script(
-                'psych-system-frontend',
-                PSYCH_SYSTEM_URL . 'assets/frontend.js',
-                ['jquery'],
-                self::VERSION,
-                true
-            );
-
-            wp_localize_script('psych-system-frontend', 'psych_system', [
-                'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('psych_system_nonce'),
-                'viewing_context' => psych_get_viewing_context(),
-                'user_id' => get_current_user_id()
-            ]);
-
-            wp_enqueue_style(
-                'psych-system-frontend',
-                PSYCH_SYSTEM_URL . 'assets/frontend.css',
-                [],
-                self::VERSION
-            );
-
-            // Add inline frontend styles for basic styling
-            wp_add_inline_style('psych-system-frontend', $this->get_frontend_inline_styles());
+            // The psych-system-frontend script and style have been removed
+            // because the files were deleted and the functionality is handled by
+            // the self-contained dashboard-display.php module.
         }
     }
 
