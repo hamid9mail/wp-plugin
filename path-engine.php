@@ -39,6 +39,9 @@ final class PsychoCourse_Path_Engine {
     private $viewing_context = null;
     private $display_mode = 'timeline'; // Default display mode
 
+    public static $current_station_node_id = null;
+    public static $current_target_user_id = null;
+
     public static function get_instance() {
         if (null === self::$instance) {
             self::$instance = new self();
@@ -805,6 +808,16 @@ public function register_result_content($atts, $content = null) {
         $content = base64_decode($station_details['raw_content_b64']);
         $is_completed = $this->is_station_completed($user_id, $station_details['station_node_id'], $station_details);
 
+        // Check if the mission is a GForm and enqueue scripts if so.
+        if (isset($station_details['mission_type']) && $station_details['mission_type'] === 'gform') {
+            if (function_exists('gravity_form_enqueue_scripts')) {
+                $form_id = intval(str_replace('form_id:', '', $station_details['mission_target']));
+                if ($form_id > 0) {
+                    gravity_form_enqueue_scripts($form_id, true);
+                }
+            }
+        }
+
         ob_start();
         $this->render_modal_content($content, $is_completed, $user_id, $station_details, $context);
         wp_send_json_success(['html' => ob_get_clean()]);
@@ -834,7 +847,15 @@ public function register_result_content($atts, $content = null) {
         // نمایش محتوای ماموریت (اگر انجام نشده)
         echo '<div class="psych-mission-area">';
         if (!empty($mission_match[1])) {
+            self::$current_station_node_id = $station_details['station_node_id'];
+            self::$current_target_user_id = $context['viewed_user_id'];
+            add_filter('gform_pre_render', [$this, 'add_mission_hidden_fields']);
+
             echo '<div class="psych-mission-content">' . wpautop(do_shortcode($mission_match[1])) . '</div>';
+
+            remove_filter('gform_pre_render', [$this, 'add_mission_hidden_fields']);
+            self::$current_station_node_id = null;
+            self::$current_target_user_id = null;
         }
         echo $this->generate_mission_action_html($user_id, $station_details, $context);
         echo '</div>';
@@ -888,7 +909,19 @@ public function register_result_content($atts, $content = null) {
                 <?php else : ?>
                     <?php if (!empty($mission_content)) : ?>
                         <div class="psych-mission-section">
-                            <div class="psych-mission-instructions"><?php echo do_shortcode($mission_content); ?></div>
+                            <div class="psych-mission-instructions">
+                                <?php
+                                self::$current_station_node_id = $station['station_node_id'];
+                                self::$current_target_user_id = $context['viewed_user_id'];
+                                add_filter('gform_pre_render', [$this, 'add_mission_hidden_fields']);
+
+                                echo do_shortcode($mission_content);
+
+                                remove_filter('gform_pre_render', [$this, 'add_mission_hidden_fields']);
+                                self::$current_station_node_id = null;
+                                self::$current_target_user_id = null;
+                                ?>
+                            </div>
                         </div>
                     <?php endif; ?>
                     <div class="psych-mission-actions">
@@ -1413,29 +1446,73 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
     // SECTION 4: INTEGRATION HANDLERS (GForm, Referral, Feedback)
     // =====================================================================
 
+    public function add_mission_hidden_fields($form) {
+        if (self::$current_station_node_id && self::$current_target_user_id) {
+            // Hidden field for Station Node ID
+            $station_field = new GF_Field_Hidden([
+                'id' => 998, // Using a high number to avoid conflicts
+                'inputName' => 'station_node_id_hidden',
+                'defaultValue' => self::$current_station_node_id,
+            ]);
+
+            // Hidden field for Target User ID
+            $user_field = new GF_Field_Hidden([
+                'id' => 997, // Using a high number to avoid conflicts
+                'inputName' => 'psych_target_user_id',
+                'defaultValue' => self::$current_target_user_id,
+            ]);
+
+            $form['fields'][] = $station_field;
+            $form['fields'][] = $user_field;
+        }
+        return $form;
+    }
+
     public function handle_gform_submission($entry, $form) {
         if (!class_exists('GFForms')) return;
 
         $station_node_id = '';
+        $target_user_id = 0;
+
+        // Find the hidden fields in the form submission
         foreach ($form['fields'] as $field) {
-            if (isset($field->inputName) && $field->inputName === 'station_node_id_hidden' ||
-                isset($field->label) && $field->label === 'station_node_id_hidden') {
+            if (isset($field->inputName) && $field->inputName === 'station_node_id_hidden') {
                 $station_node_id = rgar($entry, (string) $field->id);
-                break;
+            }
+            if (isset($field->inputName) && $field->inputName === 'psych_target_user_id') {
+                $target_user_id = rgar($entry, (string) $field->id);
             }
         }
 
-        if (empty($station_node_id)) return;
+        if (empty($station_node_id)) {
+            // If there's no station ID, it's not a mission form, so we do nothing.
+            return;
+        }
 
-        $user_id = $entry['created_by'] ?? get_current_user_id();
-        if (!$user_id) return;
+        // Determine the correct user to credit
+        $user_to_credit = 0;
+        if (!empty($target_user_id) && get_userdata($target_user_id) !== false) {
+            // Use the ID from the hidden field if it's a valid user
+            $user_to_credit = (int) $target_user_id;
+        } else {
+            // Fallback to the user who submitted the form (if logged in)
+            $user_to_credit = (int) ($entry['created_by'] ?? 0);
+        }
 
-        // Set transient for retroactive completion check
-        $transient_key = "gform_complete_{$user_id}_{$form['id']}";
+        if (!$user_to_credit) {
+            // If we still don't have a user, we can't complete the mission.
+            return;
+        }
+
+        // The old system used a transient. A more direct approach is better.
+        // We can directly call the completion function.
+        // To do this, we need the full station data. This is a limitation of this hook.
+        // For now, we will stick to the transient method as it's already in place.
+        $transient_key = "gform_complete_{$user_to_credit}_{$form['id']}";
         set_transient($transient_key, $station_node_id, DAY_IN_SECONDS);
 
-        // Fire action for other integrations
-        do_action('psych_path_gform_station_completed', $user_id, $station_node_id, $form['id'], $entry);
+        // Fire action for other integrations, using the correct user ID
+        do_action('psych_path_gform_station_completed', $user_to_credit, $station_node_id, $form['id'], $entry);
     }
 
     public function handle_feedback_submission($feedback_giver_id, $user_id_receiving_feedback) {
@@ -2951,6 +3028,13 @@ private function render_station_modal_javascript() {
                 .then(response => response.json())
                 .then(res => {
                     modalContent.innerHTML = res.success ? res.data.html : `<div class="psych-alert psych-alert-danger">${res.data.message || 'خطا'}</div>`;
+                    if (res.success && stationDetails.mission_type === 'gform') {
+                        const formId = parseInt(stationDetails.mission_target.replace('form_id:', ''), 10);
+                        if (formId > 0 && typeof jQuery !== 'undefined') {
+                            // Trigger the Gravity Forms render event to initialize the form.
+                            jQuery(document).trigger('gform_post_render', [formId, 1]);
+                        }
+                    }
                 })
                 .catch(() => {
                     modalContent.innerHTML = '<div class="psych-alert psych-alert-danger">خطای سرور.</div>';
