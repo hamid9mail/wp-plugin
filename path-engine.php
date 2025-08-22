@@ -28,6 +28,24 @@ if (!function_exists('psych_path_get_viewing_context')) {
     }
 }
 
+if (!function_exists('psych_complete_mission_by_flag')) {
+    /**
+     * Sets a flag for a user, which can complete a mission of type "flag".
+     * This is the primary way for external code to integrate with the path engine.
+     *
+     * @param string $flag_name The unique name of the flag to set.
+     * @param int    $user_id The ID of the user for whom the flag is being set.
+     * @return bool True on success, false on failure.
+     */
+    function psych_complete_mission_by_flag($flag_name, $user_id) {
+        if (empty($flag_name) || empty($user_id) || !get_userdata($user_id)) {
+            return false;
+        }
+        $meta_key = '_psych_mission_flag_' . sanitize_key($flag_name);
+        return update_user_meta($user_id, $meta_key, true);
+    }
+}
+
 /**
  * Enhanced Path Engine Class with Multiple Display Modes
  */
@@ -79,6 +97,11 @@ final class PsychoCourse_Path_Engine {
 add_shortcode('static_content', [$this, 'register_static_content']);
 add_shortcode('mission_content', [$this, 'register_mission_content']);
 add_shortcode('result_content', [$this, 'register_result_content']);
+
+        // Conditional Content Shortcodes
+        add_shortcode('student_only', [$this, 'handle_student_only_shortcode']);
+        add_shortcode('coach_only', [$this, 'handle_coach_only_shortcode']);
+        add_shortcode('mission_submission_count', [$this, 'handle_submission_count_shortcode']);
 
 
         // AJAX Handlers
@@ -269,8 +292,27 @@ add_shortcode('result_content', [$this, 'register_result_content']);
         return ob_get_clean();
     }
 
+    private function filter_visible_stations($stations, $user_id) {
+        $visible_stations = [];
+        foreach ($stations as $station) {
+            $visibility_flag = $station['visibility_flag'] ?? '';
+            if (empty($visibility_flag)) {
+                // If no flag is set, the station is visible by default.
+                $visible_stations[] = $station;
+            } else {
+                // If a flag is set, check if the user has the corresponding meta flag.
+                $meta_key = '_psych_mission_flag_' . sanitize_key($visibility_flag);
+                if (get_user_meta($user_id, $meta_key, true)) {
+                    $visible_stations[] = $station;
+                }
+            }
+        }
+        return $visible_stations;
+    }
+
     private function render_path_by_display_mode($path_id, $context) {
         $stations = $this->path_data[$path_id]['stations'];
+        $stations = $this->filter_visible_stations($stations, $context['viewed_user_id']);
 
         switch ($this->display_mode) {
             case 'accordion':
@@ -512,6 +554,35 @@ add_shortcode('result_content', [$this, 'register_result_content']);
         }
         return '';
     }
+
+    public function handle_submission_count_shortcode($atts) {
+        if (!self::$current_station_node_id || !self::$current_target_user_id) {
+            return '';
+        }
+
+        $station_node_id = self::$current_station_node_id;
+        $user_id = self::$current_target_user_id;
+
+        // Find the station data to get the required count
+        $required_count = 1;
+        foreach ($this->path_data as $path) {
+            foreach ($path['stations'] as $station) {
+                if ($station['station_node_id'] === $station_node_id) {
+                    $required_count = max(1, intval($station['mission_required_submissions'] ?? 1));
+                    break 2;
+                }
+            }
+        }
+
+        $meta_key = "_mission_sub_count_{$station_node_id}";
+        $current_count = (int) get_user_meta($user_id, $meta_key, true);
+
+        return sprintf(
+            '<span class="mission-submission-count">%d از %d پاسخ دریافت شد</span>',
+            $current_count,
+            $required_count
+        );
+    }
 public function register_static_content($atts, $content = null) {
     if (!empty($this->path_data)) {
         $path_id = array_key_last($this->path_data);
@@ -545,6 +616,22 @@ public function register_result_content($atts, $content = null) {
     return '';
 }
 
+    public function handle_student_only_shortcode($atts, $content = null) {
+        $context = $this->get_viewing_context();
+        if (!$context['is_impersonating']) {
+            return do_shortcode($content);
+        }
+        return '';
+    }
+
+    public function handle_coach_only_shortcode($atts, $content = null) {
+        $context = $this->get_viewing_context();
+        if ($context['is_impersonating']) {
+            return do_shortcode($content);
+        }
+        return '';
+    }
+
     private function process_stations($path_id, $user_id) {
     if (!isset($this->path_data[$path_id]) || !$user_id) return;
 
@@ -566,7 +653,9 @@ public function register_result_content($atts, $content = null) {
             'unlock_condition'    => '', // e.g., has_badge:pro|min_points:500
             'relation'            => 'AND', // AND or OR
             'user_meta_value'     => '', // for use with user_meta_key in unlock_condition
-            'gform_mode'          => ''
+            'gform_mode'          => '',
+            'mission_required_submissions' => '1', // New: for submission counter
+            'visibility_flag'     => '' // New: for conditional visibility
         ], $station_data['atts']);
 
         // فارغ از اینکه ایستگاه چه نوعی است، این خصوصیت انتقال پیدا می‌کند
@@ -702,6 +791,15 @@ public function register_result_content($atts, $content = null) {
         $mission_target = $station_atts['mission_target'];
 
         switch ($mission_type) {
+            case 'flag':
+                $flag_name = $station_atts['mission_target'];
+                if (!empty($flag_name)) {
+                    $meta_key = '_psych_mission_flag_' . sanitize_key($flag_name);
+                    if (get_user_meta($user_id, $meta_key, true)) {
+                        $completed_retroactively = true;
+                    }
+                }
+                break;
             case 'purchase':
                 if (function_exists('wc_customer_bought_product')) {
                     $product_id = intval(str_replace('product_id:', '', $mission_target));
@@ -1304,11 +1402,15 @@ public function ajax_complete_mission() {
             // Render the new content for the accordion
             $new_inline_html = $this->render_inline_station_content($station_data);
 
+            // Check if a station was revealed, which requires a full path refresh
+            $full_refresh_needed = isset($result['rewards_summary']['revealed_station_flag']);
+
             wp_send_json_success([
                 'message' => 'ماموریت با موفقیت تکمیل شد!',
                 'status' => 'completed',
                 'rewards' => $result['rewards_summary'],
-                'new_html' => $new_inline_html
+                'new_html' => $new_inline_html,
+                'full_path_refresh' => $full_refresh_needed
             ]);
         } else {
             // این حالت به ندرت اتفاق می‌افتد چون در ابتدا چک شده است
@@ -1437,6 +1539,14 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
                     $rewards_summary['unlocked_station_id'] = sanitize_key($value);
                 }
                 break;
+            case 'reveal_station':
+                if (!empty($value) && function_exists('psych_complete_mission_by_flag')) {
+                    // This reward sets a flag, which in turn makes a station with a corresponding visibility_flag appear.
+                    psych_complete_mission_by_flag($value, $user_id);
+                    // We can also add a toast notification for this
+                    $rewards_summary['revealed_station_flag'] = $value;
+                }
+                break;
         }
     }
     return $rewards_summary;
@@ -1462,8 +1572,26 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
                 'defaultValue' => self::$current_target_user_id,
             ]);
 
+        // Get the required submissions count from the station attributes
+        $required_submissions = 1; // Default
+        foreach ($this->path_data as $path) {
+            foreach ($path['stations'] as $station) {
+                if ($station['station_node_id'] === self::$current_station_node_id) {
+                    $required_submissions = $station['mission_required_submissions'] ?? 1;
+                    break 2;
+                }
+            }
+        }
+
+        $submissions_field = new GF_Field_Hidden([
+            'id' => 996, // Using a high number to avoid conflicts
+            'inputName' => 'psych_required_submissions',
+            'defaultValue' => $required_submissions,
+        ]);
+
             $form['fields'][] = $station_field;
             $form['fields'][] = $user_field;
+        $form['fields'][] = $submissions_field;
         }
         return $form;
     }
@@ -1473,6 +1601,7 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
 
         $station_node_id = '';
         $target_user_id = 0;
+        $required_submissions = 1;
 
         // Find the hidden fields in the form submission
         foreach ($form['fields'] as $field) {
@@ -1482,37 +1611,47 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
             if (isset($field->inputName) && $field->inputName === 'psych_target_user_id') {
                 $target_user_id = rgar($entry, (string) $field->id);
             }
+            if (isset($field->inputName) && $field->inputName === 'psych_required_submissions') {
+                $required_submissions = max(1, intval(rgar($entry, (string) $field->id)));
+            }
         }
 
         if (empty($station_node_id)) {
-            // If there's no station ID, it's not a mission form, so we do nothing.
-            return;
+            return; // Not a mission form
         }
 
         // Determine the correct user to credit
-        $user_to_credit = 0;
-        if (!empty($target_user_id) && get_userdata($target_user_id) !== false) {
-            // Use the ID from the hidden field if it's a valid user
-            $user_to_credit = (int) $target_user_id;
-        } else {
-            // Fallback to the user who submitted the form (if logged in)
-            $user_to_credit = (int) ($entry['created_by'] ?? 0);
-        }
+        $user_to_credit = !empty($target_user_id) && get_userdata($target_user_id) !== false
+            ? (int) $target_user_id
+            : (int) ($entry['created_by'] ?? 0);
 
         if (!$user_to_credit) {
-            // If we still don't have a user, we can't complete the mission.
-            return;
+            return; // Cannot determine a user to credit
         }
 
-        // The old system used a transient. A more direct approach is better.
-        // We can directly call the completion function.
-        // To do this, we need the full station data. This is a limitation of this hook.
-        // For now, we will stick to the transient method as it's already in place.
-        $transient_key = "gform_complete_{$user_to_credit}_{$form['id']}";
-        set_transient($transient_key, $station_node_id, DAY_IN_SECONDS);
+        // Increment submission count
+        $meta_key = "_mission_sub_count_{$station_node_id}";
+        $current_count = (int) get_user_meta($user_to_credit, $meta_key, true);
+        $new_count = $current_count + 1;
+        update_user_meta($user_to_credit, $meta_key, $new_count);
 
-        // Fire action for other integrations, using the correct user ID
-        do_action('psych_path_gform_station_completed', $user_to_credit, $station_node_id, $form['id'], $entry);
+        // Check if the required number of submissions has been met
+        if ($new_count >= $required_submissions) {
+            // Set transient for retroactive completion check by the path engine
+            $transient_key = "gform_complete_{$user_to_credit}_{$form['id']}";
+            set_transient($transient_key, $station_node_id, DAY_IN_SECONDS);
+        }
+
+        // Fire action for other integrations, regardless of completion status
+        do_action('psych_path_gform_station_submitted', [
+            'user_id' => $user_to_credit,
+            'station_node_id' => $station_node_id,
+            'form_id' => $form['id'],
+            'entry' => $entry,
+            'current_submissions' => $new_count,
+            'required_submissions' => $required_submissions,
+            'is_complete' => ($new_count >= $required_submissions)
+        ]);
     }
 
     public function handle_feedback_submission($feedback_giver_id, $user_id_receiving_feedback) {
@@ -3071,6 +3210,16 @@ private function render_station_modal_javascript() {
                 .then(response => response.json())
                 .then(response => {
                     if (response.success) {
+                        // If a station was revealed, the simplest way to show it is to reload.
+                        if (response.data.full_path_refresh) {
+                            psych_show_rewards_notification(response.data.rewards);
+                            // Wait for the user to close the rewards popup before reloading.
+                            document.addEventListener('psych_rewards_closed', function() {
+                                location.reload();
+                            }, { once: true });
+                            return;
+                        }
+
                         const modal = document.getElementById('psych-station-modal');
                         if (modal.style.display !== 'none') psych_close_station_modal();
 
@@ -3129,7 +3278,11 @@ private function render_station_modal_javascript() {
             notification.addEventListener('click', function(e) {
                 if (e.target.matches('.psych-rewards-close, .psych-rewards-overlay')) {
                     notification.style.opacity = '0';
-                    setTimeout(() => notification.remove(), 300);
+                    setTimeout(() => {
+                        notification.remove();
+                        // Dispatch a custom event that can be listened for.
+                        document.dispatchEvent(new CustomEvent('psych_rewards_closed'));
+                    }, 300);
                 }
             });
         }
