@@ -906,7 +906,7 @@ public function register_result_content($atts, $content = null) {
         $content = base64_decode($station_details['raw_content_b64']);
         $is_completed = $this->is_station_completed($user_id, $station_details['station_node_id'], $station_details);
 
-        // Check if the mission is a GForm and enqueue scripts if so. This is the backend part of the fix.
+        // Re-applying the backend fix for the GForm modal bug.
         if (isset($station_details['mission_type']) && $station_details['mission_type'] === 'gform') {
             if (function_exists('gravity_form_enqueue_scripts')) {
                 $form_id = intval(str_replace('form_id:', '', $station_details['mission_target']));
@@ -3167,7 +3167,7 @@ private function render_station_modal_javascript() {
                 .then(response => response.json())
                 .then(res => {
                     modalContent.innerHTML = res.success ? res.data.html : `<div class="psych-alert psych-alert-danger">${res.data.message || 'خطا'}</div>`;
-                    // Frontend part of the fix: Trigger Gravity Forms render event after loading content.
+                    // Re-applying the frontend fix for the GForm modal bug.
                     if (res.success && stationDetails.mission_type === 'gform') {
                         const formId = parseInt(stationDetails.mission_target.replace('form_id:', ''), 10);
                         if (formId > 0 && typeof jQuery !== 'undefined') {

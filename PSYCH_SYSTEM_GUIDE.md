@@ -15,76 +15,57 @@
 
 ### ۱.۲ - شورت‌کد اصلی مسیر: `[psychocourse_path]`
 این شورت‌کد به عنوان کانتینر اصلی برای یک مسیر عمل می‌کند و تمام ایستگاه‌ها باید درون آن قرار گیرند.
-*   **ویژگی‌ها:** `display_mode`, `theme`, `show_progress`, `path_title`.
+
+**ویژگی‌ها:**
+*   `display_mode` (نوع: `string`, پیش‌فرض: `timeline`): نحوه نمایش مسیر را تعیین می‌کند. مقادیر مجاز: `timeline`, `accordion`, `cards`, `treasure_map`, `simple_list`.
+*   `theme` (نوع: `string`, پیش‌فرض: `default`): تم رنگی مسیر را مشخص می‌کند. مقادیر مجاز: `default`, `dark`, `minimal`, `colorful`.
+*   `show_progress` (نوع: `boolean`, پیش‌فرض: `true`): نوار پیشرفت کلی مسیر را نمایش می‌دهد یا پنهان می‌کند.
+*   `path_title` (نوع: `string`, پیش‌فرض: `''`): یک عنوان برای کل مسیر نمایش می‌دهد.
 
 ---
 
 ### ۱.۳ - شورت‌کد ایستگاه: `[station]`
-قلب تپنده مسیر شما. هر `[station]` یک مرحله یا ماموریت در مسیر است.
+قلب تپنده مسیر شما. هر `[station]` یک مرحله یا ماموریت در مسیر است. در ادامه لیست کامل ویژگی‌های این شورت‌کد قدرتمند آمده است.
 
-**مهم‌ترین ویژگی‌ها:**
+**ویژگی‌های اصلی:**
+*   `title` (نوع: `string`, **الزامی**): عنوان ایستگاه که به کاربر نمایش داده می‌شود.
+*   `station_node_id` (نوع: `string`, **بسیار مهم**): یک شناسه منحصر به فرد برای ایستگاه. اگر این شناسه را مشخص نکنید، به صورت خودکار ساخته می‌شود. اما برای ارجاع به این ایستگاه در پاداش‌ها (مثلاً برای باز کردن یا نمایان کردن آن)، حتماً باید یک شناسه مشخص و منحصر به فرد برای آن تعریف کنید.
+*   `icon` (نوع: `string`, پیش‌فرض: `fas fa-flag`): آیکون ایستگاه از کتابخانه Font Awesome.
 
-| ویژگی | توضیح | مثال |
-| :--- | :--- | :--- |
-| `title` | **(الزامی)** عنوان ایستگاه. | `title="فصل اول: مقدمه"` |
-| `station_node_id` | **(بسیار مهم)** شناسه منحصر به فرد ایستگاه برای ارجاع در پاداش‌ها. | `station_node_id="intro_ch1"` |
-| `initial_state` | وضعیت اولیه ایستگاه. مقادیر با کاما جدا می‌شوند. | `initial_state="locked,hidden"` |
-| `mission_type` | نوع ماموریت. | `mission_type="gform"` |
-| `mission_target` | هدف ماموریت (بسته به نوع). | `mission_target="form_id:7"` |
-| `rewards` | پاداش‌ها پس از تکمیل. پاداش‌ها با `|` جدا می‌شوند. | `rewards="add_points:50|show_station:ch2"` |
+**ویژگی‌های کنترل وضعیت و نمایش:**
+*   `initial_state` (نوع: `string`, پیش‌فرض: `''`): وضعیت اولیه ایستگاه را تعیین می‌کند. مقادیر ممکن که با کاما (`,`) جدا می‌شوند عبارتند از:
+    *   `locked`: ایستگاه در ابتدا قفل است.
+    *   `hidden`: ایستگاه در ابتدا به طور کامل از مسیر مخفی است.
+    *   مثال: `initial_state="locked,hidden"`
+*   `unlock_trigger` (نوع: `string`, پیش‌فرض: `sequential`): شرط باز شدن ایستگاه. `sequential` یعنی ایستگاه قبلی باید تکمیل شده باشد. `independent` یعنی باز شدن ایستگاه به مراحل قبلی وابسته نیست و فقط به شروط دیگر (مانند `unlock_condition`) بستگی دارد.
+*   `unlock_condition` (نوع: `string`): شروط پیشرفته و ترکیبی برای باز شدن ایستگاه. شرایط با `|` از هم جدا می‌شوند. (مثال: `unlock_condition="has_badge:pro|min_points:500"`)
+*   `relation` (نوع: `string`, پیش‌فرض: `AND`): رابطه منطقی بین شروط `unlock_condition`. می‌تواند `AND` یا `OR` باشد.
 
-**توضیح `mission_type="flag"`:**
-این نوع ماموریت بسیار انعطاف‌پذیر است و به عنوان یک **"آداپتور جهانی"** عمل می‌کند. شما می‌توانید از هر جای دیگر سایت (با استفاده از کدنویسی و تابع `psych_complete_mission_by_flag`) این فلگ را فعال کرده و در نتیجه این ایستگاه را تکمیل کنید. این برای یکپارچه‌سازی با رویدادهای خارجی (مانند تکمیل یک پروفایل، مشاهده یک ویدیو و ...) عالی است.
+**ویژگی‌های ماموریت:**
+*   `mission_type` (نوع: `string`, پیش‌فرض: `button_click`): نوع ماموریتی که کاربر باید انجام دهد.
+*   `mission_target` (نوع: `string`): هدف ماموریت که به `mission_type` بستگی دارد (مثال: `form_id:7` برای گرویتی فرم، `product_id:101` برای ووکامرس).
+*   `mission_button_text` (نوع: `string`, پیش‌فرض: `مشاهده ماموریت`): متن دکمه برای ماموریت‌های نوع `button_click`.
 
----
-
-### ۱.۴ - کنترل وضعیت ایستگاه از طریق پاداش‌ها
-شما می‌توانید از پاداش‌های یک ایستگاه برای تغییر وضعیت یک ایستگاه دیگر استفاده کنید. این کار با ارجاع به `station_node_id` ایستگاه هدف انجام می‌شود.
-
-*   `show_station:station_id`: یک ایستگاه مخفی را نمایان می‌کند.
-*   `hide_station:station_id`: یک ایستگاه را مخفی می‌کند.
-*   `unlock_station:station_id`: یک ایستگاه قفل را باز می‌کند.
-*   `lock_station:station_id`: یک ایستگاه را قفل می‌کند.
-
-**مثال: مسیر شرطی**
-```html
-<!-- ایستگاه انتخاب مسیر -->
-[station station_node_id="path_choice" title="انتخاب مسیر تخصصی" rewards="show_station:tech_path_1|unlock_station:tech_path_1"]
-  [mission_content]
-    <p>با تکمیل این مرحله، مسیر تکنیکی برای شما باز خواهد شد.</p>
-  [/mission_content]
-[/station]
-
-<!-- ایستگاه مسیر تکنیکی (در ابتدا مخفی و قفل) -->
-[station station_node_id="tech_path_1" title="درس ۱: مبانی برنامه‌نویسی" initial_state="locked,hidden"]
-  [mission_content]
-    <p>به مسیر تکنیکی خوش آمدید!</p>
-  [/mission_content]
-[/station]
-```
-*توضیح:* پس از تکمیل ایستگاه `path_choice`، ایستگاه `tech_path_1` که در ابتدا مخفی و قفل بود، همزمان نمایان و باز می‌شود.
+**ویژگی‌های پاداش:**
+*   `rewards` (نوع: `string`): پاداش‌هایی که کاربر پس از تکمیل دریافت می‌کند. پاداش‌ها با `|` از هم جدا می‌شوند. (مثال: `add_points:50|award_badge:3|show_station:secret_mission`)
+*   `notification_text` (نوع: `string`): متن سفارشی برای اعلان پاداش‌ها.
 
 ---
 
-### ۱.۵ - شورت‌کدهای محتوای ایستگاه
-*   `[static_content]`, `[mission_content]`, `[result_content]` برای سازماندهی محتوای درون `[station]` استفاده می‌شوند.
+### ۱.۴ - شورت‌کدهای محتوای ایستگاه
+*   `[static_content]...[/static_content]`: محتوای ثابت که همیشه نمایش داده می‌شود.
+*   `[mission_content]...[/mission_content]`: محتوای ماموریت که قبل از تکمیل نمایش داده می‌شود.
+*   `[result_content]...[/result_content]`: محتوای نتیجه که بعد از تکمیل نمایش داده می‌شود.
 
 ---
 
-### ۱.۶ - سیستم بازیگران و تایید مربی
-این دو سیستم به شما اجازه می‌دهند ماموریت‌های پیچیده‌تر با تعاملات چندنفره و نیاز به بازبینی ایجاد کنید.
-
-| ویژگی `[station]` | توضیح |
-| :--- | :--- |
-| `actors` | چه کسانی مجاز به تکمیل ماموریت هستند (`self`, `coach`, `guest_link`, `user_link`). |
-| `required_actors_count` | تعداد بازیگران خارجی لازم برای تکمیل ماموریت. |
-| `requires_approval` | اگر برابر `coach` باشد، ماموریت پس از انجام توسط دانشجو نیازمند تایید مربی خواهد بود. |
-
-| شورت‌کد | هدف |
-| :--- | :--- |
-| `[mission_actor_link]` | لینک اشتراک‌گذاری برای ماموریت‌های چند بازیگره. |
-| `[mission_actors_count]` | نمایش تعداد بازیگرانی که ماموریت را تکمیل کرده‌اند. |
-| `[mission_approval_form]` | نمایش فرم تایید/رد برای مربی. |
+### ۱.۵ - شورت‌کدهای شرطی و دینامیک
+*   `[student_only]...[/student_only]`: محتوا فقط برای دانشجو قابل مشاهده است.
+*   `[coach_only]...[/coach_only]`: محتوا فقط برای مربی (در حالت impersonate) قابل مشاهده است.
+*   `[mission_submission_count]`: شمارنده پاسخ‌های فرم را در ماموریت‌های `gform` نمایش می‌دهد.
+*   `[mission_actors_count]`: تعداد بازیگران خارجی که ماموریت را تکمیل کرده‌اند نمایش می‌دهد.
+*   `[mission_actor_link]`: لینک اشتراک‌گذاری برای ماموریت‌های چند بازیگره.
+*   `[mission_approval_form]`: فرم تایید/رد را برای مربی نمایش می‌دهد.
 
 ---
 
@@ -99,30 +80,92 @@
 
 ---
 
-## بخش ۴: مثال جامع
+## بخش ۴: سناریوهای پیشرفته: ترکیب انواع ماموریت و بازیگران
+در این بخش، مثال‌های دقیقی برای ترکیب انواع ماموریت با بازیگران مختلف ارائه می‌شود.
+
+### سناریو ۱: ماموریت از نوع `gform` (گرویتی فرم)
+
+**الف) بازیگر `self` (حالت استاندارد):** دانشجو خودش فرم را پر می‌کند.
 ```html
-[psychocourse_path]
-
-  [station station_node_id="ch1" title="فصل اول: مقدمه" rewards="unlock_station:ch2"]
-    ...
-  [/station]
-
-  [station station_node_id="ch2" title="فصل دوم: تکلیف" initial_state="locked" requires_approval="coach" rewards="show_station:ch3_feedback"]
-    [mission_content]
-      <p>تکلیف خود را ارسال کنید.</p>
-      [gravityform id="8" ajax="true"]
-      [coach_only]
-        [mission_approval_form]
-      [/coach_only]
-    [/mission_content]
-  [/station]
-
-  [station station_node_id="ch3_feedback" title="فصل سوم: بازخورد ۳۶۰ درجه" initial_state="hidden" actors="guest_link" required_actors_count="3"]
-    [static_content]
-      <p>لینک زیر را برای ۳ همکار ارسال کنید: [mission_actor_link]</p>
-      <p>پیشرفت: [mission_actors_count]</p>
-    [/static_content]
-  [/station]
-
-[/psychocourse_path]
+[station title="آزمون خودارزیابی" mission_type="gform" mission_target="form_id:10"]
+  [mission_content]
+    <p>لطفاً فرم زیر را برای ارزیابی هفتگی خود تکمیل کنید.</p>
+    [gravityform id="10" ajax="true"]
+  [/mission_content]
+[/station]
 ```
+
+**ب) بازیگر `coach`:** مربی یک فرم ارزیابی را برای دانشجو پر می‌کند.
+```html
+[station title="ارزیابی ماهانه توسط مربی" actors="coach" mission_type="gform" mission_target="form_id:11"]
+  [mission_content]
+    [student_only]
+      <p>این مرحله توسط مربی شما تکمیل خواهد شد. لطفاً منتظر بمانید.</p>
+    [/student_only]
+    [coach_only]
+      <p><strong>فرم ارزیابی دانشجو:</strong> لطفاً پس از بررسی عملکرد ماهانه، فرم زیر را برای ایشان تکمیل نمایید.</p>
+      [gravityform id="11" ajax="true"]
+    [/coach_only]
+  [/mission_content]
+[/station]
+```
+
+**ج) بازیگر `guest_link` (بازخورد ۳۶۰ درجه):** دانشجو باید از ۵ نفر خارج از سیستم بازخورد بگیرد.
+```html
+[station title="جمع‌آوری بازخورد از همکاران" mission_type="gform" mission_target="form_id:12" actors="guest_link" required_actors_count="5" rewards="add_points:200"]
+  [static_content]
+    <p>برای این مرحله، باید لینک زیر را برای ۵ نفر از همکاران خود ارسال کنید تا فرم بازخورد را برای شما پر کنند.</p>
+    <p><strong>لینک اشتراک‌گذاری:</strong> [mission_actor_link]</p>
+    <p><strong>تعداد بازخوردهای دریافتی:</strong> [mission_actors_count]</p>
+  [/static_content]
+  [result_content]
+    <p>تبریک! شما بازخورد لازم را از ۵ نفر دریافت کردید.</p>
+  [/result_content]
+[/station]
+```
+
+---
+### سناریو ۲: ماموریت از نوع `button_click`
+
+**الف) بازیگر `self` (حالت استاندارد):** دانشجو با یک کلیک، مطالعه یک بخش را تایید می‌کند.
+```html
+[station title="مطالعه فصل اول کتاب" mission_type="button_click" mission_button_text="مطالعه کردم و آماده‌ام!"]
+  [mission_content]
+    <p>پس از مطالعه کامل فصل اول، روی دکمه زیر کلیک کنید تا وارد مرحله بعد شوید.</p>
+  [/mission_content]
+[/station]
+```
+
+**ب) بازیگر `coach`:** مربی انجام یک وظیفه آفلاین (مانند تماس تلفنی) را برای دانشجو تایید می‌کند.
+```html
+[station title="تایید انجام تماس با مشتری" actors="coach" mission_type="button_click" mission_button_text="تایید می‌کنم که تماس انجام شد"]
+  [mission_content]
+    [student_only]
+      <p>این مرحله پس از بررسی و تایید مربی تکمیل خواهد شد.</p>
+    [/student_only]
+    [coach_only]
+      <p>در صورتی که دانشجو وظیفه تماس با مشتری را به درستی انجام داده است، با کلیک روی دکمه زیر این مرحله را برای او تکمیل کنید.</p>
+    [/coach_only]
+  [/mission_content]
+[/station]
+```
+
+---
+### سناریو ۳: ماموریت از نوع `flag` (آداپتور جهانی)
+
+"بازیگر" در این نوع ماموریت، هر سیستم خارجی است که بتواند تابع `psych_complete_mission_by_flag()` را فراخوانی کند. این باعث می‌شود این نوع ماموریت بسیار قدرتمند باشد.
+
+**مثال:** تکمیل ایستگاه پس از مشاهده کامل یک ویدیوی آموزشی در یک پلتفرم دیگر.
+```html
+[station title="مشاهده ویدیوی آموزشی" mission_type="flag" mission_target="watched_video_abc"]
+  [mission_content]
+    <p>برای تکمیل این مرحله، ویدیوی آموزشی را به طور کامل مشاهده کنید.</p>
+    <!-- کد نمایش ویدیو در اینجا قرار می‌گیرد -->
+  [/mission_content]
+[/station]
+```
+*توضیح:* در این سناریو، توسعه‌دهنده می‌تواند با استفاده از API پلتفرم ویدیو، رویداد "پایان ویدیو" را شناسایی کرده و سپس تابع `psych_complete_mission_by_flag('watched_video_abc', $user_id)` را اجرا کند تا این ماموریت به طور خودکار تکمیل شود.
+
+---
+### نکته در مورد سایر انواع ماموریت
+ماموریت‌هایی مانند `purchase` (خرید)، `custom_test` (آزمون) و `achieve_badge` (کسب نشان) به طور ذاتی به حساب کاربری خود شخص وابسته‌اند و بنابراین فقط توسط `self` قابل انجام هستند. سیستم به طور خودکار این موضوع را مدیریت می‌کند.
