@@ -62,7 +62,14 @@ final class Psych_Personalization_Module {
         $source_id = $key_parts[1] ?? '';
 
         $actual_value = null;
-        $user_id = get_current_user_id();
+
+        // Get the correct user ID, respecting coach impersonation
+        $context = function_exists('psych_get_viewing_context') ? psych_get_viewing_context() : ['viewed_user_id' => get_current_user_id()];
+        $user_id = $context['viewed_user_id'];
+
+        if (!$user_id) {
+            return false; // Cannot determine a user, so hide content
+        }
 
         switch ($source) {
             case 'profile':
@@ -71,7 +78,8 @@ final class Psych_Personalization_Module {
 
             case 'quiz':
                 global $wpdb;
-                $table_name = 'wp_psych_quiz_results'; // Assuming table name from the other module
+                // Use $wpdb->prefix to be more robust
+                $table_name = $wpdb->prefix . 'psych_quiz_results';
                 $score = $wpdb->get_var($wpdb->prepare(
                     "SELECT score FROM {$table_name} WHERE user_id = %d AND quiz_id = %s ORDER BY id DESC LIMIT 1",
                     $user_id, $source_id
@@ -80,9 +88,26 @@ final class Psych_Personalization_Module {
                 break;
 
             case 'role':
-                $user = wp_get_current_user();
-                if (in_array($source_id, (array) $user->roles)) {
+                $user = get_userdata($user_id);
+                if ($user && in_array($source_id, (array) $user->roles, true)) {
                     $actual_value = $source_id; // For role checks, we just need to match the role name
+                }
+                break;
+
+            case 'points':
+                if (function_exists('psych_get_user_points')) {
+                    $actual_value = psych_get_user_points($user_id);
+                } else {
+                    $actual_value = get_user_meta($user_id, 'psych_total_points', true);
+                }
+                break;
+
+            case 'badge':
+                 if (function_exists('psych_user_has_badge')) {
+                    // This source just checks for existence of a badge by its slug or ID
+                    if (psych_user_has_badge($user_id, $source_id)) {
+                        $actual_value = 'true'; // Set to string 'true' for comparison
+                    }
                 }
                 break;
 
