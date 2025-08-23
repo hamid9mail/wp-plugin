@@ -1,7 +1,9 @@
 <?php
 /**
- * Plugin Name: Psych Complete System - Gamification Center (Enhanced Integration Edition)
- * Description: ماژول مرکزی یکپارچه برای مدیریت نشان‌ها، امتیازات، سطوح، نوتیفیکیشن‌ها و اتوماسیون پیامک
+ * Plugin Name: Psych Complete System - Gamification Center (Enhanced Integratio
+n Edition)
+ * Description: ماژول مرکزی یکپارچه برای مدیریت نشان‌ها، امتیازات، سطوح، نوتیفی
+کیشن‌ها و اتوماسیون پیامک
  * Version: 2.5.0 (Enhanced Integration Edition)
  * Author: Enhanced Integration Team
  *
@@ -29,9 +31,11 @@ if (!function_exists('psych_gamification_get_user_level')) {
      */
     function psych_gamification_get_user_level($user_id) {
         if (class_exists('Psych_Gamification_Center')) {
-            return Psych_Gamification_Center::get_instance()->get_user_level($user_id);
+            return Psych_Gamification_Center::get_instance()->get_user_level($us
+er_id);
         }
-        return ['name' => 'N/A', 'icon' => 'fa-question-circle', 'color' => '#ccc'];
+        return ['name' => 'N/A', 'icon' => 'fa-question-circle', 'color' => '#cc
+c'];
     }
 }
 
@@ -43,14 +47,15 @@ if (!function_exists('psych_gamification_get_user_level_info')) {
      */
     function psych_gamification_get_user_level_info($user_id) {
         if (class_exists('Psych_Gamification_Center')) {
-            return Psych_Gamification_Center::get_instance()->get_user_level_info($user_id);
+            return Psych_Gamification_Center::get_instance()->get_user_level_inf
+o($user_id);
         }
         return [
-            'name' => 'N/A', 
-            'icon' => 'fa-question-circle', 
-            'color' => '#ccc', 
-            'points_to_next' => 0, 
-            'current_points' => 0, 
+            'name' => 'N/A',
+            'icon' => 'fa-question-circle',
+            'color' => '#ccc',
+            'points_to_next' => 0,
+            'current_points' => 0,
             'progress_percentage' => 0
         ];
     }
@@ -60,9 +65,11 @@ if (!function_exists('psych_gamification_add_points')) {
     /**
      * API Function: به یک کاربر امتیاز اضافه می‌کند.
      */
-    function psych_gamification_add_points($user_id, $points, $reason = 'کسب امتیاز', $custom_notification = null) {
+    function psych_gamification_add_points($user_id, $points, $reason = 'کسب ام
+تیاز', $custom_notification = null) {
         if (class_exists('Psych_Gamification_Center')) {
-            Psych_Gamification_Center::get_instance()->add_points($user_id, $points, $reason, $custom_notification);
+            Psych_Gamification_Center::get_instance()->add_points($user_id, $poi
+nts, $reason, $custom_notification);
         }
     }
 }
@@ -71,9 +78,11 @@ if (!function_exists('psych_gamification_award_badge')) {
     /**
      * API Function: یک نشان را بر اساس نامک (slug) به کاربر اعطا می‌کند.
      */
-    function psych_gamification_award_badge($user_id, $badge_slug, $custom_notification = null) {
+    function psych_gamification_award_badge($user_id, $badge_slug, $custom_notif
+ication = null) {
         if (class_exists('Psych_Gamification_Center')) {
-            return Psych_Gamification_Center::get_instance()->award_badge($user_id, $badge_slug, $custom_notification);
+            return Psych_Gamification_Center::get_instance()->award_badge($user_
+id, $badge_slug, $custom_notification);
         }
         return false;
     }
@@ -95,7 +104,8 @@ if (!function_exists('psych_user_has_badge')) {
      */
     function psych_user_has_badge($user_id, $badge_slug) {
         if (class_exists('Psych_Gamification_Center')) {
-            return Psych_Gamification_Center::get_instance()->user_has_badge($user_id, $badge_slug);
+            return Psych_Gamification_Center::get_instance()->user_has_badge($us
+er_id, $badge_slug);
         }
         return false;
     }
@@ -107,7 +117,8 @@ if (!function_exists('psych_get_badge_name')) {
      */
     function psych_get_badge_name($badge_slug) {
         if (class_exists('Psych_Gamification_Center')) {
-            return Psych_Gamification_Center::get_instance()->get_badge_name($badge_slug);
+            return Psych_Gamification_Center::get_instance()->get_badge_name($ba
+dge_slug);
         }
         return 'نامشخص';
     }
@@ -119,7 +130,8 @@ if (!function_exists('psych_send_sms_by_template')) {
      */
     function psych_send_sms_by_template($user_id, $template, $vars = []) {
         if (class_exists('Psych_Gamification_Center')) {
-            return Psych_Gamification_Center::get_instance()->send_sms_by_template($user_id, $template, $vars);
+            return Psych_Gamification_Center::get_instance()->send_sms_by_templa
+te($user_id, $template, $vars);
         }
         return false;
     }
@@ -131,7 +143,8 @@ if (!function_exists('psych_gamification_queue_notification')) {
      */
     function psych_gamification_queue_notification($user_id, $title, $message) {
         if (class_exists('Psych_Gamification_Center')) {
-            Psych_Gamification_Center::get_instance()->queue_notification($user_id, $title, $message);
+            Psych_Gamification_Center::get_instance()->queue_notification($user_
+id, $title, $message);
         }
     }
 }
@@ -155,12 +168,12 @@ final class Psych_Gamification_Center {
      * @var Psych_Gamification_Center تنها نمونه از این کلاس (Singleton).
      */
     private static $instance;
-    
+
     // کلیدهای ثابت برای گزینه‌های دیتابیس.
     const LEVELS_OPTION_KEY   = 'psych_gamification_levels';
     const BADGES_OPTION_KEY   = 'psych_gamification_badges';
     const SETTINGS_OPTION_KEY = 'psych_gamification_settings';
-    
+
     private $admin_page_slug = 'psych-gamification-center';
     private $viewing_context = null;
 
@@ -209,62 +222,80 @@ final class Psych_Gamification_Center {
         add_action('admin_menu', [$this, 'add_admin_menu']);
         add_action('admin_init', [$this, 'register_settings']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
-        add_action('wp_ajax_psych_manual_award', [$this, 'handle_manual_award_ajax']);
+        add_action('wp_ajax_psych_manual_award', [$this, 'handle_manual_award_aj
+ax']);
 
         // Frontend hooks
         add_action('wp_enqueue_scripts', [$this, 'enqueue_frontend_assets']);
         add_action('wp_footer', [$this, 'render_footer_elements']);
-        add_action('wp_ajax_psych_get_pending_notifications', [$this, 'ajax_get_pending_notifications']);
-        add_action('wp_ajax_psych_clear_notification', [$this, 'ajax_clear_notification']);
+        add_action('wp_ajax_psych_get_pending_notifications', [$this, 'ajax_get_
+pending_notifications']);
+        add_action('wp_ajax_psych_clear_notification', [$this, 'ajax_clear_notif
+ication']);
 
         // Integration hooks
-        add_action('psych_user_earned_badge', [$this, 'handle_badge_earned_automation'], 10, 2);
-        add_action('psych_path_station_completed', [$this, 'handle_station_completion'], 10, 3);
-        add_action('psych_coach_student_progress', [$this, 'handle_coach_notification'], 10, 4);
-        
+        add_action('psych_user_earned_badge', [$this, 'handle_badge_earned_autom
+ation'], 10, 2);
+        add_action('psych_path_station_completed', [$this, 'handle_station_compl
+etion'], 10, 3);
+        add_action('psych_coach_student_progress', [$this, 'handle_coach_notific
+ation'], 10, 4);
+
         // Shortcodes
-        add_shortcode('psych_user_points', [$this, 'render_user_points_shortcode']);
-        add_shortcode('psych_user_level', [$this, 'render_user_level_shortcode']);
-        add_shortcode('psych_user_badges', [$this, 'render_user_badges_shortcode']);
-        add_shortcode('psych_leaderboard', [$this, 'render_leaderboard_shortcode']);
-        
+        add_shortcode('psych_user_points', [$this, 'render_user_points_shortcode
+']);
+        add_shortcode('psych_user_level', [$this, 'render_user_level_shortcode']
+);
+        add_shortcode('psych_user_badges', [$this, 'render_user_badges_shortcode
+']);
+        add_shortcode('psych_leaderboard', [$this, 'render_leaderboard_shortcode
+']);
+
         // Reward processing hooks (for path engine integration)
-        add_action('psych_reward_points', 'psych_gamification_add_points', 10, 3);
+        add_action('psych_reward_points', 'psych_gamification_add_points', 10, 3
+);
         add_action('psych_reward_badge', 'psych_award_badge_to_user', 10, 2);
-        add_action('psych_reward_coupon', [$this, 'reward_generate_coupon'], 10, 3);
-        add_action('psych_reward_unlock_product', [$this, 'reward_unlock_product'], 10, 3);
-        add_action('psych_reward_send_file', [$this, 'reward_send_file'], 10, 3);
+        add_action('psych_reward_coupon', [$this, 'reward_generate_coupon'], 10,
+ 3);
+        add_action('psych_reward_unlock_product', [$this, 'reward_unlock_product
+'], 10, 3);
+        add_action('psych_reward_send_file', [$this, 'reward_send_file'], 10, 3)
+;
         add_action('psych_reward_send_sms', [$this, 'reward_send_sms'], 10, 3);
     }
 
     /**
      * Handle station completion from path engine
      */
-    public function handle_station_completion($user_id, $node_id, $station_data) {
-        $points = isset($station_data['points']) ? intval($station_data['points']) : 10;
+    public function handle_station_completion($user_id, $node_id, $station_data)
+ {
+        $points = isset($station_data['points']) ? intval($station_data['points'
+]) : 10;
         $custom_notification = $station_data['notification_text'] ?? null;
-        
+
         if ($points > 0) {
             $reason = 'تکمیل ایستگاه: ' . ($station_data['title'] ?? 'ایستگاه');
             $this->add_points($user_id, $points, $reason, $custom_notification);
         }
-        
+
         $this->check_automatic_badge_awards($user_id);
     }
 
     /**
      * Handle coach notification when student makes progress
      */
-    public function handle_coach_notification($coach_id, $student_id, $node_id, $station_data) {
+    public function handle_coach_notification($coach_id, $student_id, $node_id,
+$station_data) {
         $student_data = get_userdata($student_id);
         if (!$student_data) return;
-        
+
         $this->queue_notification(
             $coach_id,
             'پیشرفت دانشجو',
             $student_data->display_name . ' ایستگاه جدیدی را تکمیل کرد',
             'student_progress',
-            ['student_id' => $student_id, 'station' => $station_data['title'] ?? 'ایستگاه']
+            ['student_id' => $student_id, 'station' => $station_data['title'] ??
+ 'ایستگاه']
         );
     }
 
@@ -272,51 +303,72 @@ final class Psych_Gamification_Center {
      * Check for automatic badge awards based on user stats
      */
     private function check_automatic_badge_awards($user_id) {
-        $user_points = (int) get_user_meta($user_id, 'psych_total_points', true);
+        $user_points = (int) get_user_meta($user_id, 'psych_total_points', true)
+;
         $user_badges = get_user_meta($user_id, 'psych_user_badges', true) ?: [];
-        
+
         // Example automatic badges
         $auto_badges = [
             'first_steps' => ['points' => 50, 'name' => 'نخستین گام‌ها'],
             'dedicated_learner' => ['points' => 200, 'name' => 'فراگیر مجاهد'],
             'point_collector' => ['points' => 500, 'name' => 'جمع‌آور امتیاز'],
-            'achievement_hunter' => ['points' => 1000, 'name' => 'شکارچی موفقیت'],
+            'achievement_hunter' => ['points' => 1000, 'name' => 'شکارچی موفقیت'
+],
         ];
-        
+
         foreach ($auto_badges as $badge_slug => $criteria) {
-            if ($user_points >= $criteria['points'] && !in_array($badge_slug, $user_badges)) {
+            if ($user_points >= $criteria['points'] && !in_array($badge_slug, $u
+ser_badges)) {
                 $this->award_badge($user_id, $badge_slug);
             }
         }
     }
-    
+
     // =====================================================================
     // SECTION 2: ADMIN PANEL & SETUP
     // =====================================================================
 
     public function add_admin_menu() {
         // The main page is now a submenu of the main system.
-        add_submenu_page('psych-system', 'مرکز گیمیفیکیشن', 'گیمیفیکیشن', 'manage_options', $this->admin_page_slug, [$this, 'render_admin_page']);
+        add_submenu_page('psych-system', 'مرکز گیمیفیکیشن', 'گیمیفیکیشن', 'manag
+e_options', $this->admin_page_slug, [$this, 'render_admin_page']);
     }
 
     public function render_admin_page() {
         if (!current_user_can('manage_options')) {
-            wp_die(__('You do not have sufficient permissions to access this page.'));
+            wp_die(__('You do not have sufficient permissions to access this pag
+e.'));
         }
 
-        $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'overview';
+        $active_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'overvi
+ew';
         ?>
         <div class="wrap psych-admin-wrap">
-            <h1><i class="dashicons-before dashicons-star-filled"></i> مرکز گیمیفیکیشن</h1>
-            
+            <h1><i class="dashicons-before dashicons-star-filled"></i> مرکز گیم
+یفیکیشن</h1>
+
             <nav class="nav-tab-wrapper">
-                <a href="?page=<?php echo $this->admin_page_slug; ?>&tab=overview" class="nav-tab <?php echo $active_tab == 'overview' ? 'nav-tab-active' : ''; ?>">نمای کلی</a>
-                <a href="?page=<?php echo $this->admin_page_slug; ?>&tab=settings" class="nav-tab <?php echo $active_tab == 'settings' ? 'nav-tab-active' : ''; ?>">تنظیمات عمومی</a>
-                <a href="?page=<?php echo $this->admin_page_slug; ?>&tab=levels" class="nav-tab <?php echo $active_tab == 'levels' ? 'nav-tab-active' : ''; ?>">سطوح</a>
-                <a href="?page=<?php echo $this->admin_page_slug; ?>&tab=badges" class="nav-tab <?php echo $active_tab == 'badges' ? 'nav-tab-active' : ''; ?>">نشان‌ها</a>
-                <a href="?page=<?php echo $this->admin_page_slug; ?>&tab=sms_templates" class="nav-tab <?php echo $active_tab == 'sms_templates' ? 'nav-tab-active' : ''; ?>">قالب‌های پیامک</a>
-                <a href="?page=<?php echo $this->admin_page_slug; ?>&tab=manual_award" class="nav-tab <?php echo $active_tab == 'manual_award' ? 'nav-tab-active' : ''; ?>">اعطای دستی</a>
-                <a href="?page=<?php echo $this->admin_page_slug; ?>&tab=stats" class="nav-tab <?php echo $active_tab == 'stats' ? 'nav-tab-active' : ''; ?>">آمار</a>
+                <a href="?page=<?php echo $this->admin_page_slug; ?>&tab=overvie
+w" class="nav-tab <?php echo $active_tab == 'overview' ? 'nav-tab-active' : '';
+?>">نمای کلی</a>
+                <a href="?page=<?php echo $this->admin_page_slug; ?>&tab=setting
+s" class="nav-tab <?php echo $active_tab == 'settings' ? 'nav-tab-active' : '';
+?>">تنظیمات عمومی</a>
+                <a href="?page=<?php echo $this->admin_page_slug; ?>&tab=levels"
+ class="nav-tab <?php echo $active_tab == 'levels' ? 'nav-tab-active' : ''; ?>">
+سطوح</a>
+                <a href="?page=<?php echo $this->admin_page_slug; ?>&tab=badges"
+ class="nav-tab <?php echo $active_tab == 'badges' ? 'nav-tab-active' : ''; ?>">
+نشان‌ها</a>
+                <a href="?page=<?php echo $this->admin_page_slug; ?>&tab=sms_tem
+plates" class="nav-tab <?php echo $active_tab == 'sms_templates' ? 'nav-tab-acti
+ve' : ''; ?>">قالب‌های پیامک</a>
+                <a href="?page=<?php echo $this->admin_page_slug; ?>&tab=manual_
+award" class="nav-tab <?php echo $active_tab == 'manual_award' ? 'nav-tab-active
+' : ''; ?>">اعطای دستی</a>
+                <a href="?page=<?php echo $this->admin_page_slug; ?>&tab=stats"
+class="nav-tab <?php echo $active_tab == 'stats' ? 'nav-tab-active' : ''; ?>">آ
+مار</a>
             </nav>
 
             <div class="tab-content" style="margin-top: 20px;">
@@ -366,7 +418,7 @@ final class Psych_Gamification_Center {
                     <p>کل کاربران</p>
                 </div>
             </div>
-            
+
             <div class="psych-card">
                 <div class="psych-card-icon">
                     <i class="dashicons dashicons-awards"></i>
@@ -376,13 +428,14 @@ final class Psych_Gamification_Center {
                     <p>نشان‌های فعال</p>
                 </div>
             </div>
-            
+
             <div class="psych-card">
                 <div class="psych-card-icon">
                     <i class="dashicons dashicons-star-filled"></i>
                 </div>
                 <div class="psych-card-content">
-                    <h3><?php echo number_format_i18n($total_points_awarded); ?></h3>
+                    <h3><?php echo number_format_i18n($total_points_awarded); ?>
+</h3>
                     <p>کل امتیازات اعطا شده</p>
                 </div>
             </div>
@@ -408,45 +461,53 @@ final class Psych_Gamification_Center {
                 'sms_sender' => sanitize_text_field($_POST['sms_sender']),
             ];
             update_option(self::SETTINGS_OPTION_KEY, $settings);
-            echo '<div class="notice notice-success"><p>تنظیمات با موفقیت ذخیره شد.</p></div>';
+            echo '<div class="notice notice-success"><p>تنظیمات با موفقیت ذخیره
+شد.</p></div>';
         }
 
         $settings = $this->get_settings();
         ?>
         <form method="post" action="">
             <?php wp_nonce_field('psych_gamification_settings'); ?>
-            
+
             <table class="form-table">
                 <tr>
                     <th scope="row">امتیاز ورود روزانه</th>
-                    <td><input type="number" name="points_per_login" value="<?php echo esc_attr($settings['points_per_login']); ?>" /></td>
+                    <td><input type="number" name="points_per_login" value="<?ph
+p echo esc_attr($settings['points_per_login']); ?>" /></td>
                 </tr>
                 <tr>
                     <th scope="row">امتیاز انتشار مطلب</th>
-                    <td><input type="number" name="points_per_post" value="<?php echo esc_attr($settings['points_per_post']); ?>" /></td>
+                    <td><input type="number" name="points_per_post" value="<?php
+ echo esc_attr($settings['points_per_post']); ?>" /></td>
                 </tr>
                 <tr>
                     <th scope="row">امتیاز ثبت نظر</th>
-                    <td><input type="number" name="points_per_comment" value="<?php echo esc_attr($settings['points_per_comment']); ?>" /></td>
+                    <td><input type="number" name="points_per_comment" value="<?
+php echo esc_attr($settings['points_per_comment']); ?>" /></td>
                 </tr>
                 <tr>
                     <th scope="row">فعال‌سازی نوتیفیکیشن</th>
-                    <td><input type="checkbox" name="enable_notifications" <?php checked($settings['enable_notifications']); ?> /></td>
+                    <td><input type="checkbox" name="enable_notifications" <?php
+ checked($settings['enable_notifications']); ?> /></td>
                 </tr>
                 <tr>
                     <th scope="row">فعال‌سازی پیامک</th>
-                    <td><input type="checkbox" name="sms_enabled" <?php checked($settings['sms_enabled']); ?> /></td>
+                    <td><input type="checkbox" name="sms_enabled" <?php checked(
+$settings['sms_enabled']); ?> /></td>
                 </tr>
                 <tr>
                     <th scope="row">کلید API پیامک</th>
-                    <td><input type="text" name="sms_api_key" value="<?php echo esc_attr($settings['sms_api_key']); ?>" class="regular-text" /></td>
+                    <td><input type="text" name="sms_api_key" value="<?php echo
+esc_attr($settings['sms_api_key']); ?>" class="regular-text" /></td>
                 </tr>
                 <tr>
                     <th scope="row">شماره فرستنده</th>
-                    <td><input type="text" name="sms_sender" value="<?php echo esc_attr($settings['sms_sender']); ?>" class="regular-text" /></td>
+                    <td><input type="text" name="sms_sender" value="<?php echo e
+sc_attr($settings['sms_sender']); ?>" class="regular-text" /></td>
                 </tr>
             </table>
-            
+
             <?php submit_button(); ?>
         </form>
         <?php
@@ -472,9 +533,12 @@ final class Psych_Gamification_Center {
                         <?php foreach ($top_users as $index => $user_data): ?>
                         <tr>
                             <td><?php echo $index + 1; ?></td>
-                            <td><?php echo esc_html($user_data['display_name']); ?></td>
-                            <td><?php echo number_format_i18n($user_data['points']); ?></td>
-                            <td><?php echo esc_html($user_data['level']); ?></td>
+                            <td><?php echo esc_html($user_data['display_name']);
+ ?></td>
+                            <td><?php echo number_format_i18n($user_data['points
+']); ?></td>
+                            <td><?php echo esc_html($user_data['level']); ?></td
+>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -495,8 +559,10 @@ final class Psych_Gamification_Center {
                         <?php foreach ($badge_stats as $badge): ?>
                         <tr>
                             <td><?php echo esc_html($badge['name']); ?></td>
-                            <td><?php echo number_format_i18n($badge['awarded_count']); ?></td>
-                            <td><?php echo number_format($badge['percentage'], 1); ?>%</td>
+                            <td><?php echo number_format_i18n($badge['awarded_co
+unt']); ?></td>
+                            <td><?php echo number_format($badge['percentage'], 1
+); ?>%</td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -513,51 +579,58 @@ final class Psych_Gamification_Center {
     /**
      * Add points to a user
      */
-    public function add_points($user_id, $points, $reason = 'کسب امتیاز', $custom_notification = null) {
+    public function add_points($user_id, $points, $reason = 'کسب امتیاز', $custo
+m_notification = null) {
         if (!$user_id || $points == 0) return false;
-        
-        $current_points = (int) get_user_meta($user_id, 'psych_total_points', true);
+
+        $current_points = (int) get_user_meta($user_id, 'psych_total_points', tr
+ue);
         $new_total = $current_points + $points;
         update_user_meta($user_id, 'psych_total_points', $new_total);
-        
+
         $this->log_points_transaction($user_id, $points, $reason);
-        
+
         if ($points > 0) {
             $this->check_level_up($user_id, $new_total);
             $notification_title = 'امتیاز جدید!';
-            $notification_message = $custom_notification ?: "شما {$points} امتیاز کسب کردید: {$reason}";
-            $this->queue_notification($user_id, $notification_title, $notification_message);
+            $notification_message = $custom_notification ?: "شما {$points} امتی
+از کسب کردید: {$reason}";
+            $this->queue_notification($user_id, $notification_title, $notificati
+on_message);
         }
-        
-        do_action('psych_points_awarded', $user_id, $points, $reason, $new_total);
+
+        do_action('psych_points_awarded', $user_id, $points, $reason, $new_total
+);
         return true;
     }
 
     /**
      * Award a badge to a user
      */
-    public function award_badge($user_id, $badge_slug, $custom_notification = null) {
+    public function award_badge($user_id, $badge_slug, $custom_notification = nu
+ll) {
         if (!$user_id || empty($badge_slug)) return false;
-        
+
         $user_badges = get_user_meta($user_id, 'psych_user_badges', true) ?: [];
         if (in_array($badge_slug, $user_badges)) {
             return false; // User already has this badge
         }
-        
+
         $badges = $this->get_badges();
         if (!isset($badges[$badge_slug])) {
             return false; // Badge doesn't exist
         }
-        
+
         $user_badges[] = $badge_slug;
         update_user_meta($user_id, 'psych_user_badges', $user_badges);
-        
+
         $this->log_badge_award($user_id, $badge_slug);
-        
+
         $badge_name = $badges[$badge_slug]['name'];
-        $message = $custom_notification ?: "تبریک! شما نشان '{$badge_name}' را کسب کردید.";
+        $message = $custom_notification ?: "تبریک! شما نشان '{$badge_name}' را
+کسب کردید.";
         $this->queue_notification($user_id, 'نشان جدید!', $message);
-        
+
         do_action('psych_user_earned_badge', $user_id, $badge_slug);
         return true;
     }
@@ -575,7 +648,8 @@ final class Psych_Gamification_Center {
      */
     public function get_badge_name($badge_slug) {
         $badges = $this->get_badges();
-        return isset($badges[$badge_slug]) ? $badges[$badge_slug]['name'] : 'نامشخص';
+        return isset($badges[$badge_slug]) ? $badges[$badge_slug]['name'] : 'نا
+مشخص';
     }
 
     /**
@@ -584,9 +658,10 @@ final class Psych_Gamification_Center {
     public function get_user_level($user_id) {
         $points = (int) get_user_meta($user_id, 'psych_total_points', true);
         $levels = $this->get_levels();
-        
-        $current_level = ['name' => 'تازه‌کار', 'icon' => 'fa-seedling', 'color' => '#95a5a6'];
-        
+
+        $current_level = ['name' => 'تازه‌کار', 'icon' => 'fa-seedling', 'color'
+ => '#95a5a6'];
+
         foreach ($levels as $level) {
             if ($points >= $level['required_points']) {
                 $current_level = $level;
@@ -594,7 +669,7 @@ final class Psych_Gamification_Center {
                 break;
             }
         }
-        
+
         return $current_level;
     }
 
@@ -605,7 +680,7 @@ final class Psych_Gamification_Center {
         $points = (int) get_user_meta($user_id, 'psych_total_points', true);
         $levels = $this->get_levels();
         $current_level = $this->get_user_level($user_id);
-        
+
         // Find next level
         $next_level = null;
         foreach ($levels as $level) {
@@ -614,10 +689,11 @@ final class Psych_Gamification_Center {
                 break;
             }
         }
-        
-        $points_to_next = $next_level ? ($next_level['required_points'] - $points) : 0;
+
+        $points_to_next = $next_level ? ($next_level['required_points'] - $point
+s) : 0;
         $progress_percentage = 0;
-        
+
         if ($next_level) {
             $prev_level_points = 0;
             foreach ($levels as $level) {
@@ -625,12 +701,13 @@ final class Psych_Gamification_Center {
                     $prev_level_points = $level['required_points'];
                 }
             }
-            
+
             $level_range = $next_level['required_points'] - $prev_level_points;
             $user_progress = $points - $prev_level_points;
-            $progress_percentage = $level_range > 0 ? ($user_progress / $level_range) * 100 : 100;
+            $progress_percentage = $level_range > 0 ? ($user_progress / $level_r
+ange) * 100 : 100;
         }
-        
+
         return [
             'name' => $current_level['name'],
             'icon' => $current_level['icon'],
@@ -648,7 +725,7 @@ final class Psych_Gamification_Center {
         $all_badges = $this->get_badges();
         $user_badges = get_user_meta($user_id, 'psych_user_badges', true) ?: [];
         $badges_progress = [];
-        
+
         foreach ($all_badges as $slug => $badge) {
             $badges_progress[] = [
                 'slug' => $slug,
@@ -660,7 +737,7 @@ final class Psych_Gamification_Center {
                 'progress' => in_array($slug, $user_badges) ? 100 : 0
             ];
         }
-        
+
         return $badges_progress;
     }
 
@@ -670,17 +747,19 @@ final class Psych_Gamification_Center {
     private function check_level_up($user_id, $new_points) {
         $levels = $this->get_levels();
         $old_level = get_user_meta($user_id, 'psych_user_level', true);
-        
+
         $new_level = null;
         foreach ($levels as $level) {
             if ($new_points >= $level['required_points']) {
                 $new_level = $level;
             }
         }
-        
-        if ($new_level && (!$old_level || $new_level['required_points'] > ($old_level['required_points'] ?? 0))) {
+
+        if ($new_level && (!$old_level || $new_level['required_points'] > ($old_
+level['required_points'] ?? 0))) {
             update_user_meta($user_id, 'psych_user_level', $new_level);
-            $this->queue_notification($user_id, 'سطح جدید!', "تبریک! شما به سطح '{$new_level['name']}' رسیدید.");
+            $this->queue_notification($user_id, 'سطح جدید!', "تبریک! شما به سطح
+'{$new_level['name']}' رسیدید.");
             do_action('psych_user_level_up', $user_id, $new_level, $old_level);
         }
     }
@@ -688,8 +767,10 @@ final class Psych_Gamification_Center {
     /**
      * Queue notification for user
      */
-    public function queue_notification($user_id, $title, $message, $type = 'info', $data = []) {
-        $notifications = get_user_meta($user_id, 'psych_pending_notifications', true) ?: [];
+    public function queue_notification($user_id, $title, $message, $type = 'info
+', $data = []) {
+        $notifications = get_user_meta($user_id, 'psych_pending_notifications',
+true) ?: [];
         $notifications[] = [
             'id' => uniqid(),
             'title' => $title,
@@ -698,10 +779,11 @@ final class Psych_Gamification_Center {
             'data' => $data,
             'timestamp' => current_time('timestamp')
         ];
-        
+
         // Keep only last 10 notifications
         $notifications = array_slice($notifications, -10);
-        update_user_meta($user_id, 'psych_pending_notifications', $notifications);
+        update_user_meta($user_id, 'psych_pending_notifications', $notifications
+);
     }
 
     /**
@@ -712,22 +794,26 @@ final class Psych_Gamification_Center {
         if (!$settings['sms_enabled'] || empty($settings['sms_api_key'])) {
             return false;
         }
-        
+
         $user = get_userdata($user_id);
         if (!$user) return false;
-        
+
         $phone = get_user_meta($user_id, 'phone', true);
         if (empty($phone)) return false;
-        
+
         $default_templates = [
-            'badge_earned' => 'تبریک {user_name}! شما نشان {badge_name} را کسب کردید.',
+            'badge_earned' => 'تبریک {user_name}! شما نشان {badge_name} را کسب
+کردید.',
             'level_up' => 'تبریک {user_name}! شما به سطح {level_name} رسیدید.',
-            'points_awarded' => '{user_name} عزیز، شما {points} امتیاز کسب کردید!'
+            'points_awarded' => '{user_name} عزیز، شما {points} امتیاز کسب کردی
+د!'
         ];
-        
-        $custom_templates = get_option('psych_gamification_sms_templates', $default_templates);
-        
-        if (!isset($custom_templates[$template]) || empty($custom_templates[$template])) {
+
+        $custom_templates = get_option('psych_gamification_sms_templates', $defa
+ult_templates);
+
+        if (!isset($custom_templates[$template]) || empty($custom_templates[$tem
+plate])) {
             // Fallback to default if custom template is not set or is empty
             if (!isset($default_templates[$template])) return false;
             $message = $default_templates[$template];
@@ -738,16 +824,16 @@ final class Psych_Gamification_Center {
             'user_name' => $user->display_name,
             'site_name' => get_bloginfo('name')
         ];
-        
+
         $vars = array_merge($default_vars, $vars);
         foreach ($vars as $key => $value) {
             $message = str_replace('{' . $key . '}', $value, $message);
         }
-        
+
         // Here you would integrate with your SMS provider
         // For now, we'll just log it
         error_log("SMS to {$phone}: {$message}");
-        
+
         return true;
     }
 
@@ -866,16 +952,17 @@ final class Psych_Gamification_Center {
             'user_id' => 0,
             'show_label' => 'true'
         ], $atts);
-        
+
         $context = $this->get_viewing_context();
         $user_id = $atts['user_id'] ?: $context['viewed_user_id'];
-        
+
         if (!$user_id) return '';
-        
+
         $points = (int) get_user_meta($user_id, 'psych_total_points', true);
         $label = $atts['show_label'] === 'true' ? 'امتیاز: ' : '';
-        
-        return sprintf('<span class="psych-user-points">%s%s</span>', $label, number_format_i18n($points));
+
+        return sprintf('<span class="psych-user-points">%s%s</span>', $label, nu
+mber_format_i18n($points));
     }
 
     /**
@@ -886,17 +973,20 @@ final class Psych_Gamification_Center {
             'user_id' => 0,
             'show_icon' => 'true'
         ], $atts);
-        
+
         $context = $this->get_viewing_context();
         $user_id = $atts['user_id'] ?: $context['viewed_user_id'];
-        
+
         if (!$user_id) return '';
-        
+
         $level = $this->get_user_level($user_id);
-        $icon = $atts['show_icon'] === 'true' ? '<i class="' . esc_attr($level['icon']) . '"></i> ' : '';
-        
-        return sprintf('<span class="psych-user-level" style="color: %s;">%s%s</span>', 
-                      esc_attr($level['color']), $icon, esc_html($level['name']));
+        $icon = $atts['show_icon'] === 'true' ? '<i class="' . esc_attr($level['
+icon']) . '"></i> ' : '';
+
+        return sprintf('<span class="psych-user-level" style="color: %s;">%s%s</
+span>',
+                      esc_attr($level['color']), $icon, esc_html($level['name'])
+);
     }
 
     /**
@@ -907,26 +997,26 @@ final class Psych_Gamification_Center {
             'user_id' => 0,
             'limit' => 5
         ], $atts);
-        
+
         $context = $this->get_viewing_context();
         $user_id = $atts['user_id'] ?: $context['viewed_user_id'];
-        
+
         if (!$user_id) return '';
-        
+
         $user_badges = get_user_meta($user_id, 'psych_user_badges', true) ?: [];
         $all_badges = $this->get_badges();
         $limit = intval($atts['limit']);
-        
+
         if (empty($user_badges)) {
             return '<p class="psych-no-badges">هنوز نشانی کسب نشده است.</p>';
         }
-        
+
         $output = '<div class="psych-user-badges-list">';
         $count = 0;
-        
+
         foreach ($user_badges as $badge_slug) {
             if ($limit > 0 && $count >= $limit) break;
-            
+
             if (isset($all_badges[$badge_slug])) {
                 $badge = $all_badges[$badge_slug];
                 $output .= sprintf(
@@ -941,7 +1031,7 @@ final class Psych_Gamification_Center {
                 $count++;
             }
         }
-        
+
         $output .= '</div>';
         return $output;
     }
@@ -954,24 +1044,24 @@ final class Psych_Gamification_Center {
             'limit' => 10,
             'show_current_user' => 'true'
         ], $atts);
-        
+
         $limit = intval($atts['limit']);
         $top_users = $this->get_top_users_by_points($limit);
         $context = $this->get_viewing_context();
         $current_user_id = $context['viewed_user_id'];
-        
+
         if (empty($top_users)) {
             return '<p>هنوز آماری موجود نیست.</p>';
         }
-        
+
         $output = '<div class="psych-leaderboard">';
         $output .= '<h3>جدول امتیازات</h3>';
         $output .= '<ol class="psych-leaderboard-list">';
-        
+
         foreach ($top_users as $user_data) {
             $is_current = ($user_data['ID'] == $current_user_id);
             $css_class = $is_current ? ' class="current-user"' : '';
-            
+
             $output .= sprintf(
                 '<li%s>
                     <span class="user-name">%s</span>
@@ -984,7 +1074,7 @@ final class Psych_Gamification_Center {
                 esc_html($user_data['level'])
             );
         }
-        
+
         $output .= '</ol></div>';
         return $output;
     }
@@ -1000,15 +1090,16 @@ final class Psych_Gamification_Center {
         if (!check_ajax_referer('psych_gamification_ajax', 'nonce', false)) {
             wp_send_json_error(['message' => 'نشست شما منقضی شده است.'], 403);
         }
-        
+
         $context = $this->get_viewing_context();
         $user_id = $context['viewed_user_id'];
-        
+
         if (!$user_id) {
             wp_send_json_error(['message' => 'کاربر نامعتبر.'], 401);
         }
-        
-        $notifications = get_user_meta($user_id, 'psych_pending_notifications', true) ?: [];
+
+        $notifications = get_user_meta($user_id, 'psych_pending_notifications',
+true) ?: [];
         wp_send_json_success(['notifications' => $notifications]);
     }
 
@@ -1019,21 +1110,24 @@ final class Psych_Gamification_Center {
         if (!check_ajax_referer('psych_gamification_ajax', 'nonce', false)) {
             wp_send_json_error(['message' => 'نشست شما منقضی شده است.'], 403);
         }
-        
+
         $context = $this->get_viewing_context();
         $user_id = $context['viewed_user_id'];
         $notification_id = sanitize_text_field($_POST['notification_id'] ?? '');
-        
+
         if (!$user_id || empty($notification_id)) {
             wp_send_json_error(['message' => 'پارامترهای نامعتبر.']);
         }
-        
-        $notifications = get_user_meta($user_id, 'psych_pending_notifications', true) ?: [];
-        $notifications = array_filter($notifications, function($notif) use ($notification_id) {
+
+        $notifications = get_user_meta($user_id, 'psych_pending_notifications',
+true) ?: [];
+        $notifications = array_filter($notifications, function($notif) use ($not
+ification_id) {
             return $notif['id'] !== $notification_id;
         });
-        
-        update_user_meta($user_id, 'psych_pending_notifications', array_values($notifications));
+
+        update_user_meta($user_id, 'psych_pending_notifications', array_values($
+notifications));
         wp_send_json_success(['message' => 'نوتیفیکیشن حذف شد.']);
     }
 
@@ -1044,23 +1138,23 @@ final class Psych_Gamification_Center {
         if (!current_user_can('manage_options')) {
             wp_send_json_error(['message' => 'دسترسی غیرمجاز.'], 403);
         }
-        
-        if (!check_ajax_referer('psych_manual_award', 'nonce', false)) {
+
+        if (!check_admin_referer('psych_manual_award', 'nonce', false)) {
             wp_send_json_error(['message' => 'نشست منقضی شده.'], 403);
         }
-        
+
         $user_id = intval($_POST['user_id'] ?? 0);
         $award_type = sanitize_key($_POST['award_type'] ?? '');
         $award_value = sanitize_text_field($_POST['award_value'] ?? '');
         $reason = sanitize_text_field($_POST['reason'] ?? 'اعطای دستی');
-        
+
         if (!$user_id || !$award_type || !$award_value) {
             wp_send_json_error(['message' => 'پارامترهای ناقص.']);
         }
-        
+
         $success = false;
         $message = '';
-        
+
         switch ($award_type) {
             case 'points':
                 $points = intval($award_value);
@@ -1070,21 +1164,23 @@ final class Psych_Gamification_Center {
                     $message = "{$points} امتیاز با موفقیت اعطا شد.";
                 }
                 break;
-                
+
             case 'badge':
                 if ($this->award_badge($user_id, $award_value)) {
                     $success = true;
                     $message = "نشان با موفقیت اعطا شد.";
                 } else {
-                    $message = "کاربر این نشان را قبلاً دارد یا نشان وجود ندارد.";
+                    $message = "کاربر این نشان را قبلاً دارد یا نشان وجود ندارد.
+";
                 }
                 break;
         }
-        
+
         if ($success) {
             wp_send_json_success(['message' => $message]);
         } else {
-            wp_send_json_error(['message' => $message ?: 'خطا در اعطای جایزه.']);
+            wp_send_json_error(['message' => $message ?: 'خطا در اعطای جایزه.'])
+;
         }
     }
 
@@ -1097,7 +1193,7 @@ final class Psych_Gamification_Center {
      */
     public function get_top_users_by_points($limit = 10) {
     global $wpdb;
-    
+
     $results = $wpdb->get_results($wpdb->prepare(
         "SELECT u.ID, u.display_name, um.meta_value as points
          FROM {$wpdb->users} u
@@ -1130,23 +1226,24 @@ final class Psych_Gamification_Center {
         $total_users = count_users()['total_users'];
         $badges = $this->get_badges();
         $stats = [];
-        
+
         foreach ($badges as $slug => $badge) {
             $count = $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM {$wpdb->usermeta} 
-                 WHERE meta_key = 'psych_user_badges' 
+                "SELECT COUNT(*) FROM {$wpdb->usermeta}
+                 WHERE meta_key = 'psych_user_badges'
                  AND meta_value LIKE %s",
                 '%' . $wpdb->esc_like($slug) . '%'
             ));
-            
+
             $stats[] = [
                 'slug' => $slug,
                 'name' => $badge['name'],
                 'awarded_count' => intval($count),
-                'percentage' => $total_users > 0 ? ($count / $total_users) * 100 : 0
+                'percentage' => $total_users > 0 ? ($count / $total_users) * 100
+ : 0
             ];
         }
-        
+
         return $stats;
     }
 
@@ -1155,13 +1252,13 @@ final class Psych_Gamification_Center {
      */
     public function get_total_points_awarded() {
         global $wpdb;
-        
+
         $total = $wpdb->get_var(
-            "SELECT SUM(CAST(meta_value AS UNSIGNED)) 
-             FROM {$wpdb->usermeta} 
+            "SELECT SUM(CAST(meta_value AS UNSIGNED))
+             FROM {$wpdb->usermeta}
              WHERE meta_key = 'psych_total_points'"
         );
-        
+
         return intval($total);
     }
 
@@ -1176,7 +1273,7 @@ final class Psych_Gamification_Center {
             'reason' => $reason,
             'timestamp' => current_time('mysql')
         ];
-        
+
         // Keep only last 1000 entries
         $log = array_slice($log, -1000);
         update_option('psych_points_log', $log);
@@ -1192,7 +1289,7 @@ final class Psych_Gamification_Center {
             'badge_slug' => $badge_slug,
             'timestamp' => current_time('mysql')
         ];
-        
+
         // Keep only last 1000 entries
         $log = array_slice($log, -1000);
         update_option('psych_badge_log', $log);
@@ -1204,22 +1301,23 @@ final class Psych_Gamification_Center {
     private function render_recent_activities() {
         $points_log = array_slice(get_option('psych_points_log', []), -10);
         $badge_log = array_slice(get_option('psych_badge_log', []), -10);
-        
+
         // Merge and sort by timestamp
         $activities = [];
-        
+
         foreach ($points_log as $entry) {
             $user = get_userdata($entry['user_id']);
             if ($user) {
                 $activities[] = [
                     'type' => 'points',
                     'user' => $user->display_name,
-                    'description' => "کسب {$entry['points']} امتیاز: {$entry['reason']}",
+                    'description' => "کسب {$entry['points']} امتیاز: {$entry['re
+ason']}",
                     'timestamp' => $entry['timestamp']
                 ];
             }
         }
-        
+
         foreach ($badge_log as $entry) {
             $user = get_userdata($entry['user_id']);
             $badge_name = $this->get_badge_name($entry['badge_slug']);
@@ -1232,24 +1330,25 @@ final class Psych_Gamification_Center {
                 ];
             }
         }
-        
+
         // Sort by timestamp
         usort($activities, function($a, $b) {
             return strtotime($b['timestamp']) - strtotime($a['timestamp']);
         });
-        
+
         $activities = array_slice($activities, 0, 15);
-        
+
         if (empty($activities)) {
             echo '<p>هنوز فعالیتی ثبت نشده است.</p>';
             return;
         }
-        
+
         echo '<ul class="psych-activities-list">';
         foreach ($activities as $activity) {
             $icon = $activity['type'] === 'points' ? 'fa-star' : 'fa-trophy';
             printf(
-                '<li><i class="fas %s"></i> <strong>%s:</strong> %s <small>(%s)</small></li>',
+                '<li><i class="fas %s"></i> <strong>%s:</strong> %s <small>(%s)<
+/small></li>',
                 $icon,
                 esc_html($activity['user']),
                 esc_html($activity['description']),
@@ -1268,14 +1367,16 @@ final class Psych_Gamification_Center {
      */
     public function enqueue_admin_assets($hook) {
         if (strpos($hook, $this->admin_page_slug) === false) return;
-        
+
         wp_enqueue_style('psych-gamification-admin', false, [], self::VERSION);
         wp_add_inline_style('psych-gamification-admin', $this->get_admin_css());
-        
-        wp_enqueue_script('psych-gamification-admin', false, ['jquery'], self::VERSION, true);
+
+        wp_enqueue_script('psych-gamification-admin', false, ['jquery'], self::V
+ERSION, true);
         wp_add_inline_script('psych-gamification-admin', $this->get_admin_js());
-        
-        wp_localize_script('psych-gamification-admin', 'psych_gamification_admin', [
+
+        wp_localize_script('psych-gamification-admin', 'psych_gamification_admin
+', [
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('psych_manual_award')
         ]);
@@ -1286,14 +1387,19 @@ final class Psych_Gamification_Center {
      */
     public function enqueue_frontend_assets() {
         if (!is_user_logged_in()) return;
-        
-        wp_enqueue_style('psych-gamification-frontend', false, [], self::VERSION);
-        wp_add_inline_style('psych-gamification-frontend', $this->get_frontend_css());
-        
-        wp_enqueue_script('psych-gamification-frontend', false, ['jquery'], self::VERSION, true);
-        wp_add_inline_script('psych-gamification-frontend', $this->get_frontend_js());
-        
-        wp_localize_script('psych-gamification-frontend', 'psych_gamification', [
+
+        wp_enqueue_style('psych-gamification-frontend', false, [], self::VERSION
+);
+        wp_add_inline_style('psych-gamification-frontend', $this->get_frontend_c
+ss());
+
+        wp_enqueue_script('psych-gamification-frontend', false, ['jquery'], self
+::VERSION, true);
+        wp_add_inline_script('psych-gamification-frontend', $this->get_frontend_
+js());
+
+        wp_localize_script('psych-gamification-frontend', 'psych_gamification',
+[
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('psych_gamification_ajax'),
             'viewing_context' => $this->get_viewing_context()
@@ -1305,10 +1411,11 @@ final class Psych_Gamification_Center {
      */
     public function render_footer_elements() {
         if (!is_user_logged_in()) return;
-        
+
         $context = $this->get_viewing_context();
-        if ($context['is_impersonating']) return; // Don't show notifications when impersonating
-        
+        if ($context['is_impersonating']) return; // Don't show notifications wh
+en impersonating
+
         ?>
         <div id="psych-notification-container" style="display: none;">
             <div id="psych-notification-popup">
@@ -1347,14 +1454,14 @@ final class Psych_Gamification_Center {
             width: 100%;
             max-width: 450px;
         }
-        
+
         .psych-dashboard-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
             margin: 30px 0;
         }
-        
+
         .psych-card {
             background: white;
             padding: 30px;
@@ -1363,24 +1470,24 @@ final class Psych_Gamification_Center {
             display: flex;
             align-items: center;
         }
-        
+
         .psych-card-icon {
             font-size: 3rem;
             margin-left: 20px;
             color: #3498db;
         }
-        
+
         .psych-card-content h3 {
             margin: 0;
             font-size: 2rem;
             color: #2c3e50;
         }
-        
+
         .psych-card-content p {
             margin: 5px 0 0 0;
             color: #7f8c8d;
         }
-        
+
         .psych-recent-activities {
             background: white;
             padding: 30px;
@@ -1388,49 +1495,49 @@ final class Psych_Gamification_Center {
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             margin-top: 30px;
         }
-        
+
         .psych-activities-list {
             list-style: none;
             padding: 0;
         }
-        
+
         .psych-activities-list li {
             padding: 10px 0;
             border-bottom: 1px solid #ecf0f1;
         }
-        
+
         .psych-activities-list li:last-child {
             border-bottom: none;
         }
-        
+
         .psych-stats-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 30px;
             margin-top: 20px;
         }
-        
+
         .psych-stats-section {
             background: white;
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        
+
         @media (max-width: 768px) {
             .psych-dashboard-cards {
                 grid-template-columns: 1fr;
             }
-            
+
             .psych-stats-container {
                 grid-template-columns: 1fr;
             }
-            
+
             .psych-card {
                 flex-direction: column;
                 text-align: center;
             }
-            
+
             .psych-card-icon {
                 margin: 0 0 15px 0;
             }
@@ -1452,14 +1559,14 @@ final class Psych_Gamification_Center {
             display: inline-block;
             margin: 2px;
         }
-        
+
         .psych-user-badges-list {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
             margin: 10px 0;
         }
-        
+
         .psych-badge {
             background: #fff;
             border: 2px solid currentColor;
@@ -1471,20 +1578,20 @@ final class Psych_Gamification_Center {
             align-items: center;
             gap: 5px;
         }
-        
+
         .psych-leaderboard {
             background: #fff;
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        
+
         .psych-leaderboard-list {
             list-style: none;
             padding: 0;
             margin: 15px 0 0 0;
         }
-        
+
         .psych-leaderboard-list li {
             display: flex;
             justify-content: space-between;
@@ -1495,45 +1602,45 @@ final class Psych_Gamification_Center {
             border-radius: 8px;
             transition: all 0.3s ease;
         }
-        
+
         .psych-leaderboard-list li:nth-child(1) {
             background: linear-gradient(135deg, #FFD700, #FFA500);
             color: white;
         }
-        
+
         .psych-leaderboard-list li:nth-child(2) {
             background: linear-gradient(135deg, #C0C0C0, #A9A9A9);
             color: white;
         }
-        
+
         .psych-leaderboard-list li:nth-child(3) {
             background: linear-gradient(135deg, #CD7F32, #B8860B);
             color: white;
         }
-        
+
         .psych-leaderboard-list li.current-user {
             background: linear-gradient(135deg, #3498DB, #2980B9);
             color: white;
             border: 2px solid #1F618D;
             font-weight: bold;
         }
-        
+
         .user-name {
             font-weight: 600;
         }
-        
+
         .user-points {
             font-size: 0.9rem;
             opacity: 0.8;
         }
-        
+
         .user-level {
             font-size: 0.8rem;
             background: rgba(255,255,255,0.2);
             padding: 2px 8px;
             border-radius: 10px;
         }
-        
+
         #psych-notification-container {
             position: fixed;
             top: 20px;
@@ -1541,7 +1648,7 @@ final class Psych_Gamification_Center {
             z-index: 10000;
             max-width: 350px;
         }
-        
+
         #psych-notification-popup {
             background: linear-gradient(135deg, #27AE60, #2ECC71);
             color: white;
@@ -1551,7 +1658,7 @@ final class Psych_Gamification_Center {
             position: relative;
             animation: slideInFromTop 0.5s ease-out;
         }
-        
+
         #psych-notification-close {
             position: absolute;
             top: 10px;
@@ -1563,11 +1670,11 @@ final class Psych_Gamification_Center {
             cursor: pointer;
             opacity: 0.8;
         }
-        
+
         #psych-notification-close:hover {
             opacity: 1;
         }
-        
+
         @keyframes slideInFromTop {
             from {
                 transform: translateY(-100%);
@@ -1578,7 +1685,7 @@ final class Psych_Gamification_Center {
                 opacity: 1;
             }
         }
-        
+
         .psych-no-badges {
             color: #7f8c8d;
             font-style: italic;
@@ -1587,18 +1694,18 @@ final class Psych_Gamification_Center {
             background: #f8f9fa;
             border-radius: 8px;
         }
-        
+
         @media (max-width: 768px) {
             .psych-user-badges-list {
                 justify-content: center;
             }
-            
+
             .psych-leaderboard-list li {
                 flex-direction: column;
                 text-align: center;
                 gap: 5px;
             }
-            
+
             #psych-notification-container {
                 top: 10px;
                 left: 10px;
@@ -1618,7 +1725,7 @@ final class Psych_Gamification_Center {
             // Manual award form handling
             $("#manual-award-form").on("submit", function(e) {
                 e.preventDefault();
-                
+
                 var formData = {
                     action: "psych_manual_award",
                     nonce: psych_gamification_admin.nonce,
@@ -1627,7 +1734,7 @@ final class Psych_Gamification_Center {
                     award_value: $("#award_value").val(),
                     reason: $("#award_reason").val()
                 };
-                
+
                 $.post(psych_gamification_admin.ajax_url, formData)
                 .done(function(response) {
                     if (response.success) {
@@ -1641,12 +1748,12 @@ final class Psych_Gamification_Center {
                     alert("❌ خطا در ارتباط با سرور");
                 });
             });
-            
+
             // Live search for users
             $("#award_user_search").on("input", function() {
                 var query = $(this).val();
                 if (query.length < 2) return;
-                
+
                 // Here you could implement user search functionality
                 // For now, this is a placeholder
             });
@@ -1661,35 +1768,37 @@ final class Psych_Gamification_Center {
         return '
         jQuery(document).ready(function($) {
             var notificationShown = false;
-            
+
             // Check for pending notifications
             function checkNotifications() {
                 if (notificationShown) return;
-                
+
                 $.post(psych_gamification.ajax_url, {
                     action: "psych_get_pending_notifications",
                     nonce: psych_gamification.nonce
                 })
                 .done(function(response) {
-                    if (response.success && response.data.notifications.length > 0) {
+                    if (response.success && response.data.notifications.length >
+ 0) {
                         showNotification(response.data.notifications[0]);
                     }
                 });
             }
-            
+
             // Show notification popup
             function showNotification(notification) {
-                var content = "<h4>" + notification.title + "</h4><p>" + notification.message + "</p>";
+                var content = "<h4>" + notification.title + "</h4><p>" + notific
+ation.message + "</p>";
                 $("#psych-notification-content").html(content);
                 $("#psych-notification-container").fadeIn();
                 notificationShown = true;
-                
+
                 // Auto-hide after 5 seconds
                 setTimeout(function() {
                     hideNotification(notification.id);
                 }, 5000);
             }
-            
+
             // Hide notification
             function hideNotification(notificationId) {
                 $("#psych-notification-container").fadeOut(function() {
@@ -1704,20 +1813,21 @@ final class Psych_Gamification_Center {
                     notificationShown = false;
                 });
             }
-            
+
             // Close notification manually
             $("#psych-notification-close").on("click", function() {
                 hideNotification();
             });
-            
+
             // Check for notifications every 30 seconds
             setInterval(checkNotifications, 30000);
-            
+
             // Initial check
             setTimeout(checkNotifications, 2000);
-            
+
             // Handle mission completion integration
-            $(document).on("psych_mission_completed", function(e, missionId, buttonElement) {
+            $(document).on("psych_mission_completed", function(e, missionId, but
+tonElement) {
                 // This integrates with Interactive Content Module
                 setTimeout(checkNotifications, 1000);
             });
@@ -1729,7 +1839,8 @@ final class Psych_Gamification_Center {
      * Register admin settings
      */
     public function register_settings() {
-        register_setting('psych_gamification_settings', self::SETTINGS_OPTION_KEY);
+        register_setting('psych_gamification_settings', self::SETTINGS_OPTION_KE
+Y);
         register_setting('psych_gamification_levels', self::LEVELS_OPTION_KEY);
         register_setting('psych_gamification_badges', self::BADGES_OPTION_KEY);
     }
@@ -1743,9 +1854,10 @@ final class Psych_Gamification_Center {
      */
     public function reward_generate_coupon($user_id, $coupon_data, $context) {
         $coupon_code = 'PSYCH_' . strtoupper(wp_generate_password(8, false));
-        
+
         // Store coupon data
-        $user_coupons = get_user_meta($user_id, 'psych_user_coupons', true) ?: [];
+        $user_coupons = get_user_meta($user_id, 'psych_user_coupons', true) ?: [
+];
         $user_coupons[] = [
             'code' => $coupon_code,
             'discount' => $coupon_data['discount'] ?? 10,
@@ -1754,13 +1866,13 @@ final class Psych_Gamification_Center {
             'used' => false,
             'created' => current_time('mysql')
         ];
-        
+
         update_user_meta($user_id, 'psych_user_coupons', $user_coupons);
-        
+
         // Queue notification
         $this->queue_notification(
-            $user_id, 
-            'کد تخفیف جدید!', 
+            $user_id,
+            'کد تخفیف جدید!',
             "کد تخفیف شما: {$coupon_code} - {$coupon_data['discount']}% تخفیف"
         );
     }
@@ -1769,12 +1881,14 @@ final class Psych_Gamification_Center {
      * Unlock product reward
      */
     public function reward_unlock_product($user_id, $product_data, $context) {
-        $unlocked_products = get_user_meta($user_id, 'psych_unlocked_products', true) ?: [];
-        
+        $unlocked_products = get_user_meta($user_id, 'psych_unlocked_products',
+true) ?: [];
+
         if (!in_array($product_data['product_id'], $unlocked_products)) {
             $unlocked_products[] = $product_data['product_id'];
-            update_user_meta($user_id, 'psych_unlocked_products', $unlocked_products);
-            
+            update_user_meta($user_id, 'psych_unlocked_products', $unlocked_prod
+ucts);
+
             $product_name = $product_data['name'] ?? 'محصول خاص';
             $this->queue_notification(
                 $user_id,
@@ -1795,9 +1909,9 @@ final class Psych_Gamification_Center {
             'file_url' => $file_data['url'] ?? '',
             'received_date' => current_time('mysql')
         ];
-        
+
         update_user_meta($user_id, 'psych_reward_files', $user_files);
-        
+
         $this->queue_notification(
             $user_id,
             'فایل پاداش جدید!',
@@ -1811,20 +1925,22 @@ final class Psych_Gamification_Center {
     public function reward_send_sms($user_id, $sms_data, $context) {
         $template = $sms_data['template'] ?? 'custom';
         $message = $sms_data['message'] ?? 'تبریک! شما پاداش جدیدی کسب کردید.';
-        
+
         if ($template !== 'custom') {
-            $this->send_sms_by_template($user_id, $template, $sms_data['vars'] ?? []);
+            $this->send_sms_by_template($user_id, $template, $sms_data['vars'] ?
+? []);
         } else {
             // Send custom message
             $user = get_userdata($user_id);
             $phone = get_user_meta($user_id, 'phone', true);
-            
+
             if ($user && $phone) {
                 // Replace variables in custom message
-                $message = str_replace(['{user_name}', '{site_name}'], 
-                                     [$user->display_name, get_bloginfo('name')], 
+                $message = str_replace(['{user_name}', '{site_name}'],
+                                     [$user->display_name, get_bloginfo('name')]
+,
                                      $message);
-                
+
                 // Log SMS (in real implementation, send via SMS service)
                 error_log("SMS to {$phone}: {$message}");
             }
@@ -1836,25 +1952,26 @@ final class Psych_Gamification_Center {
      */
     public function handle_badge_earned_automation($user_id, $badge_slug) {
         $settings = $this->get_settings();
-        
+
         if ($settings['sms_enabled']) {
             $badge_name = $this->get_badge_name($badge_slug);
             $this->send_sms_by_template($user_id, 'badge_earned', [
                 'badge_name' => $badge_name
             ]);
         }
-        
+
         // Coach notification if student earns badge
         if (function_exists('psych_get_user_coach')) {
             $coach_id = psych_get_user_coach($user_id);
             if ($coach_id) {
                 $student_data = get_userdata($user_id);
                 $badge_name = $this->get_badge_name($badge_slug);
-                
+
                 $this->queue_notification(
                     $coach_id,
                     'دانشجو نشان کسب کرد',
-                    $student_data->display_name . " نشان '{$badge_name}' را کسب کرد"
+                    $student_data->display_name . " نشان '{$badge_name}' را کسب
+کرد"
                 );
             }
         }
@@ -1869,45 +1986,59 @@ final class Psych_Gamification_Center {
      */
     public function render_sms_templates_page() {
         if (!current_user_can('manage_options')) {
-            wp_die(__('You do not have sufficient permissions to access this page.'));
+            wp_die(__('You do not have sufficient permissions to access this pag
+e.'));
         }
 
         $option_key = 'psych_gamification_sms_templates';
         $default_templates = [
-            'badge_earned' => 'تبریک {user_name}! شما نشان {badge_name} را کسب کردید.',
+            'badge_earned' => 'تبریک {user_name}! شما نشان {badge_name} را کسب
+کردید.',
             'level_up' => 'تبریک {user_name}! شما به سطح {level_name} رسیدید.',
-            'points_awarded' => '{user_name} عزیز، شما {points} امتیاز کسب کردید!'
+            'points_awarded' => '{user_name} عزیز، شما {points} امتیاز کسب کردی
+د!'
         ];
 
-        if (isset($_POST['submit']) && check_admin_referer('psych_save_sms_templates')) {
+        if (isset($_POST['submit']) && check_admin_referer('psych_save_sms_templ
+ates')) {
             $saved_templates = [];
             foreach ($default_templates as $key => $default_text) {
                 if (isset($_POST[$key])) {
-                    $saved_templates[$key] = sanitize_textarea_field($_POST[$key]);
+                    $saved_templates[$key] = sanitize_textarea_field($_POST[$key
+]);
                 }
             }
             update_option($option_key, $saved_templates);
-            echo '<div class="notice notice-success"><p>قالب‌ها با موفقیت ذخیره شدند.</p></div>';
+            echo '<div class="notice notice-success"><p>قالب‌ها با موفقیت ذخیره
+شدند.</p></div>';
         }
 
         $current_templates = get_option($option_key, $default_templates);
         ?>
         <div class="wrap">
             <h1>قالب‌های پیامک</h1>
-            <p>در این بخش می‌توانید متن پیامک‌های خودکار را ویرایش کنید. از متغیرهای موجود برای شخصی‌سازی استفاده کنید.</p>
-            <p>متغیرهای موجود: <code>{user_name}</code>, <code>{site_name}</code>, <code>{badge_name}</code>, <code>{level_name}</code>, <code>{points}</code></p>
+            <p>در این بخش می‌توانید متن پیامک‌های خودکار را ویرایش کنید. از متغ
+یرهای موجود برای شخصی‌سازی استفاده کنید.</p>
+            <p>متغیرهای موجود: <code>{user_name}</code>, <code>{site_name}</code
+>, <code>{badge_name}</code>, <code>{level_name}</code>, <code>{points}</code></
+p>
 
             <form method="post" action="">
                 <?php wp_nonce_field('psych_save_sms_templates'); ?>
                 <table class="form-table">
-                    <?php foreach ($default_templates as $key => $default_text): ?>
+                    <?php foreach ($default_templates as $key => $default_text):
+ ?>
                     <tr>
                         <th scope="row">
-                            <label for="<?php echo esc_attr($key); ?>"><?php echo esc_html(ucwords(str_replace('_', ' ', $key))); ?></label>
+                            <label for="<?php echo esc_attr($key); ?>"><?php ech
+o esc_html(ucwords(str_replace('_', ' ', $key))); ?></label>
                         </th>
                         <td>
-                            <textarea id="<?php echo esc_attr($key); ?>" name="<?php echo esc_attr($key); ?>" rows="4" class="large-text"><?php echo esc_textarea($current_templates[$key] ?? $default_text); ?></textarea>
-                            <p class="description">پیش‌فرض: <?php echo esc_html($default_text); ?></p>
+                            <textarea id="<?php echo esc_attr($key); ?>" name="<
+?php echo esc_attr($key); ?>" rows="4" class="large-text"><?php echo esc_textare
+a($current_templates[$key] ?? $default_text); ?></textarea>
+                            <p class="description">پیش‌فرض: <?php echo esc_html(
+$default_text); ?></p>
                         </td>
                     </tr>
                     <?php endforeach; ?>
@@ -1923,87 +2054,106 @@ final class Psych_Gamification_Center {
      */
     public function render_levels_page() {
         if (!current_user_can('manage_options')) {
-            wp_die(__('You do not have sufficient permissions to access this page.'));
+            wp_die(__('You do not have sufficient permissions to access this pag
+e.'));
         }
-        
+
         // Handle form submission
         if (isset($_POST['save_levels'])) {
             check_admin_referer('psych_save_levels');
-            
+
             $levels = [];
             if (isset($_POST['levels']) && is_array($_POST['levels'])) {
                 foreach ($_POST['levels'] as $level_data) {
                     $levels[] = [
                         'name' => sanitize_text_field($level_data['name']),
-                        'required_points' => intval($level_data['required_points']),
+                        'required_points' => intval($level_data['required_points
+']),
                         'icon' => sanitize_text_field($level_data['icon']),
                         'color' => sanitize_hex_color($level_data['color'])
                     ];
                 }
-                
+
                 // Sort by required points
                 usort($levels, function($a, $b) {
                     return $a['required_points'] - $b['required_points'];
                 });
             }
-            
+
             update_option(self::LEVELS_OPTION_KEY, $levels);
-            echo '<div class="notice notice-success"><p>سطوح با موفقیت ذخیره شد.</p></div>';
+            echo '<div class="notice notice-success"><p>سطوح با موفقیت ذخیره شد.
+</p></div>';
         }
-        
+
         $levels = $this->get_levels();
         ?>
         <div class="wrap">
             <h1>مدیریت سطوح</h1>
             <form method="post" action="">
                 <?php wp_nonce_field('psych_save_levels'); ?>
-                
+
                 <div id="levels-container">
                     <?php foreach ($levels as $index => $level): ?>
                     <div class="level-row">
-                        <input type="text" name="levels[<?php echo $index; ?>][name]" 
-                               value="<?php echo esc_attr($level['name']); ?>" placeholder="نام سطح" />
-                        <input type="number" name="levels[<?php echo $index; ?>][required_points]" 
-                               value="<?php echo esc_attr($level['required_points']); ?>" placeholder="امتیاز مورد نیاز" />
-                        <input type="text" name="levels[<?php echo $index; ?>][icon]" 
-                               value="<?php echo esc_attr($level['icon']); ?>" placeholder="کلاس آیکون" />
-                        <input type="color" name="levels[<?php echo $index; ?>][color]" 
-                               value="<?php echo esc_attr($level['color']); ?>" />
-                        <button type="button" class="button remove-level">حذف</button>
+                        <input type="text" name="levels[<?php echo $index; ?>][n
+ame]"
+                               value="<?php echo esc_attr($level['name']); ?>" p
+laceholder="نام سطح" />
+                        <input type="number" name="levels[<?php echo $index; ?>]
+[required_points]"
+                               value="<?php echo esc_attr($level['required_point
+s']); ?>" placeholder="امتیاز مورد نیاز" />
+                        <input type="text" name="levels[<?php echo $index; ?>][i
+con]"
+                               value="<?php echo esc_attr($level['icon']); ?>" p
+laceholder="کلاس آیکون" />
+                        <input type="color" name="levels[<?php echo $index; ?>][
+color]"
+                               value="<?php echo esc_attr($level['color']); ?>"
+/>
+                        <button type="button" class="button remove-level">حذف</b
+utton>
                     </div>
                     <?php endforeach; ?>
                 </div>
-                
+
                 <p>
-                    <button type="button" id="add-level" class="button">افزودن سطح</button>
-                    <button type="submit" name="save_levels" class="button-primary">ذخیره سطوح</button>
+                    <button type="button" id="add-level" class="button">افزودن
+سطح</button>
+                    <button type="submit" name="save_levels" class="button-prima
+ry">ذخیره سطوح</button>
                 </p>
             </form>
         </div>
-        
+
         <script>
         jQuery(document).ready(function($) {
             var levelIndex = <?php echo count($levels); ?>;
-            
+
             $("#add-level").click(function() {
                 var html = '<div class="level-row">' +
-                    '<input type="text" name="levels[' + levelIndex + '][name]" placeholder="نام سطح" />' +
-                    '<input type="number" name="levels[' + levelIndex + '][required_points]" placeholder="امتیاز مورد نیاز" />' +
-                    '<input type="text" name="levels[' + levelIndex + '][icon]" placeholder="کلاس آیکون" />' +
-                    '<input type="color" name="levels[' + levelIndex + '][color]" value="#3498db" />' +
-                    '<button type="button" class="button remove-level">حذف</button>' +
+                    '<input type="text" name="levels[' + levelIndex + '][name]"
+placeholder="نام سطح" />' +
+                    '<input type="number" name="levels[' + levelIndex + '][requi
+red_points]" placeholder="امتیاز مورد نیاز" />' +
+                    '<input type="text" name="levels[' + levelIndex + '][icon]"
+placeholder="کلاس آیکون" />' +
+                    '<input type="color" name="levels[' + levelIndex + '][color]
+" value="#3498db" />' +
+                    '<button type="button" class="button remove-level">حذف</butt
+on>' +
                     '</div>';
-                
+
                 $("#levels-container").append(html);
                 levelIndex++;
             });
-            
+
             $(document).on("click", ".remove-level", function() {
                 $(this).closest(".level-row").remove();
             });
         });
         </script>
-        
+
         <style>
         .level-row {
             display: flex;
@@ -2023,81 +2173,103 @@ final class Psych_Gamification_Center {
      */
     public function render_badges_page() {
         if (!current_user_can('manage_options')) {
-            wp_die(__('You do not have sufficient permissions to access this page.'));
+            wp_die(__('You do not have sufficient permissions to access this pag
+e.'));
         }
-        
+
         // Handle form submission
         if (isset($_POST['save_badges'])) {
             check_admin_referer('psych_save_badges');
-            
+
             $badges = [];
             if (isset($_POST['badges']) && is_array($_POST['badges'])) {
                 foreach ($_POST['badges'] as $slug => $badge_data) {
                     $badges[sanitize_key($slug)] = [
                         'name' => sanitize_text_field($badge_data['name']),
-                        'description' => sanitize_textarea_field($badge_data['description']),
+                        'description' => sanitize_textarea_field($badge_data['de
+scription']),
                         'icon' => sanitize_text_field($badge_data['icon']),
                         'color' => sanitize_hex_color($badge_data['color'])
                     ];
                 }
             }
-            
+
             update_option(self::BADGES_OPTION_KEY, $badges);
-            echo '<div class="notice notice-success"><p>نشان‌ها با موفقیت ذخیره شد.</p></div>';
+            echo '<div class="notice notice-success"><p>نشان‌ها با موفقیت ذخیره
+شد.</p></div>';
         }
-        
+
         $badges = $this->get_badges();
         ?>
         <div class="wrap">
             <h1>مدیریت نشان‌ها</h1>
             <form method="post" action="">
                 <?php wp_nonce_field('psych_save_badges'); ?>
-                
+
                 <div id="badges-container">
                     <?php foreach ($badges as $slug => $badge): ?>
                     <div class="badge-row">
-                        <input type="text" value="<?php echo esc_attr($slug); ?>" 
-                               name="badge_slugs[]" placeholder="نامک نشان" readonly />
-                        <input type="text" name="badges[<?php echo esc_attr($slug); ?>][name]" 
-                               value="<?php echo esc_attr($badge['name']); ?>" placeholder="نام نشان" />
-                        <textarea name="badges[<?php echo esc_attr($slug); ?>][description]" 
-                                  placeholder="توضیحات"><?php echo esc_textarea($badge['description'] ?? ''); ?></textarea>
-                        <input type="text" name="badges[<?php echo esc_attr($slug); ?>][icon]" 
-                               value="<?php echo esc_attr($badge['icon']); ?>" placeholder="کلاس آیکون" />
-                        <input type="color" name="badges[<?php echo esc_attr($slug); ?>][color]" 
-                               value="<?php echo esc_attr($badge['color']); ?>" />
-                        <button type="button" class="button remove-badge">حذف</button>
+                        <input type="text" value="<?php echo esc_attr($slug); ?>
+"
+                               name="badge_slugs[]" placeholder="نامک نشان" read
+only />
+                        <input type="text" name="badges[<?php echo esc_attr($slu
+g); ?>][name]"
+                               value="<?php echo esc_attr($badge['name']); ?>" p
+laceholder="نام نشان" />
+                        <textarea name="badges[<?php echo esc_attr($slug); ?>][d
+escription]"
+                                  placeholder="توضیحات"><?php echo esc_textarea(
+$badge['description'] ?? ''); ?></textarea>
+                        <input type="text" name="badges[<?php echo esc_attr($slu
+g); ?>][icon]"
+                               value="<?php echo esc_attr($badge['icon']); ?>" p
+laceholder="کلاس آیکون" />
+                        <input type="color" name="badges[<?php echo esc_attr($sl
+ug); ?>][color]"
+                               value="<?php echo esc_attr($badge['color']); ?>"
+/>
+                        <button type="button" class="button remove-badge">حذف</b
+utton>
                     </div>
                     <?php endforeach; ?>
                 </div>
-                
+
                 <p>
-                    <button type="button" id="add-badge" class="button">افزودن نشان</button>
-                    <button type="submit" name="save_badges" class="button-primary">ذخیره نشان‌ها</button>
+                    <button type="button" id="add-badge" class="button">افزودن
+نشان</button>
+                    <button type="submit" name="save_badges" class="button-prima
+ry">ذخیره نشان‌ها</button>
                 </p>
             </form>
         </div>
-        
+
         <script>
         jQuery(document).ready(function($) {
             $("#add-badge").click(function() {
                 var slug = prompt("نامک نشان (انگلیسی، بدون فاصله):");
                 if (!slug) return;
-                
+
                 slug = slug.toLowerCase().replace(/[^a-z0-9_]/g, '_');
-                
+
                 var html = '<div class="badge-row">' +
-                    '<input type="text" value="' + slug + '" name="badge_slugs[]" readonly />' +
-                    '<input type="text" name="badges[' + slug + '][name]" placeholder="نام نشان" />' +
-                    '<textarea name="badges[' + slug + '][description]" placeholder="توضیحات"></textarea>' +
-                    '<input type="text" name="badges[' + slug + '][icon]" placeholder="کلاس آیکون" value="fa-trophy" />' +
-                    '<input type="color" name="badges[' + slug + '][color]" value="#FFD700" />' +
-                    '<button type="button" class="button remove-badge">حذف</button>' +
+                    '<input type="text" value="' + slug + '" name="badge_slugs[]
+" readonly />' +
+                    '<input type="text" name="badges[' + slug + '][name]" placeh
+older="نام نشان" />' +
+                    '<textarea name="badges[' + slug + '][description]" placehol
+der="توضیحات"></textarea>' +
+                    '<input type="text" name="badges[' + slug + '][icon]" placeh
+older="کلاس آیکون" value="fa-trophy" />' +
+                    '<input type="color" name="badges[' + slug + '][color]" valu
+e="#FFD700" />' +
+                    '<button type="button" class="button remove-badge">حذف</butt
+on>' +
                     '</div>';
-                
+
                 $("#badges-container").append(html);
             });
-            
+
             $(document).on("click", ".remove-badge", function() {
                 if (confirm("آیا مطمئن هستید؟")) {
                     $(this).closest(".badge-row").remove();
@@ -2105,7 +2277,7 @@ final class Psych_Gamification_Center {
             });
         });
         </script>
-        
+
         <style>
         .badge-row {
             display: grid;
@@ -2130,20 +2302,23 @@ final class Psych_Gamification_Center {
      */
     public function render_manual_award_page() {
         if (!current_user_can('manage_options')) {
-            wp_die(__('You do not have sufficient permissions to access this page.'));
+            wp_die(__('You do not have sufficient permissions to access this pag
+e.'));
         }
         ?>
         <div class="wrap">
             <h1>اعطای دستی پاداش</h1>
-            
+
             <div class="manual-award-container">
                 <form id="manual-award-form">
                     <table class="form-table">
                         <tr>
                             <th scope="row">جستجوی کاربر</th>
                             <td>
-                                <input type="text" id="award_user_search" placeholder="نام کاربری یا ایمیل..." class="regular-text" />
-                                <input type="hidden" id="award_user_id" name="user_id" />
+                                <input type="text" id="award_user_search" placeh
+older="نام کاربری یا ایمیل..." class="regular-text" />
+                                <input type="hidden" id="award_user_id" name="us
+er_id" />
                                 <div id="user-search-results"></div>
                             </td>
                         </tr>
@@ -2159,23 +2334,27 @@ final class Psych_Gamification_Center {
                         <tr>
                             <th scope="row">مقدار</th>
                             <td>
-                                <input type="text" id="award_value" name="award_value" placeholder="مقدار امتیاز یا نامک نشان" class="regular-text" />
-                                <p class="description">برای امتیاز: عدد وارد کنید. برای نشان: نامک نشان را وارد کنید.</p>
+                                <input type="text" id="award_value" name="award_
+value" placeholder="مقدار امتیاز یا نامک نشان" class="regular-text" />
+                                <p class="description">برای امتیاز: عدد وارد کن
+ید. برای نشان: نامک نشان را وارد کنید.</p>
                             </td>
                         </tr>
                         <tr>
                             <th scope="row">دلیل</th>
                             <td>
-                                <input type="text" id="award_reason" name="reason" placeholder="دلیل اعطای پاداش..." class="regular-text" />
+                                <input type="text" id="award_reason" name="reaso
+n" placeholder="دلیل اعطای پاداش..." class="regular-text" />
                             </td>
                         </tr>
                     </table>
-                    
+
                     <p class="submit">
-                        <button type="submit" class="button-primary">اعطای پاداش</button>
+                        <button type="submit" class="button-primary">اعطای پادا
+ش</button>
                     </p>
                 </form>
-                
+
                 <div class="badges-reference">
                     <h3>راهنمای نشان‌ها</h3>
                     <table class="wp-list-table widefat fixed striped">
@@ -2187,11 +2366,14 @@ final class Psych_Gamification_Center {
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($this->get_badges() as $slug => $badge): ?>
+                            <?php foreach ($this->get_badges() as $slug => $badg
+e): ?>
                             <tr>
-                                <td><code><?php echo esc_html($slug); ?></code></td>
+                                <td><code><?php echo esc_html($slug); ?></code><
+/td>
                                 <td><?php echo esc_html($badge['name']); ?></td>
-                                <td><?php echo esc_html($badge['description'] ?? ''); ?></td>
+                                <td><?php echo esc_html($badge['description'] ??
+ ''); ?></td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -2199,7 +2381,7 @@ final class Psych_Gamification_Center {
                 </div>
             </div>
         </div>
-        
+
         <style>
         .manual-award-container {
             max-width: 800px;
@@ -2242,8 +2424,10 @@ register_activation_hook(__FILE__, function() {
     // Create default data on activation
     if (!get_option(Psych_Gamification_Center::LEVELS_OPTION_KEY)) {
         $center = Psych_Gamification_Center::get_instance();
-        update_option(Psych_Gamification_Center::LEVELS_OPTION_KEY, $center->get_levels());
-        update_option(Psych_Gamification_Center::BADGES_OPTION_KEY, $center->get_badges());
+        update_option(Psych_Gamification_Center::LEVELS_OPTION_KEY, $center->get
+_levels());
+        update_option(Psych_Gamification_Center::BADGES_OPTION_KEY, $center->get
+_badges());
     }
 });
 

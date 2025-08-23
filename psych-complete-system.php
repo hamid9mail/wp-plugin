@@ -2,7 +2,8 @@
 /**
  * Plugin Name:       Psych Complete System - Enhanced Integration Edition
  * Plugin URI:        https://yourwebsite.com/psych-complete-system
- * Description:       سیستم جامع روان گستر برای مدیریت کاربران، مسیرهای یادگیری، گیمیفیکیشن و مربیگری با یکپارچگی کامل
+ * Description:       سیستم جامع روان گستر برای مدیریت کاربران، مسیرهای یادگیری
+، گیمیفیکیشن و مربیگری با یکپارچگی کامل
  * Version:           6.1.0
  * Requires at least: 5.0
  * Requires PHP:      7.4
@@ -110,7 +111,8 @@ final class Psych_Complete_System_Enhanced {
         // Check PHP version
         if (version_compare(PHP_VERSION, self::MIN_PHP_VERSION, '<')) {
             $this->errors[] = sprintf(
-                'سیستم روان گستر نیاز به PHP نسخه %s یا بالاتر دارد. نسخه فعلی شما: %s',
+                'سیستم روان گستر نیاز به PHP نسخه %s یا بالاتر دارد. نسخه فعلی
+شما: %s',
                 self::MIN_PHP_VERSION,
                 PHP_VERSION
             );
@@ -120,7 +122,8 @@ final class Psych_Complete_System_Enhanced {
         global $wp_version;
         if (version_compare($wp_version, self::MIN_WP_VERSION, '<')) {
             $this->errors[] = sprintf(
-                'سیستم روان گستر نیاز به وردپرس نسخه %s یا بالاتر دارد. نسخه فعلی شما: %s',
+                'سیستم روان گستر نیاز به وردپرس نسخه %s یا بالاتر دارد. نسخه فع
+لی شما: %s',
                 self::MIN_WP_VERSION,
                 $wp_version
             );
@@ -132,7 +135,8 @@ final class Psych_Complete_System_Enhanced {
      */
     public function complete_requirements_check() {
         // Check required functions after WordPress is fully loaded
-        $required_functions = ['wp_create_nonce', 'wp_verify_nonce', 'current_user_can'];
+        $required_functions = ['wp_create_nonce', 'wp_verify_nonce', 'current_us
+er_can'];
         foreach ($required_functions as $function) {
             if (!function_exists($function)) {
                 $this->errors[] = "تابع مورد نیاز $function موجود نیست.";
@@ -175,7 +179,8 @@ final class Psych_Complete_System_Enhanced {
      * Initialize hooks
      */
     private function init_hooks() {
-        // Core initialization - Load modules on init to ensure WordPress is ready
+        // Core initialization - Load modules on init to ensure WordPress is rea
+dy
         add_action('init', [$this, 'init_plugin'], 0);
         add_action('init', [$this, 'load_textdomain'], 1);
 
@@ -190,7 +195,8 @@ final class Psych_Complete_System_Enhanced {
         add_action('wp_enqueue_scripts', [$this, 'frontend_enqueue_scripts']);
 
         // AJAX hooks
-        add_action('wp_ajax_psych_system_status', [$this, 'ajax_system_status']);
+        add_action('wp_ajax_psych_system_status', [$this, 'ajax_system_status'])
+;
         add_action('wp_ajax_psych_clear_cache', [$this, 'ajax_clear_cache']);
 
         // Cleanup hooks
@@ -198,9 +204,10 @@ final class Psych_Complete_System_Enhanced {
 
         // Integration hooks
         add_action('psych_system_loaded', [$this, 'after_system_loaded'], 999);
-        
+
         // Fix for nested shortcode processing
-        add_filter('psych_process_station_content', [$this, 'process_nested_shortcodes'], 10, 1);
+        add_filter('psych_process_station_content', [$this, 'process_nested_shor
+tcodes'], 10, 1);
     }
 
     /**
@@ -254,7 +261,7 @@ final class Psych_Complete_System_Enhanced {
                 if (!defined('PSYCH_PREVENT_AUTO_INIT')) {
                     define('PSYCH_PREVENT_AUTO_INIT', true);
                 }
-                
+
                 require_once $file_path;
 
                 if (!class_exists($class)) {
@@ -289,7 +296,8 @@ final class Psych_Complete_System_Enhanced {
             if (class_exists($class_name)) {
                 try {
                     if (method_exists($class_name, 'get_instance')) {
-                        $this->modules[$module_key] = $class_name::get_instance();
+                        $this->modules[$module_key] = $class_name::get_instance(
+);
                     } else {
                         $this->modules[$module_key] = new $class_name();
                     }
@@ -298,10 +306,12 @@ final class Psych_Complete_System_Enhanced {
                     if (method_exists($this->modules[$module_key], 'init')) {
                         $this->modules[$module_key]->init();
                     }
-                    
-                    do_action("psych_{$module_key}_initialized", $this->modules[$module_key]);
+
+                    do_action("psych_{$module_key}_initialized", $this->modules[
+$module_key]);
                 } catch (Exception $e) {
-                    $this->errors[] = "خطا در راه‌اندازی ماژول {$module_key}: " . $e->getMessage();
+                    $this->errors[] = "خطا در راه‌اندازی ماژول {$module_key}: "
+. $e->getMessage();
                 }
             }
         }
@@ -332,7 +342,8 @@ final class Psych_Complete_System_Enhanced {
         if (!function_exists('psych_get_user_points')) {
             function psych_get_user_points($user_id) {
                 if (isset($GLOBALS['psych_system']->modules['gamification'])) {
-                    return $GLOBALS['psych_system']->modules['gamification']->get_user_total_points($user_id);
+                    return $GLOBALS['psych_system']->modules['gamification']->ge
+t_user_total_points($user_id);
                 }
                 return 0;
             }
@@ -341,7 +352,8 @@ final class Psych_Complete_System_Enhanced {
         if (!function_exists('psych_award_points')) {
             function psych_award_points($user_id, $points, $reason = '') {
                 if (isset($GLOBALS['psych_system']->modules['gamification'])) {
-                    return $GLOBALS['psych_system']->modules['gamification']->award_points($user_id, $points, $reason);
+                    return $GLOBALS['psych_system']->modules['gamification']->aw
+ard_points($user_id, $points, $reason);
                 }
                 return false;
             }
@@ -350,7 +362,8 @@ final class Psych_Complete_System_Enhanced {
         if (!function_exists('psych_get_user_level')) {
             function psych_get_user_level($user_id) {
                 if (isset($GLOBALS['psych_system']->modules['gamification'])) {
-                    return $GLOBALS['psych_system']->modules['gamification']->get_user_level_info($user_id);
+                    return $GLOBALS['psych_system']->modules['gamification']->ge
+t_user_level_info($user_id);
                 }
                 return null;
             }
@@ -359,9 +372,11 @@ final class Psych_Complete_System_Enhanced {
         if (!function_exists('psych_get_viewing_context')) {
             function psych_get_viewing_context() {
                 if (isset($GLOBALS['psych_system']->modules['path_engine'])) {
-                    return $GLOBALS['psych_system']->modules['path_engine']->get_viewing_context();
+                    return $GLOBALS['psych_system']->modules['path_engine']->get
+_viewing_context();
                 }
-                return ['is_impersonating' => false, 'real_user_id' => get_current_user_id(), 'viewed_user_id' => get_current_user_id()];
+                return ['is_impersonating' => false, 'real_user_id' => get_curre
+nt_user_id(), 'viewed_user_id' => get_current_user_id()];
             }
         }
 
@@ -381,13 +396,15 @@ final class Psych_Complete_System_Enhanced {
      */
     private function setup_integration_hooks() {
         // WooCommerce integration
-        add_action('woocommerce_order_status_completed', [$this, 'woocommerce_order_completed']);
+        add_action('woocommerce_order_status_completed', [$this, 'woocommerce_or
+der_completed']);
 
         // BuddyPress integration
         add_action('bp_activity_add', [$this, 'buddypress_activity_add']);
 
         // LearnDash integration
-        add_action('learndash_lesson_completed', [$this, 'learndash_lesson_completed'], 10, 2);
+        add_action('learndash_lesson_completed', [$this, 'learndash_lesson_compl
+eted'], 10, 2);
 
         // bbPress integration
         add_action('bbp_new_topic', [$this, 'bbpress_new_topic']);
@@ -424,7 +441,8 @@ final class Psych_Complete_System_Enhanced {
     public function admin_enqueue_scripts($hook) {
         if (strpos($hook, 'psych-system') !== false) {
             wp_enqueue_script('jquery');
-            wp_enqueue_script('chart-js', 'https://cdn.jsdelivr.net/npm/chart.js', [], '3.9.1', true);
+            wp_enqueue_script('chart-js', 'https://cdn.jsdelivr.net/npm/chart.js
+', [], '3.9.1', true);
 
             wp_enqueue_script(
                 'psych-system-admin',
@@ -449,7 +467,8 @@ final class Psych_Complete_System_Enhanced {
             );
 
             // Add inline admin styles
-            wp_add_inline_style('psych-system-admin', $this->get_admin_inline_styles());
+            wp_add_inline_style('psych-system-admin', $this->get_admin_inline_st
+yles());
         }
     }
 
@@ -462,7 +481,8 @@ final class Psych_Complete_System_Enhanced {
             wp_enqueue_script('jquery');
 
             // The psych-system-frontend script and style have been removed
-            // because the files were deleted and the functionality is handled by
+            // because the files were deleted and the functionality is handled b
+y
             // the self-contained dashboard-display.php module.
         }
     }
@@ -579,37 +599,37 @@ final class Psych_Complete_System_Enhanced {
                 border-radius: 8px;
                 margin: 20px 0;
             }
-            
+
             .psych-user-performance-header .user-welcome h2 {
                 margin: 0 0 10px 0;
                 font-size: 24px;
             }
-            
+
             .psych-user-performance-header .user-stats {
                 display: flex;
                 gap: 20px;
                 flex-wrap: wrap;
             }
-            
+
             .psych-user-performance-header .stat-item {
                 background: rgba(255,255,255,0.2);
                 padding: 10px 15px;
                 border-radius: 5px;
             }
-            
+
             .psych-user-performance-header .stat-label {
                 display: block;
                 font-size: 12px;
                 opacity: 0.8;
             }
-            
+
             .psych-user-performance-header .stat-value {
                 display: block;
                 font-size: 18px;
                 font-weight: bold;
                 margin-top: 5px;
             }
-            
+
             .psychocourse-path {
                 background: #f8f9fa;
                 border: 1px solid #dee2e6;
@@ -617,14 +637,14 @@ final class Psych_Complete_System_Enhanced {
                 padding: 20px;
                 margin: 20px 0;
             }
-            
+
             .psychocourse-path .path-header h2 {
                 color: #343a40;
                 margin-bottom: 20px;
                 border-bottom: 2px solid #007bff;
                 padding-bottom: 10px;
             }
-            
+
             .psych-login-notice {
                 background: #fff3cd;
                 border: 1px solid #ffeaa7;
@@ -644,18 +664,22 @@ final class Psych_Complete_System_Enhanced {
         ?>
         <div class="wrap">
             <h1>سیستم جامع روان گستر</h1>
-            <p>نسخه <?php echo esc_html(self::VERSION); ?> - Enhanced Integration Edition</p>
+            <p>نسخه <?php echo esc_html(self::VERSION); ?> - Enhanced Integratio
+n Edition</p>
 
             <div class="psych-admin-container">
                 <div class="psych-admin-grid">
                     <div class="psych-admin-card">
                         <h3>وضعیت سیستم</h3>
                         <ul>
-                            <?php foreach ($system_status['modules'] as $module => $status): ?>
+                            <?php foreach ($system_status['modules'] as $module
+=> $status): ?>
                                 <li>
-                                    <span class="psych-status-indicator psych-status-<?php echo $status['active'] ? 'active' : 'inactive'; ?>"></span>
+                                    <span class="psych-status-indicator psych-st
+atus-<?php echo $status['active'] ? 'active' : 'inactive'; ?>"></span>
                                     <?php echo esc_html($status['name']); ?>
-                                    <small>(<?php echo $status['active'] ? 'فعال' : 'غیرفعال'; ?>)</small>
+                                    <small>(<?php echo $status['active'] ? 'فعا
+ل' : 'غیرفعال'; ?>)</small>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
@@ -665,19 +689,23 @@ final class Psych_Complete_System_Enhanced {
                         <h3>آمار کلی</h3>
                         <div class="psych-admin-stats">
                             <div class="psych-admin-stat">
-                                <h3><?php echo number_format_i18n($system_status['stats']['total_users']); ?></h3>
+                                <h3><?php echo number_format_i18n($system_status
+['stats']['total_users']); ?></h3>
                                 <p>کل کاربران</p>
                             </div>
                             <div class="psych-admin-stat">
-                                <h3><?php echo number_format_i18n($system_status['stats']['total_points']); ?></h3>
+                                <h3><?php echo number_format_i18n($system_status
+['stats']['total_points']); ?></h3>
                                 <p>کل امتیازات</p>
                             </div>
                             <div class="psych-admin-stat">
-                                <h3><?php echo number_format_i18n($system_status['stats']['total_badges']); ?></h3>
+                                <h3><?php echo number_format_i18n($system_status
+['stats']['total_badges']); ?></h3>
                                 <p>نشان‌های اعطا شده</p>
                             </div>
                             <div class="psych-admin-stat">
-                                <h3><?php echo number_format_i18n($system_status['stats']['active_coaches']); ?></h3>
+                                <h3><?php echo number_format_i18n($system_status
+['stats']['active_coaches']); ?></h3>
                                 <p>مربیان فعال</p>
                             </div>
                         </div>
@@ -687,9 +715,12 @@ final class Psych_Complete_System_Enhanced {
                 <div class="psych-admin-card">
                     <h3>ابزارهای سیستم</h3>
                     <p>
-                        <button type="button" class="button button-secondary" onclick="psychClearCache()">پاک کردن کش</button>
-                        <button type="button" class="button button-secondary" onclick="psychTestSystem()">تست سیستم</button>
-                        <a href="<?php echo admin_url('admin.php?page=psych-system-status'); ?>" class="button button-primary">وضعیت تفصیلی</a>
+                        <button type="button" class="button button-secondary" on
+click="psychClearCache()">پاک کردن کش</button>
+                        <button type="button" class="button button-secondary" on
+click="psychTestSystem()">تست سیستم</button>
+                        <a href="<?php echo admin_url('admin.php?page=psych-syst
+em-status'); ?>" class="button button-primary">وضعیت تفصیلی</a>
                     </p>
                 </div>
             </div>
@@ -715,7 +746,8 @@ final class Psych_Complete_System_Enhanced {
         function psychTestSystem() {
             jQuery.post(ajaxurl, {
                 action: 'psych_system_status',
-                nonce: '<?php echo wp_create_nonce('psych_system_admin_nonce'); ?>'
+                nonce: '<?php echo wp_create_nonce('psych_system_admin_nonce');
+?>'
             }, function(response) {
                 if (response.success) {
                     alert('سیستم عملکرد مناسبی دارد!');
@@ -735,7 +767,7 @@ final class Psych_Complete_System_Enhanced {
         ?>
         <div class="wrap">
             <h1>وضعیت تفصیلی سیستم</h1>
-            
+
             <div class="psych-admin-container">
                 <h2>ماژول‌های بارگذاری شده</h2>
                 <table class="wp-list-table widefat fixed striped">
@@ -750,10 +782,13 @@ final class Psych_Complete_System_Enhanced {
                     <tbody>
                         <?php foreach ($this->modules as $key => $module): ?>
                         <tr>
-                            <td><?php echo esc_html(ucfirst(str_replace('_', ' ', $key))); ?></td>
+                            <td><?php echo esc_html(ucfirst(str_replace('_', ' '
+, $key))); ?></td>
                             <td><?php echo esc_html(get_class($module)); ?></td>
-                            <td><?php echo defined(get_class($module) . '::VERSION') ? constant(get_class($module) . '::VERSION') : 'N/A'; ?></td>
-                            <td><span class="psych-status-indicator psych-status-active"></span>فعال</td>
+                            <td><?php echo defined(get_class($module) . '::VERSI
+ON') ? constant(get_class($module) . '::VERSION') : 'N/A'; ?></td>
+                            <td><span class="psych-status-indicator psych-status
+-active"></span>فعال</td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -765,13 +800,16 @@ final class Psych_Complete_System_Enhanced {
                     <ul>
                         <?php
                         global $shortcode_tags;
-                        $psych_shortcodes = array_filter(array_keys($shortcode_tags), function($tag) {
-                            return strpos($tag, 'psych') !== false || strpos($tag, 'psycho') !== false;
+                        $psych_shortcodes = array_filter(array_keys($shortcode_t
+ags), function($tag) {
+                            return strpos($tag, 'psych') !== false || strpos($ta
+g, 'psycho') !== false;
                         });
                         sort($psych_shortcodes);
                         foreach ($psych_shortcodes as $shortcode):
                         ?>
-                            <li><code>[<?php echo esc_html($shortcode); ?>]</code></li>
+                            <li><code>[<?php echo esc_html($shortcode); ?>]</cod
+e></li>
                         <?php endforeach; ?>
                     </ul>
                 </div>
@@ -850,7 +888,8 @@ final class Psych_Complete_System_Enhanced {
 
         // Set default options
         if (!get_option('psych_system_settings')) {
-            update_option('psych_system_settings', $this->get_default_settings());
+            update_option('psych_system_settings', $this->get_default_settings()
+);
         }
 
         // Set version
@@ -889,10 +928,12 @@ final class Psych_Complete_System_Enhanced {
 
         // Clean up user meta
         global $wpdb;
-        $wpdb->query("DELETE FROM {$wpdb->usermeta} WHERE meta_key LIKE 'psych_%'");
+        $wpdb->query("DELETE FROM {$wpdb->usermeta} WHERE meta_key LIKE 'psych_%
+'");
 
         // Drop custom tables if needed
-        // $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}psych_achievements");
+        // $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}psych_achievements"
+);
     }
 
     /**
@@ -1025,8 +1066,8 @@ final class Psych_Complete_System_Enhanced {
     private function get_total_points_awarded() {
         global $wpdb;
         $result = $wpdb->get_var("
-            SELECT SUM(meta_value) 
-            FROM {$wpdb->usermeta} 
+            SELECT SUM(meta_value)
+            FROM {$wpdb->usermeta}
             WHERE meta_key = 'psych_total_points'
         ");
         return intval($result);
@@ -1035,8 +1076,8 @@ final class Psych_Complete_System_Enhanced {
     private function get_total_badges_awarded() {
         global $wpdb;
         $result = $wpdb->get_var("
-            SELECT COUNT(*) 
-            FROM {$wpdb->usermeta} 
+            SELECT COUNT(*)
+            FROM {$wpdb->usermeta}
             WHERE meta_key = 'psych_user_badges'
             AND meta_value != ''
         ");
@@ -1067,14 +1108,17 @@ final class Psych_Complete_System_Enhanced {
     public function buddypress_activity_add($activity) {
         if (!function_exists('psych_award_points')) return;
 
-        $points = apply_filters('psych_buddypress_activity_points', 10, $activity);
-        psych_award_points($activity['user_id'], $points, 'فعالیت در شبکه اجتماعی');
+        $points = apply_filters('psych_buddypress_activity_points', 10, $activit
+y);
+        psych_award_points($activity['user_id'], $points, 'فعالیت در شبکه اجتما
+عی');
     }
 
     public function learndash_lesson_completed($user_id, $lesson_id) {
         if (!function_exists('psych_award_points')) return;
 
-        $points = apply_filters('psych_learndash_lesson_points', 25, $lesson_id);
+        $points = apply_filters('psych_learndash_lesson_points', 25, $lesson_id)
+;
         psych_award_points($user_id, $points, 'تکمیل درس');
     }
 
@@ -1110,7 +1154,8 @@ final class Psych_Complete_System_Enhanced {
         if (empty($this->errors)) return;
 
         foreach ($this->errors as $error) {
-            echo '<div class="notice notice-error"><p>' . esc_html($error) . '</p></div>';
+            echo '<div class="notice notice-error"><p>' . esc_html($error) . '</
+p></div>';
         }
     }
 
@@ -1125,7 +1170,8 @@ final class Psych_Complete_System_Enhanced {
      * Check if module is active
      */
     public function is_module_active($module_name) {
-        return isset($this->modules[$module_name]) && is_object($this->modules[$module_name]);
+        return isset($this->modules[$module_name]) && is_object($this->modules[$
+module_name]);
     }
 
     /**
@@ -1159,7 +1205,8 @@ if (!wp_installing()) {
 
 // Create global instance for backward compatibility
 add_action('wp_loaded', function() {
-    $GLOBALS['psych_complete_system'] = Psych_Complete_System_Enhanced::get_instance();
+    $GLOBALS['psych_complete_system'] = Psych_Complete_System_Enhanced::get_inst
+ance();
 });
 
 // Additional utility functions
@@ -1171,7 +1218,7 @@ if (!function_exists('psych_system_get_instance')) {
 
 if (!function_exists('psych_system_is_active')) {
     function psych_system_is_active() {
-        return class_exists('Psych_Complete_System_Enhanced') && 
+        return class_exists('Psych_Complete_System_Enhanced') &&
                psych_system_get_instance()->initialized;
     }
 }

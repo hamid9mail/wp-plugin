@@ -6,13 +6,16 @@
 [station station_node_id="start_point" title="۱. نقطه شروع"
          mission_type="button_click"
          mission_button_text="ماموریت اول را تکمیل کن"
-         rewards="add_points:50|award_badge:path_master|unlock_station:final_destination"]
+         rewards="add_points:50|award_badge:path_master|unlock_station:final_des
+tination"]
     [static_content]
         <h3>به این مسیر آزمایشی خوش آمدید.</h3>
-        <p>با تکمیل این ایستگاه، شما ۵۰ امتیاز و نشان "استاد مسیر" را کسب کرده و مستقیماً به ایستگاه سوم خواهید رفت.</p>
+        <p>با تکمیل این ایستگاه، شما ۵۰ امتیاز و نشان "استاد مسیر" را کسب کرده
+و مستقیماً به ایستگاه سوم خواهید رفت.</p>
     [/static_content]
     [result_content]
-        <p>عالی بود! شما پاداش خود را دریافت کردید. اکنون ایستگاه سوم (مقصد نهایی) برای شما باز شده است.</p>
+        <p>عالی بود! شما پاداش خود را دریافت کردید. اکنون ایستگاه سوم (مقصد نها
+یی) برای شما باز شده است.</p>
     [/result_content]
 [/station]
 
@@ -20,16 +23,19 @@
 [station station_node_id="branching_point" title="۲. نقطه انشعاب (انتخاب مسیر)"]
     [static_content]
         <h3>حالا یک انتخاب مهم پیش روی شماست.</h3>
-        <p>می‌خواهید مسیر A را دنبال کنید یا مسیر B؟ هر انتخاب، شما را به یک مقصد متفاوت هدایت می‌کند.</p>
+        <p>می‌خواهید مسیر A را دنبال کنید یا مسیر B؟ هر انتخاب، شما را به یک مق
+صد متفاوت هدایت می‌کند.</p>
     [/static_content]
     [mission_content]
         <p>یکی از دکمه‌های زیر را انتخاب کنید:</p>
 
-        <button class="psych-station-action-btn" data-rewards="unlock_station:branch_a" onclick="psych_complete_mission_inline(this)">
+        <button class="psych-station-action-btn" data-rewards="unlock_station:br
+anch_a" onclick="psych_complete_mission_inline(this)">
             می‌خواهم به مسیر A بروم
         </button>
 
-        <button class="psych-station-action-btn" data-rewards="unlock_station:branch_b" onclick="psych_complete_mission_inline(this)">
+        <button class="psych-station-action-btn" data-rewards="unlock_station:br
+anch_b" onclick="psych_complete_mission_inline(this)">
             می‌خواهم به مسیر B بروم
         </button>
     [/mission_content]
@@ -43,10 +49,12 @@
          mission_type="button_click"
          mission_button_text="تکمیل ماموریت سوم"
          rewards="unlock_station:branching_point"
-         notification_text="آفرین! شما به نقطه انشعاب مسیر رسیدید. حالا می‌توانید مسیر خود را انتخاب کنید."]
+         notification_text="آفرین! شما به نقطه انشعاب مسیر رسیدید. حالا می‌توان
+ید مسیر خود را انتخاب کنید."]
     [static_content]
         <h3>شما به ایستگاه سوم رسیدید!</h3>
-        <p>با تکمیل این ایستگاه، به ایستگاه دوم (نقطه انشعاب) باز خواهید گشت تا مسیر خود را انتخاب کنید و یک نوتیفیکیشن سفارشی دریافت خواهید کرد.</p>
+        <p>با تکمیل این ایستگاه، به ایستگاه دوم (نقطه انشعاب) باز خواهید گشت تا
+مسیر خود را انتخاب کنید و یک نوتیفیکیشن سفارشی دریافت خواهید کرد.</p>
     [/static_content]
     [result_content]
         <p>ماموریت سوم با موفقیت انجام شد. ایستگاه دوم برای شما فعال گردید.</p>

@@ -1,7 +1,8 @@
 <?php
 /**
  * Plugin Name:       PsychoCourse Path Engine (Complete Display Modes Edition)
- * Description:       موتور جامع مسیر رشد با حالت‌های نمایش مختلف: آکاردئون، نقشه گنج، کارت و تایم‌لاین
+ * Description:       موتور جامع مسیر رشد با حالت‌های نمایش مختلف: آکاردئون، نق
+شه گنج، کارت و تایم‌لاین
  * Version:           12.4.0
  * Author:            Hamid Hashem Matouri (Complete Display Modes)
  * Text Domain:       psych-path-engine
@@ -31,7 +32,8 @@ if (!function_exists('psych_path_get_viewing_context')) {
 if (!function_exists('psych_complete_mission_by_flag')) {
     /**
      * Sets a flag for a user, which can complete a mission of type "flag".
-     * This is the primary way for external code to integrate with the path engine.
+     * This is the primary way for external code to integrate with the path engi
+ne.
      *
      * @param string $flag_name The unique name of the flag to set.
      * @param int    $user_id The ID of the user for whom the flag is being set.
@@ -85,7 +87,8 @@ final class PsychoCourse_Path_Engine {
         define('PSYCH_PATH_REFERRED_BY_USER_META', 'referred_by_user_id');
 
         // Feedback System Constants
-        define('PSYCH_PATH_FEEDBACK_USER_META_COUNT', 'psych_feedback_received_count');
+        define('PSYCH_PATH_FEEDBACK_USER_META_COUNT', 'psych_feedback_received_c
+ount');
     }
 
     private function add_hooks() {
@@ -101,25 +104,32 @@ add_shortcode('result_content', [$this, 'register_result_content']);
         // Conditional Content Shortcodes
         add_shortcode('student_only', [$this, 'handle_student_only_shortcode']);
         add_shortcode('coach_only', [$this, 'handle_coach_only_shortcode']);
-        add_shortcode('mission_submission_count', [$this, 'handle_submission_count_shortcode']);
+        add_shortcode('mission_submission_count', [$this, 'handle_submission_cou
+nt_shortcode']);
 
 
         // AJAX Handlers
-        add_action('wp_ajax_psych_path_get_station_content', [$this, 'ajax_get_station_content']);
-        add_action('wp_ajax_psych_path_get_inline_station_content', [$this, 'ajax_get_inline_station_content']); // ⭐ جدید
-        add_action('wp_ajax_psych_path_complete_mission', [$this, 'ajax_complete_mission']);
+        add_action('wp_ajax_psych_path_get_station_content', [$this, 'ajax_get_s
+tation_content']);
+        add_action('wp_ajax_psych_path_get_inline_station_content', [$this, 'aja
+x_get_inline_station_content']); // ⭐ جدید
+        add_action('wp_ajax_psych_path_complete_mission', [$this, 'ajax_complete
+_mission']);
 
         // Assets and Footer Elements
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
         add_action('wp_footer', [$this, 'render_footer_elements']);
 
         // Integration Hooks
-        add_action('gform_after_submission', [$this, 'handle_gform_submission'], 10, 2);
-        add_action('psych_feedback_submitted', [$this, 'handle_feedback_submission'], 10, 2);
+        add_action('gform_after_submission', [$this, 'handle_gform_submission'],
+ 10, 2);
+        add_action('psych_feedback_submitted', [$this, 'handle_feedback_submissi
+on'], 10, 2);
 
         // Referral System Hooks
         add_action('init', [$this, 'capture_referral_code']);
-        add_action('user_register', [$this, 'process_referral_on_registration'], 10, 1);
+        add_action('user_register', [$this, 'process_referral_on_registration'],
+ 10, 1);
 
         // Coach Module Integration
         add_action('init', [$this, 'sync_with_coach_module'], 5);
@@ -140,11 +150,13 @@ add_shortcode('result_content', [$this, 'register_result_content']);
             return $this->viewing_context;
         }
 
-        $real_user_id = isset($_SESSION['_seeas_real_user']) ? intval($_SESSION['_seeas_real_user']) : get_current_user_id();
+        $real_user_id = isset($_SESSION['_seeas_real_user']) ? intval($_SESSION[
+'_seeas_real_user']) : get_current_user_id();
         $viewed_user_id = get_current_user_id();
 
         $this->viewing_context = [
-            'is_impersonating' => ($real_user_id != $viewed_user_id && $real_user_id > 0),
+            'is_impersonating' => ($real_user_id != $viewed_user_id && $real_use
+r_id > 0),
             'real_user_id'     => $real_user_id,
             'viewed_user_id'   => $viewed_user_id,
         ];
@@ -159,15 +171,18 @@ add_shortcode('result_content', [$this, 'register_result_content']);
         // Check if coach module is active
         if (class_exists('Psych_Coach_Module')) {
             // Add coach-specific filters and actions
-            add_filter('psych_path_can_view_station', [$this, 'coach_station_access_filter'], 10, 3);
-            add_action('psych_path_station_completed', [$this, 'notify_coach_on_completion'], 10, 3);
+            add_filter('psych_path_can_view_station', [$this, 'coach_station_acc
+ess_filter'], 10, 3);
+            add_action('psych_path_station_completed', [$this, 'notify_coach_on_
+completion'], 10, 3);
         }
     }
 
     /**
      * Filter station access based on coach permissions
      */
-    public function coach_station_access_filter($can_access, $user_id, $station_data) {
+    public function coach_station_access_filter($can_access, $user_id, $station_
+data) {
         $context = $this->get_viewing_context();
 
         // If coach is impersonating, check their permissions
@@ -177,8 +192,10 @@ add_shortcode('result_content', [$this, 'register_result_content']);
 
             // Check if coach has access to this page (using coach module logic)
             if (class_exists('Psych_Coach_Module')) {
-                $coach_allowed_pages = get_user_meta($coach_id, 'psych_coach_allowed_pages', true) ?: [];
-                if (!user_can($coach_id, 'manage_options') && !in_array($current_page_id, (array)$coach_allowed_pages)) {
+                $coach_allowed_pages = get_user_meta($coach_id, 'psych_coach_all
+owed_pages', true) ?: [];
+                if (!user_can($coach_id, 'manage_options') && !in_array($current
+_page_id, (array)$coach_allowed_pages)) {
                     return false;
                 }
             }
@@ -190,7 +207,8 @@ add_shortcode('result_content', [$this, 'register_result_content']);
     /**
      * Notify coach when student completes a station
      */
-    public function notify_coach_on_completion($user_id, $node_id, $station_data) {
+    public function notify_coach_on_completion($user_id, $node_id, $station_data
+) {
         // Get assigned coach for any product
         global $wpdb;
         $coach_id = $wpdb->get_var($wpdb->prepare(
@@ -200,7 +218,8 @@ add_shortcode('result_content', [$this, 'register_result_content']);
         ));
 
         if ($coach_id) {
-            do_action('psych_coach_student_progress', $coach_id, $user_id, $node_id, $station_data);
+            do_action('psych_coach_student_progress', $coach_id, $user_id, $node
+_id, $station_data);
         }
     }
 
@@ -218,7 +237,8 @@ add_shortcode('result_content', [$this, 'register_result_content']);
 
         // Parse shortcode attributes
         $shortcode_atts = shortcode_atts([
-            'display_mode' => 'timeline', // timeline, accordion, treasure_map, cards, simple_list
+            'display_mode' => 'timeline', // timeline, accordion, treasure_map,
+cards, simple_list
             'theme' => 'default', // default, dark, minimal, colorful
             'show_progress' => 'true',
             'path_title' => ''
@@ -242,20 +262,24 @@ add_shortcode('result_content', [$this, 'register_result_content']);
 
         ob_start();
         ?>
-        <div class="psych-path-container psych-display-<?php echo esc_attr($this->display_mode); ?> psych-theme-<?php echo esc_attr($shortcode_atts['theme']); ?>"
+        <div class="psych-path-container psych-display-<?php echo esc_attr($this
+->display_mode); ?> psych-theme-<?php echo esc_attr($shortcode_atts['theme']); ?
+>"
              id="<?php echo esc_attr($path_id); ?>"
              data-display-mode="<?php echo esc_attr($this->display_mode); ?>">
 
             <?php if ($context['is_impersonating']) : ?>
                 <div class="coach-path-notice">
                     <i class="fas fa-user-eye"></i>
-                    در حال مشاهده مسیر به جای: <strong><?php echo esc_html(get_userdata($user_id)->display_name); ?></strong>
+                    در حال مشاهده مسیر به جای: <strong><?php echo esc_html(get_u
+serdata($user_id)->display_name); ?></strong>
                 </div>
             <?php endif; ?>
 
             <?php if (!empty($shortcode_atts['path_title'])) : ?>
                 <div class="psych-path-header">
-                    <h2 class="psych-path-title"><?php echo esc_html($shortcode_atts['path_title']); ?></h2>
+                    <h2 class="psych-path-title"><?php echo esc_html($shortcode_
+atts['path_title']); ?></h2>
                 </div>
             <?php endif; ?>
 
@@ -263,7 +287,8 @@ add_shortcode('result_content', [$this, 'register_result_content']);
                 <?php echo $this->render_progress_indicator($path_id); ?>
             <?php endif; ?>
 
-            <?php echo $this->render_path_by_display_mode($path_id, $context); ?>
+            <?php echo $this->render_path_by_display_mode($path_id, $context); ?
+>
         </div>
         <?php
         return ob_get_clean();
@@ -281,11 +306,14 @@ add_shortcode('result_content', [$this, 'register_result_content']);
         ?>
         <div class="psych-progress-indicator">
             <div class="psych-progress-stats">
-                <span class="psych-progress-text">پیشرفت: <?php echo $completed; ?> از <?php echo $total; ?> ایستگاه</span>
-                <span class="psych-progress-percentage"><?php echo $percentage; ?>%</span>
+                <span class="psych-progress-text">پیشرفت: <?php echo $completed;
+ ?> از <?php echo $total; ?> ایستگاه</span>
+                <span class="psych-progress-percentage"><?php echo $percentage;
+?>%</span>
             </div>
             <div class="psych-progress-bar">
-                <div class="psych-progress-fill" style="width: <?php echo $percentage; ?>%"></div>
+                <div class="psych-progress-fill" style="width: <?php echo $perce
+ntage; ?>%"></div>
             </div>
         </div>
         <?php
@@ -300,8 +328,10 @@ add_shortcode('result_content', [$this, 'register_result_content']);
                 // If no flag is set, the station is visible by default.
                 $visible_stations[] = $station;
             } else {
-                // If a flag is set, check if the user has the corresponding meta flag.
-                $meta_key = '_psych_mission_flag_' . sanitize_key($visibility_flag);
+                // If a flag is set, check if the user has the corresponding met
+a flag.
+                $meta_key = '_psych_mission_flag_' . sanitize_key($visibility_fl
+ag);
                 if (get_user_meta($user_id, $meta_key, true)) {
                     $visible_stations[] = $station;
                 }
@@ -312,7 +342,8 @@ add_shortcode('result_content', [$this, 'register_result_content']);
 
     private function render_path_by_display_mode($path_id, $context) {
         $stations = $this->path_data[$path_id]['stations'];
-        $stations = $this->filter_visible_stations($stations, $context['viewed_user_id']);
+        $stations = $this->filter_visible_stations($stations, $context['viewed_u
+ser_id']);
 
         switch ($this->display_mode) {
             case 'accordion':
@@ -347,19 +378,26 @@ add_shortcode('result_content', [$this, 'register_result_content']);
     ?>
     <div class="psych-accordion">
         <?php foreach ($stations as $index => $station) : ?>
-            <div class="psych-accordion-item <?php echo esc_attr($station['status']); ?>"
-                 data-station-node-id="<?php echo esc_attr($station['station_node_id']); ?>"
-                 data-station-details="<?php echo esc_attr(json_encode($station, JSON_UNESCAPED_UNICODE)); ?>">
+            <div class="psych-accordion-item <?php echo esc_attr($station['statu
+s']); ?>"
+                 data-station-node-id="<?php echo esc_attr($station['station_nod
+e_id']); ?>"
+                 data-station-details="<?php echo esc_attr(json_encode($station,
+ JSON_UNESCAPED_UNICODE)); ?>">
 
                 <div class="psych-accordion-header">
                     <div class="psych-accordion-icon">
-                        <i class="<?php echo esc_attr($station['is_completed'] ? 'fas fa-check-circle' : $station['icon']); ?>"></i>
+                        <i class="<?php echo esc_attr($station['is_completed'] ?
+ 'fas fa-check-circle' : $station['icon']); ?>"></i>
                     </div>
-                    <h3 class="psych-accordion-title"><?php echo esc_html($station['title']); ?></h3>
+                    <h3 class="psych-accordion-title"><?php echo esc_html($stati
+on['title']); ?></h3>
                     <div class="psych-accordion-status">
-                        <?php echo $this->get_status_badge($station['status']); ?>
+                        <?php echo $this->get_status_badge($station['status']);
+?>
                     </div>
-                    <button class="psych-accordion-toggle" aria-expanded="false">
+                    <button class="psych-accordion-toggle" aria-expanded="false"
+>
                         <i class="fas fa-chevron-down"></i>
                     </button>
                 </div>
@@ -373,7 +411,8 @@ add_shortcode('result_content', [$this, 'register_result_content']);
                         <?php endif; ?>
 
                         <div class="psych-accordion-mission-content">
-                            <?php echo $this->render_inline_station_content($station); ?>
+                            <?php echo $this->render_inline_station_content($sta
+tion); ?>
                         </div>
                     </div>
                 </div>
@@ -392,13 +431,18 @@ add_shortcode('result_content', [$this, 'register_result_content']);
         <div class="psych-map-background">
             <div class="psych-map-path">
                 <?php foreach ($stations as $index => $station) : ?>
-                    <div class="psych-treasure-station <?php echo esc_attr($station['status']); ?>"
-                         style="<?php echo $this->get_treasure_map_position($index, count($stations)); ?>"
-                         data-station-node-id="<?php echo esc_attr($station['station_node_id']); ?>"
-                         data-station-details="<?php echo esc_attr(json_encode($station, JSON_UNESCAPED_UNICODE)); ?>">
+                    <div class="psych-treasure-station <?php echo esc_attr($stat
+ion['status']); ?>"
+                         style="<?php echo $this->get_treasure_map_position($ind
+ex, count($stations)); ?>"
+                         data-station-node-id="<?php echo esc_attr($station['sta
+tion_node_id']); ?>"
+                         data-station-details="<?php echo esc_attr(json_encode($
+station, JSON_UNESCAPED_UNICODE)); ?>">
 
                         <div class="psych-treasure-icon">
-                            <i class="<?php echo esc_attr($station['is_completed'] ? 'fas fa-trophy' : $station['icon']); ?>"></i>
+                            <i class="<?php echo esc_attr($station['is_completed
+'] ? 'fas fa-trophy' : $station['icon']); ?>"></i>
                             <?php if ($station['is_completed']) : ?>
                                 <div class="psych-treasure-glow"></div>
                             <?php endif; ?>
@@ -414,12 +458,14 @@ add_shortcode('result_content', [$this, 'register_result_content']);
                             <?php endif; ?>
 
                             <div class="psych-treasure-content">
-                                <?php echo $this->render_inline_station_content($station); ?>
+                                <?php echo $this->render_inline_station_content(
+$station); ?>
                             </div>
                         </div>
 
                         <?php if ($index < count($stations) - 1) : ?>
-                            <div class="psych-treasure-path-line <?php echo ($station['is_completed'] ? 'completed' : 'incomplete'); ?>"></div>
+                            <div class="psych-treasure-path-line <?php echo ($st
+ation['is_completed'] ? 'completed' : 'incomplete'); ?>"></div>
                         <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
@@ -436,21 +482,27 @@ add_shortcode('result_content', [$this, 'register_result_content']);
     ?>
     <div class="psych-cards">
         <?php foreach ($stations as $station) : ?>
-            <div class="psych-card-item <?php echo esc_attr($station['status']); ?>"
-                 data-station-node-id="<?php echo esc_attr($station['station_node_id']); ?>"
-                 data-station-details="<?php echo esc_attr(json_encode($station, JSON_UNESCAPED_UNICODE)); ?>">
+            <div class="psych-card-item <?php echo esc_attr($station['status']);
+ ?>"
+                 data-station-node-id="<?php echo esc_attr($station['station_nod
+e_id']); ?>"
+                 data-station-details="<?php echo esc_attr(json_encode($station,
+ JSON_UNESCAPED_UNICODE)); ?>">
 
                 <div class="psych-card-header">
                     <div class="psych-card-icon">
-                        <i class="<?php echo esc_attr($station['is_completed'] ? 'fas fa-check-circle' : $station['icon']); ?>"></i>
+                        <i class="<?php echo esc_attr($station['is_completed'] ?
+ 'fas fa-check-circle' : $station['icon']); ?>"></i>
                     </div>
                     <div class="psych-card-status">
-                        <?php echo $this->get_status_badge($station['status']); ?>
+                        <?php echo $this->get_status_badge($station['status']);
+?>
                     </div>
                 </div>
 
                 <div class="psych-card-body">
-                    <h3 class="psych-card-title"><?php echo esc_html($station['title']); ?></h3>
+                    <h3 class="psych-card-title"><?php echo esc_html($station['t
+itle']); ?></h3>
 
                     <?php if ($context['is_impersonating']) : ?>
                         <div class="coach-impersonation-indicator">
@@ -460,7 +512,8 @@ add_shortcode('result_content', [$this, 'register_result_content']);
                 </div>
 
                 <div class="psych-card-footer">
-                    <?php echo $this->render_inline_station_content($station); ?>
+                    <?php echo $this->render_inline_station_content($station); ?
+>
                 </div>
             </div>
         <?php endforeach; ?>
@@ -474,9 +527,12 @@ add_shortcode('result_content', [$this, 'register_result_content']);
     ?>
     <div class="psych-simple-list">
         <?php foreach ($stations as $index => $station) : ?>
-            <div class="psych-list-item <?php echo esc_attr($station['status']); ?>"
-                 data-station-node-id="<?php echo esc_attr($station['station_node_id']); ?>"
-                 data-station-details="<?php echo esc_attr(json_encode($station, JSON_UNESCAPED_UNICODE)); ?>">
+            <div class="psych-list-item <?php echo esc_attr($station['status']);
+ ?>"
+                 data-station-node-id="<?php echo esc_attr($station['station_nod
+e_id']); ?>"
+                 data-station-details="<?php echo esc_attr(json_encode($station,
+ JSON_UNESCAPED_UNICODE)); ?>">
 
                 <div class="psych-list-number">
                     <?php if ($station['is_completed']) : ?>
@@ -487,7 +543,8 @@ add_shortcode('result_content', [$this, 'register_result_content']);
                 </div>
 
                 <div class="psych-list-content">
-                    <h3 class="psych-list-title"><?php echo esc_html($station['title']); ?></h3>
+                    <h3 class="psych-list-title"><?php echo esc_html($station['t
+itle']); ?></h3>
 
                     <?php if ($context['is_impersonating']) : ?>
                         <div class="coach-impersonation-indicator">
@@ -501,7 +558,8 @@ add_shortcode('result_content', [$this, 'register_result_content']);
                 </div>
 
                 <div class="psych-list-action">
-                    <?php echo $this->render_inline_station_content($station); ?>
+                    <?php echo $this->render_inline_station_content($station); ?
+>
                 </div>
             </div>
         <?php endforeach; ?>
@@ -513,10 +571,14 @@ add_shortcode('result_content', [$this, 'register_result_content']);
 
     private function get_status_badge($status) {
         $badges = [
-            'completed' => '<span class="psych-status-badge completed"><i class="fas fa-check"></i> تکمیل شده</span>',
-            'open' => '<span class="psych-status-badge open"><i class="fas fa-unlock"></i> باز</span>',
-            'locked' => '<span class="psych-status-badge locked"><i class="fas fa-lock"></i> قفل</span>',
-            'restricted' => '<span class="psych-status-badge restricted"><i class="fas fa-ban"></i> محدود</span>'
+            'completed' => '<span class="psych-status-badge completed"><i class=
+"fas fa-check"></i> تکمیل شده</span>',
+            'open' => '<span class="psych-status-badge open"><i class="fas fa-un
+lock"></i> باز</span>',
+            'locked' => '<span class="psych-status-badge locked"><i class="fas f
+a-lock"></i> قفل</span>',
+            'restricted' => '<span class="psych-status-badge restricted"><i clas
+s="fas fa-ban"></i> محدود</span>'
         ];
 
         return $badges[$status] ?? $badges['locked'];
@@ -568,7 +630,8 @@ add_shortcode('result_content', [$this, 'register_result_content']);
         foreach ($this->path_data as $path) {
             foreach ($path['stations'] as $station) {
                 if ($station['station_node_id'] === $station_node_id) {
-                    $required_count = max(1, intval($station['mission_required_submissions'] ?? 1));
+                    $required_count = max(1, intval($station['mission_required_s
+ubmissions'] ?? 1));
                     break 2;
                 }
             }
@@ -578,7 +641,8 @@ add_shortcode('result_content', [$this, 'register_result_content']);
         $current_count = (int) get_user_meta($user_id, $meta_key, true);
 
         return sprintf(
-            '<span class="mission-submission-count">%d از %d پاسخ دریافت شد</span>',
+            '<span class="mission-submission-count">%d از %d پاسخ دریافت شد</spa
+n>',
             $current_count,
             $required_count
         );
@@ -588,7 +652,8 @@ public function register_static_content($atts, $content = null) {
         $path_id = array_key_last($this->path_data);
         $station_index = count($this->path_data[$path_id]['stations']) - 1;
         if ($station_index >= 0) {
-            $this->path_data[$path_id]['stations'][$station_index]['static_content'] = $content;
+            $this->path_data[$path_id]['stations'][$station_index]['static_conte
+nt'] = $content;
         }
     }
     return '';
@@ -599,7 +664,8 @@ public function register_mission_content($atts, $content = null) {
         $path_id = array_key_last($this->path_data);
         $station_index = count($this->path_data[$path_id]['stations']) - 1;
         if ($station_index >= 0) {
-            $this->path_data[$path_id]['stations'][$station_index]['mission_content'] = $content;
+            $this->path_data[$path_id]['stations'][$station_index]['mission_cont
+ent'] = $content;
         }
     }
     return '';
@@ -610,7 +676,8 @@ public function register_result_content($atts, $content = null) {
         $path_id = array_key_last($this->path_data);
         $station_index = count($this->path_data[$path_id]['stations']) - 1;
         if ($station_index >= 0) {
-            $this->path_data[$path_id]['stations'][$station_index]['result_content'] = $content;
+            $this->path_data[$path_id]['stations'][$station_index]['result_conte
+nt'] = $content;
         }
     }
     return '';
@@ -645,22 +712,26 @@ public function register_result_content($atts, $content = null) {
             'title'               => 'ایستگاه بدون عنوان',
             'icon'                => 'fas fa-flag',
             'unlock_trigger'      => 'sequential', // sequential, independent
-            'mission_type'        => 'button_click', // button_click, gform, purchase, ...
+            'mission_type'        => 'button_click', // button_click, gform, pur
+chase, ...
             'mission_target'      => '',
             'mission_button_text' => 'مشاهده ماموریت',
             'rewards'             => '',
             'notification_text'   => '',
             'unlock_condition'    => '', // e.g., has_badge:pro|min_points:500
             'relation'            => 'AND', // AND or OR
-            'user_meta_value'     => '', // for use with user_meta_key in unlock_condition
+            'user_meta_value'     => '', // for use with user_meta_key in unlock
+_condition
             'gform_mode'          => '',
-            'mission_required_submissions' => '1', // New: for submission counter
+            'mission_required_submissions' => '1', // New: for submission counte
+r
             'visibility_flag'     => '' // New: for conditional visibility
         ], $station_data['atts']);
 
         // فارغ از اینکه ایستگاه چه نوعی است، این خصوصیت انتقال پیدا می‌کند
         $atts['station_node_id'] = sanitize_key($atts['station_node_id']);
-        $atts = $this->calculate_station_status($user_id, $atts, $previous_station_completed);
+        $atts = $this->calculate_station_status($user_id, $atts, $previous_stati
+on_completed);
         $atts['raw_content_b64'] = base64_encode($station_data['content']);
         $atts['static_content'] = $station_data['static_content'] ?? '';
         $atts['mission_content'] = $station_data['mission_content'] ?? '';
@@ -680,21 +751,27 @@ public function register_result_content($atts, $content = null) {
     $this->path_data[$path_id]['stations'] = $processed_stations;
 }
 
-    private function calculate_station_status($user_id, $atts, $previous_station_completed) {
+    private function calculate_station_status($user_id, $atts, $previous_station
+_completed) {
         $node_id = $atts['station_node_id'];
-        $atts['is_completed'] = $this->is_station_completed($user_id, $node_id, $atts);
+        $atts['is_completed'] = $this->is_station_completed($user_id, $node_id,
+$atts);
 
         // New: Check for custom unlock conditions
-        $custom_conditions_met = $this->check_unlock_conditions($user_id, $atts);
+        $custom_conditions_met = $this->check_unlock_conditions($user_id, $atts)
+;
 
         // Original access filter (for coaches, etc.)
-        $can_access = apply_filters('psych_path_can_view_station', true, $user_id, $atts);
+        $can_access = apply_filters('psych_path_can_view_station', true, $user_i
+d, $atts);
 
         $status = 'locked';
         $is_unlocked = false;
 
-        // An station is ready to be unlocked if its trigger is met (sequential or independent)
-        $is_ready_to_unlock = ($atts['unlock_trigger'] === 'independent' || $previous_station_completed);
+        // An station is ready to be unlocked if its trigger is met (sequential
+or independent)
+        $is_ready_to_unlock = ($atts['unlock_trigger'] === 'independent' || $pre
+vious_station_completed);
 
         if ($atts['is_completed']) {
             $status = 'completed';
@@ -707,7 +784,8 @@ public function register_result_content($atts, $content = null) {
             $status = 'open';
             $is_unlocked = true;
         } else {
-            // It's either not ready sequentially, or it doesn't meet custom conditions
+            // It's either not ready sequentially, or it doesn't meet custom con
+ditions
             $status = 'locked';
             $is_unlocked = false;
         }
@@ -747,17 +825,20 @@ public function register_result_content($atts, $content = null) {
                     }
                     break;
                 case 'min_points':
-                    $points = (int) get_user_meta($user_id, 'psych_total_points', true);
+                    $points = (int) get_user_meta($user_id, 'psych_total_points'
+, true);
                     $result = ($points >= (int)$value);
                     break;
                 case 'max_points':
-                    $points = (int) get_user_meta($user_id, 'psych_total_points', true);
+                    $points = (int) get_user_meta($user_id, 'psych_total_points'
+, true);
                     $result = ($points <= (int)$value);
                     break;
                 case 'user_level':
                      if (function_exists('psych_gamification_get_user_level')) {
                         $level = psych_gamification_get_user_level($user_id);
-                        $result = (is_array($level) && strtolower($level['name']) === strtolower($value));
+                        $result = (is_array($level) && strtolower($level['name']
+) === strtolower($value));
                     }
                     break;
                 case 'user_meta_key':
@@ -781,7 +862,8 @@ public function register_result_content($atts, $content = null) {
     }
 
     private function is_station_completed($user_id, $node_id, $station_atts) {
-        $completed_stations = get_user_meta($user_id, PSYCH_PATH_META_COMPLETED, true) ?: [];
+        $completed_stations = get_user_meta($user_id, PSYCH_PATH_META_COMPLETED,
+ true) ?: [];
         if (isset($completed_stations[$node_id])) {
             return true;
         }
@@ -794,7 +876,8 @@ public function register_result_content($atts, $content = null) {
             case 'flag':
                 $flag_name = $station_atts['mission_target'];
                 if (!empty($flag_name)) {
-                    $meta_key = '_psych_mission_flag_' . sanitize_key($flag_name);
+                    $meta_key = '_psych_mission_flag_' . sanitize_key($flag_name
+);
                     if (get_user_meta($user_id, $meta_key, true)) {
                         $completed_retroactively = true;
                     }
@@ -802,25 +885,31 @@ public function register_result_content($atts, $content = null) {
                 break;
             case 'purchase':
                 if (function_exists('wc_customer_bought_product')) {
-                    $product_id = intval(str_replace('product_id:', '', $mission_target));
+                    $product_id = intval(str_replace('product_id:', '', $mission
+_target));
                     $user_obj = get_userdata($user_id);
-                    if ($product_id > 0 && $user_obj && wc_customer_bought_product($user_obj->user_email, $user_id, $product_id)) {
+                    if ($product_id > 0 && $user_obj && wc_customer_bought_produ
+ct($user_obj->user_email, $user_id, $product_id)) {
                         $completed_retroactively = true;
                     }
                 }
                 break;
             case 'custom_test':
                 if (function_exists('psych_user_has_completed_test')) {
-                    $test_id = intval(str_replace('test_id:', '', $mission_target));
-                    if ($test_id > 0 && psych_user_has_completed_test($user_id, $test_id)) {
+                    $test_id = intval(str_replace('test_id:', '', $mission_targe
+t));
+                    if ($test_id > 0 && psych_user_has_completed_test($user_id,
+$test_id)) {
                         $completed_retroactively = true;
                     }
                 }
                 break;
             case 'achieve_badge':
                  if (function_exists('psych_user_has_badge')) {
-                    $badge_id = intval(str_replace('badge_id:', '', $mission_target));
-                    if ($badge_id > 0 && psych_user_has_badge($user_id, $badge_id)) {
+                    $badge_id = intval(str_replace('badge_id:', '', $mission_tar
+get));
+                    if ($badge_id > 0 && psych_user_has_badge($user_id, $badge_i
+d)) {
                         $completed_retroactively = true;
                     }
                 }
@@ -830,8 +919,10 @@ public function register_result_content($atts, $content = null) {
                 $form_id = intval(str_replace('form_id:', '', $mission_target));
                 if ($form_id > 0) {
                     $transient_key = "gform_complete_{$user_id}_{$form_id}";
-                    $station_node_from_transient = get_transient($transient_key);
-                    if ($station_node_from_transient === $station_atts['station_node_id']) {
+                    $station_node_from_transient = get_transient($transient_key)
+;
+                    if ($station_node_from_transient === $station_atts['station_
+node_id']) {
                         $completed_retroactively = true;
                         delete_transient($transient_key); // Clean up
                     }
@@ -840,7 +931,8 @@ public function register_result_content($atts, $content = null) {
         }
 
         if ($completed_retroactively) {
-            $this->mark_station_as_completed($user_id, $node_id, $station_atts, false);
+            $this->mark_station_as_completed($user_id, $node_id, $station_atts,
+false);
             return true;
         }
 
@@ -855,19 +947,24 @@ public function register_result_content($atts, $content = null) {
         ob_start();
         ?>
         <div class="psych-timeline-item <?php echo esc_attr($status_class); ?>"
-             data-station-node-id="<?php echo esc_attr($station['station_node_id']); ?>"
-             data-station-details="<?php echo esc_attr(json_encode($station, JSON_UNESCAPED_UNICODE)); ?>">
+             data-station-node-id="<?php echo esc_attr($station['station_node_id
+']); ?>"
+             data-station-details="<?php echo esc_attr(json_encode($station, JSO
+N_UNESCAPED_UNICODE)); ?>">
             <div class="psych-timeline-icon">
-                <i class="<?php echo esc_attr($station['is_completed'] ? 'fas fa-check-circle' : $station['icon']); ?>"></i>
+                <i class="<?php echo esc_attr($station['is_completed'] ? 'fas fa
+-check-circle' : $station['icon']); ?>"></i>
             </div>
             <div class="psych-timeline-content">
-                <h3 class="psych-station-title"><?php echo esc_html($station['title']); ?></h3>
+                <h3 class="psych-station-title"><?php echo esc_html($station['ti
+tle']); ?></h3>
                 <?php if ($context['is_impersonating']) : ?>
                     <div class="coach-impersonation-indicator">
                         <i class="fas fa-user-tie"></i> نمایش مربی
                     </div>
                 <?php endif; ?>
-                <button class="psych-station-action-btn" <?php echo $is_disabled ? 'disabled' : ''; ?> onclick="psych_open_station_modal(this)">
+                <button class="psych-station-action-btn" <?php echo $is_disabled
+ ? 'disabled' : ''; ?> onclick="psych_open_station_modal(this)">
                     <?php echo esc_html($button_text); ?>
                 </button>
             </div>
@@ -882,7 +979,8 @@ public function register_result_content($atts, $content = null) {
 
     public function ajax_get_station_content() {
         if (!check_ajax_referer(PSYCH_PATH_AJAX_NONCE, 'nonce', false)) {
-            wp_send_json_error(['message' => 'نشست شما منقضی شده است. لطفاً صفحه را رفرش کنید.'], 403);
+            wp_send_json_error(['message' => 'نشست شما منقضی شده است. لطفاً صفح
+ه را رفرش کنید.'], 403);
         }
 
         $context = $this->get_viewing_context();
@@ -892,24 +990,30 @@ public function register_result_content($atts, $content = null) {
             wp_send_json_error(['message' => 'کاربر نامعتبر.'], 401);
         }
 
-        $station_details = json_decode(stripslashes($_POST['station_data'] ?? ''), true);
+        $station_details = json_decode(stripslashes($_POST['station_data'] ?? ''
+), true);
         if (empty($station_details)) {
             wp_send_json_error(['message' => 'اطلاعات ایستگاه ناقص است.']);
         }
 
         // Validate station access
-        $can_access = apply_filters('psych_path_can_view_station', true, $user_id, $station_details);
+        $can_access = apply_filters('psych_path_can_view_station', true, $user_i
+d, $station_details);
         if (!$can_access) {
-            wp_send_json_error(['message' => 'شما مجاز به مشاهده این ایستگاه نیستید.'], 403);
+            wp_send_json_error(['message' => 'شما مجاز به مشاهده این ایستگاه نی
+ستید.'], 403);
         }
 
         $content = base64_decode($station_details['raw_content_b64']);
-        $is_completed = $this->is_station_completed($user_id, $station_details['station_node_id'], $station_details);
+        $is_completed = $this->is_station_completed($user_id, $station_details['
+station_node_id'], $station_details);
 
         // Check if the mission is a GForm and enqueue scripts if so.
-        if (isset($station_details['mission_type']) && $station_details['mission_type'] === 'gform') {
+        if (isset($station_details['mission_type']) && $station_details['mission
+_type'] === 'gform') {
             if (function_exists('gravity_form_enqueue_scripts')) {
-                $form_id = intval(str_replace('form_id:', '', $station_details['mission_target']));
+                $form_id = intval(str_replace('form_id:', '', $station_details['
+mission_target']));
                 if ($form_id > 0) {
                     gravity_form_enqueue_scripts($form_id, true);
                 }
@@ -917,19 +1021,25 @@ public function register_result_content($atts, $content = null) {
         }
 
         ob_start();
-        $this->render_modal_content($content, $is_completed, $user_id, $station_details, $context);
+        $this->render_modal_content($content, $is_completed, $user_id, $station_
+details, $context);
         wp_send_json_success(['html' => ob_get_clean()]);
     }
 
-    private function render_modal_content($content, $is_completed, $user_id, $station_details, $context) {
+    private function render_modal_content($content, $is_completed, $user_id, $st
+ation_details, $context) {
     // پشتیبانی از هر دو حالت $$...$$ و [shortcode] ... [/shortcode]
-    preg_match('/(?:\$\$static_content\$\$|\[static_content\])(.*?)(?:\$\$\/static_content\$\$|\[\/static_content\])/s', $content, $static_match);
-    preg_match('/(?:\$\$mission_content\$\$|\[mission_content\])(.*?)(?:\$\$\/mission_content\$\$|\[\/mission_content\])/s', $content, $mission_match);
-    preg_match('/(?:\$\$result_content\$\$|\[result_content\])(.*?)(?:\$\$\/result_content\$\$|\[\/result_content\])/s', $content, $result_match);
+    preg_match('/(?:\$\$static_content\$\$|\[static_content\])(.*?)(?:\$\$\/stat
+ic_content\$\$|\[\/static_content\])/s', $content, $static_match);
+    preg_match('/(?:\$\$mission_content\$\$|\[mission_content\])(.*?)(?:\$\$\/mi
+ssion_content\$\$|\[\/mission_content\])/s', $content, $mission_match);
+    preg_match('/(?:\$\$result_content\$\$|\[result_content\])(.*?)(?:\$\$\/resu
+lt_content\$\$|\[\/result_content\])/s', $content, $result_match);
 
     // نمایش محتوای استاتیک (همیشه اگر وجود داشت)
     if (!empty($static_match[1])) {
-        echo '<div class="psych-static-content">' . wpautop(do_shortcode($static_match[1])) . '</div>';
+        echo '<div class="psych-static-content">' . wpautop(do_shortcode($static
+_match[1])) . '</div>';
     }
 
     // اگر ماموریت انجام شده
@@ -945,17 +1055,22 @@ public function register_result_content($atts, $content = null) {
         // نمایش محتوای ماموریت (اگر انجام نشده)
         echo '<div class="psych-mission-area">';
         if (!empty($mission_match[1])) {
-            self::$current_station_node_id = $station_details['station_node_id'];
+            self::$current_station_node_id = $station_details['station_node_id']
+;
             self::$current_target_user_id = $context['viewed_user_id'];
-            add_filter('gform_pre_render', [$this, 'add_mission_hidden_fields']);
+            add_filter('gform_pre_render', [$this, 'add_mission_hidden_fields'])
+;
 
-            echo '<div class="psych-mission-content">' . wpautop(do_shortcode($mission_match[1])) . '</div>';
+            echo '<div class="psych-mission-content">' . wpautop(do_shortcode($m
+ission_match[1])) . '</div>';
 
-            remove_filter('gform_pre_render', [$this, 'add_mission_hidden_fields']);
+            remove_filter('gform_pre_render', [$this, 'add_mission_hidden_fields
+']);
             self::$current_station_node_id = null;
             self::$current_target_user_id = null;
         }
-        echo $this->generate_mission_action_html($user_id, $station_details, $context);
+        echo $this->generate_mission_action_html($user_id, $station_details, $co
+ntext);
         echo '</div>';
     }
 }
@@ -966,13 +1081,19 @@ public function register_result_content($atts, $content = null) {
     private function render_inline_station_content($station) {
         $content = base64_decode($station['raw_content_b64']);
 
-        preg_match('/(?:\$\$static_content\$\$|\[static_content\])(.*?)(?:\$\$\/static_content\$\$|\[\/static_content\])/s', $content, $static_matches);
-        preg_match('/(?:\$\$mission_content\$\$|\[mission_content\])(.*?)(?:\$\$\/mission_content\$\$|\[\/mission_content\])/s', $content, $mission_matches);
-        preg_match('/(?:\$\$result_content\$\$|\[result_content\])(.*?)(?:\$\$\/result_content\$\$|\[\/result_content\])/s', $content, $result_matches);
+        preg_match('/(?:\$\$static_content\$\$|\[static_content\])(.*?)(?:\$\$\/
+static_content\$\$|\[\/static_content\])/s', $content, $static_matches);
+        preg_match('/(?:\$\$mission_content\$\$|\[mission_content\])(.*?)(?:\$\$
+\/mission_content\$\$|\[\/mission_content\])/s', $content, $mission_matches);
+        preg_match('/(?:\$\$result_content\$\$|\[result_content\])(.*?)(?:\$\$\/
+result_content\$\$|\[\/result_content\])/s', $content, $result_matches);
 
-        $static_content = isset($static_matches[1]) ? trim($static_matches[1]) : '';
-        $mission_content = isset($mission_matches[1]) ? trim($mission_matches[1]) : '';
-        $result_content  = isset($result_matches[1]) ? trim($result_matches[1]) : '';
+        $static_content = isset($static_matches[1]) ? trim($static_matches[1]) :
+ '';
+        $mission_content = isset($mission_matches[1]) ? trim($mission_matches[1]
+) : '';
+        $result_content  = isset($result_matches[1]) ? trim($result_matches[1])
+: '';
 
         $context = $this->get_viewing_context();
         $user_id = $context['viewed_user_id'];
@@ -983,17 +1104,20 @@ public function register_result_content($atts, $content = null) {
 
             <?php if (!$station['is_unlocked']) : ?>
                 <div class="psych-locked-station-inline">
-                    <div class="psych-lock-icon"><i class="fas fa-lock"></i></div>
+                    <div class="psych-lock-icon"><i class="fas fa-lock"></i></di
+v>
                     <div class="psych-lock-message">
                         <h4>ایستگاه قفل است</h4>
-                        <p>برای باز کردن این ایستگاه، ابتدا ایستگاه‌های قبلی را تکمیل کنید.</p>
+                        <p>برای باز کردن این ایستگاه، ابتدا ایستگاه‌های قبلی را
+تکمیل کنید.</p>
                     </div>
                 </div>
 
             <?php else : ?>
 
                 <?php if (!empty($static_content)) : ?>
-                    <div class="psych-static-section"><?php echo do_shortcode($static_content); ?></div>
+                    <div class="psych-static-section"><?php echo do_shortcode($s
+tatic_content); ?></div>
                 <?php endif; ?>
 
                 <?php if ($station['is_completed']) : ?>
@@ -1002,20 +1126,25 @@ public function register_result_content($atts, $content = null) {
                             <i class="fas fa-check-circle"></i>
                             <span>تکمیل شده</span>
                         </div>
-                        <?php echo !empty($result_content) ? do_shortcode($result_content) : '<p>این ماموریت تکمیل شده است.</p>'; ?>
+                        <?php echo !empty($result_content) ? do_shortcode($resul
+t_content) : '<p>این ماموریت تکمیل شده است.</p>'; ?>
                     </div>
                 <?php else : ?>
                     <?php if (!empty($mission_content)) : ?>
                         <div class="psych-mission-section">
                             <div class="psych-mission-instructions">
                                 <?php
-                                self::$current_station_node_id = $station['station_node_id'];
-                                self::$current_target_user_id = $context['viewed_user_id'];
-                                add_filter('gform_pre_render', [$this, 'add_mission_hidden_fields']);
+                                self::$current_station_node_id = $station['stati
+on_node_id'];
+                                self::$current_target_user_id = $context['viewed
+_user_id'];
+                                add_filter('gform_pre_render', [$this, 'add_miss
+ion_hidden_fields']);
 
                                 echo do_shortcode($mission_content);
 
-                                remove_filter('gform_pre_render', [$this, 'add_mission_hidden_fields']);
+                                remove_filter('gform_pre_render', [$this, 'add_m
+ission_hidden_fields']);
                                 self::$current_station_node_id = null;
                                 self::$current_target_user_id = null;
                                 ?>
@@ -1023,7 +1152,8 @@ public function register_result_content($atts, $content = null) {
                         </div>
                     <?php endif; ?>
                     <div class="psych-mission-actions">
-                        <?php echo $this->generate_mission_action_html($user_id, $station, $context); ?>
+                        <?php echo $this->generate_mission_action_html($user_id,
+ $station, $context); ?>
                     </div>
                 <?php endif; ?>
 
@@ -1037,7 +1167,8 @@ public function register_result_content($atts, $content = null) {
 
 
 
-    private function generate_mission_action_html($user_id, $station_details, $context) {
+    private function generate_mission_action_html($user_id, $station_details, $c
+ontext) {
         $type = $station_details['mission_type'];
         $target = $station_details['mission_target'];
         $output = "<div class='mission-action-wrapper'>";
@@ -1048,7 +1179,8 @@ public function register_result_content($atts, $content = null) {
             $real_coach = get_userdata($context['real_user_id']);
             $output .= "<div class='coach-mission-notice'>
                           <i class='fas fa-info-circle'></i>
-                          شما به عنوان مربی <strong>{$real_coach->display_name}</strong> در حال مشاهده این ماموریت هستید.
+                          شما به عنوان مربی <strong>{$real_coach->display_name}<
+/strong> در حال مشاهده این ماموریت هستید.
                         </div>";
         }
 
@@ -1061,14 +1193,17 @@ public function register_result_content($atts, $content = null) {
     $form_id = intval(str_replace('form_id:', '', $target));
 
     // گام ۱: خواندن حالت مود مورد نظر از آرایه (پیش‌فرض مکالمه‌ای)
-    $gform_mode = !empty($station_details['gform_mode']) ? $station_details['gform_mode'] : 'conversational';
+    $gform_mode = !empty($station_details['gform_mode']) ? $station_details['gfo
+rm_mode'] : 'conversational';
 
     if ($form_id > 0 && function_exists('gravity_form')) {
         $output .= "<p>برای تکمیل این ماموریت، فرم زیر را ارسال کنید.</p>";
 
         if ($gform_mode === 'conversational') {
-            // فقط در حالت مکالمه‌ای فیلتر و کلاس و Hidden Field و استایل ویژه اضافه کن
-            add_filter('gform_pre_render_' . $form_id, function($form) use ($station_details) {
+            // فقط در حالت مکالمه‌ای فیلتر و کلاس و Hidden Field و استایل ویژه
+اضافه کن
+            add_filter('gform_pre_render_' . $form_id, function($form) use ($sta
+tion_details) {
                 // افزودن کلاس روان‌شناسی مکالمه‌ای
                 if (strpos($form['cssClass'], 'psych-convo-gform') === false) {
                     $form['cssClass'] .= ' psych-convo-gform';
@@ -1076,8 +1211,10 @@ public function register_result_content($atts, $content = null) {
                 // حذف hidden قبلی
                 foreach ($form['fields'] as $i => $field) {
                     if (
-                        (isset($field->inputName) && $field->inputName === 'station_node_id_hidden') ||
-                        (isset($field->label) && $field->label === 'station_node_id_hidden')
+                        (isset($field->inputName) && $field->inputName === 'stat
+ion_node_id_hidden') ||
+                        (isset($field->label) && $field->label === 'station_node
+_id_hidden')
                     ) {
                         unset($form['fields'][$i]);
                     }
@@ -1109,7 +1246,8 @@ public function register_result_content($atts, $content = null) {
         );
 
     } else {
-        $output .= "<p>خطا: شناسه فرم گرویتی مشخص نیست یا افزونه فعال نیست.</p>";
+        $output .= "<p>خطا: شناسه فرم گرویتی مشخص نیست یا افزونه فعال نیست.</p>"
+;
     }
     break;
 }
@@ -1119,67 +1257,88 @@ public function register_result_content($atts, $content = null) {
 
             case 'purchase':
                 if (function_exists('wc_get_product')) {
-                    $product_id = intval(str_replace('product_id:', '', $target));
+                    $product_id = intval(str_replace('product_id:', '', $target)
+);
                     $product = wc_get_product($product_id);
                     if ($product) {
                         $user_obj = get_userdata($user_id);
-                        if ($user_obj && wc_customer_bought_product($user_obj->user_email, $user_id, $product_id)) {
-                             $output .= "<p>این محصول قبلاً خریداری شده است.</p>";
+                        if ($user_obj && wc_customer_bought_product($user_obj->u
+ser_email, $user_id, $product_id)) {
+                             $output .= "<p>این محصول قبلاً خریداری شده است.</p>
+";
                              $can_complete = true;
                         } else {
-                             $output .= "<p>برای تکمیل ماموریت، باید محصول زیر را خریداری کنید:</p>";
-                             $output .= "<a href='" . esc_url($product->get_permalink()) . "' target='_blank' class='psych-mission-link-btn'>خرید " . esc_html($product->get_name()) . "</a>";
+                             $output .= "<p>برای تکمیل ماموریت، باید محصول زیر
+را خریداری کنید:</p>";
+                             $output .= "<a href='" . esc_url($product->get_perm
+alink()) . "' target='_blank' class='psych-mission-link-btn'>خرید " . esc_html($
+product->get_name()) . "</a>";
 
                              // Add coach referral if applicable
                              if ($context['is_impersonating']) {
-                                 $coach_ref_url = add_query_arg('coach_ref', $context['real_user_id'], $product->get_permalink());
-                                 $output .= "<p><small>لینک با ارجاع مربی: <a href='" . esc_url($coach_ref_url) . "' target='_blank'>کلیک کنید</a></small></p>";
+                                 $coach_ref_url = add_query_arg('coach_ref', $co
+ntext['real_user_id'], $product->get_permalink());
+                                 $output .= "<p><small>لینک با ارجاع مربی: <a hr
+ef='" . esc_url($coach_ref_url) . "' target='_blank'>کلیک کنید</a></small></p>";
                              }
                         }
                     } else {
-                        $output .= "<p>خطا: محصول با شناسه مشخص شده یافت نشد.</p>";
+                        $output .= "<p>خطا: محصول با شناسه مشخص شده یافت نشد.</p
+>";
                     }
                 }
                 break;
 
             case 'custom_test':
-                if (function_exists('psych_user_has_completed_test') && function_exists('psych_get_test_link')) {
+                if (function_exists('psych_user_has_completed_test') && function
+_exists('psych_get_test_link')) {
                     $test_id = intval(str_replace('test_id:', '', $target));
                     if ($test_id > 0) {
                         if (psych_user_has_completed_test($user_id, $test_id)) {
-                            $output .= "<p>این آزمون با موفقیت تکمیل شده است.</p>";
+                            $output .= "<p>این آزمون با موفقیت تکمیل شده است.</p
+>";
                             $can_complete = true;
                         } else {
                             $test_link = psych_get_test_link($test_id);
-                            $output .= "<p>برای تکمیل این ماموریت، باید در آزمون زیر شرکت کنید:</p>";
-                            $output .= "<a href='" . esc_url($test_link) . "' target='_blank' class='psych-mission-link-btn'>شروع آزمون</a>";
+                            $output .= "<p>برای تکمیل این ماموریت، باید در آزمو
+ن زیر شرکت کنید:</p>";
+                            $output .= "<a href='" . esc_url($test_link) . "' ta
+rget='_blank' class='psych-mission-link-btn'>شروع آزمون</a>";
                         }
                     } else {
                         $output .= "<p>خطا: شناسه آزمون مشخص نشده است.</p>";
                     }
                 } else {
-                    $output .= "<p>خطا: ماژول آزمون‌های روانشناسی به درستی پیکربندی نشده است.</p>";
+                    $output .= "<p>خطا: ماژول آزمون‌های روانشناسی به درستی پیکر
+بندی نشده است.</p>";
                 }
                 break;
 
             case 'achieve_badge':
-                if (function_exists('psych_user_has_badge') && function_exists('psych_get_badge_name')) {
+                if (function_exists('psych_user_has_badge') && function_exists('
+psych_get_badge_name')) {
                     $badge_id = intval(str_replace('badge_id:', '', $target));
                     if ($badge_id > 0) {
                         if (psych_user_has_badge($user_id, $badge_id)) {
-                            $output .= "<p>تبریک! نشان مورد نیاز کسب شده است.</p>";
+                            $output .= "<p>تبریک! نشان مورد نیاز کسب شده است.</p
+>";
                             $can_complete = true;
                         } else {
                             $badge_name = psych_get_badge_name($badge_id);
-                            $gamification_center_url = home_url('/gamification-center/');
-                            $output .= "<p>برای تکمیل این ماموریت، باید نشان <strong>'" . esc_html($badge_name) . "'</strong> را کسب کنید.</p>";
-                            $output .= "<a href='" . esc_url($gamification_center_url) . "' target='_blank' class='psych-mission-link-btn'>بررسی نحوه کسب نشان</a>";
+                            $gamification_center_url = home_url('/gamification-c
+enter/');
+                            $output .= "<p>برای تکمیل این ماموریت، باید نشان <st
+rong>'" . esc_html($badge_name) . "'</strong> را کسب کنید.</p>";
+                            $output .= "<a href='" . esc_url($gamification_cente
+r_url) . "' target='_blank' class='psych-mission-link-btn'>بررسی نحوه کسب نشان</
+a>";
                         }
                     } else {
                          $output .= "<p>خطا: شناسه نشان مشخص نشده است.</p>";
                     }
                 } else {
-                    $output .= "<p>خطا: ماژول گیمیفیکیشن (نشان‌ها) به درستی پیکربندی نشده است.</p>";
+                    $output .= "<p>خطا: ماژول گیمیفیکیشن (نشان‌ها) به درستی پیک
+ربندی نشده است.</p>";
                 }
                 break;
 
@@ -1191,54 +1350,79 @@ public function register_result_content($atts, $content = null) {
 
                 // Add coach referral to share URL if applicable
                 if ($context['is_impersonating']) {
-                    $share_url = add_query_arg('coach_ref', $context['real_user_id'], $share_url);
+                    $share_url = add_query_arg('coach_ref', $context['real_user_
+id'], $share_url);
                 }
 
-                $share_text = urlencode("یک دوره فوق‌العاده پیدا کردم! " . $share_url);
-                $telegram_link = "https://t.me/share/url?url=" . urlencode($share_url) . "&text=" . $share_text;
-                $whatsapp_link = "https://api.whatsapp.com/send?text=" . $share_text;
+                $share_text = urlencode("یک دوره فوق‌العاده پیدا کردم! " . $shar
+e_url);
+                $telegram_link = "https://t.me/share/url?url=" . urlencode($shar
+e_url) . "&text=" . $share_text;
+                $whatsapp_link = "https://api.whatsapp.com/send?text=" . $share_
+text;
 
-                $output .= "<p>برای تکمیل این ماموریت، این صفحه را با دوستانتان به اشتراک بگذارید:</p>";
+                $output .= "<p>برای تکمیل این ماموریت، این صفحه را با دوستانتان
+به اشتراک بگذارید:</p>";
                 $output .= "<div class='psych-share-buttons'>";
-                $output .= "<a href='{$telegram_link}' target='_blank' class='psych-share-btn telegram'><i class='fab fa-telegram-plane'></i> اشتراک در تلگرام</a>";
-                $output .= "<a href='{$whatsapp_link}' target='_blank' class='psych-share-btn whatsapp'><i class='fab fa-whatsapp'></i> اشتراک در واتس‌اپ</a>";
+                $output .= "<a href='{$telegram_link}' target='_blank' class='ps
+ych-share-btn telegram'><i class='fab fa-telegram-plane'></i> اشتراک در تلگرام</
+a>";
+                $output .= "<a href='{$whatsapp_link}' target='_blank' class='ps
+ych-share-btn whatsapp'><i class='fab fa-whatsapp'></i> اشتراک در واتس‌اپ</a>";
                 $output .= "</div>";
-                $output .= "<p class='psych-share-notice' style='display:none; color: green; margin-top: 10px;'>عالی! اکنون می‌توانید ماموریت را تکمیل کنید.</p>";
+                $output .= "<p class='psych-share-notice' style='display:none; c
+olor: green; margin-top: 10px;'>عالی! اکنون می‌توانید ماموریت را تکمیل کنید.</p>
+";
                 $can_complete = true;
                 break;
 
             case 'referral':
                 $required_count = intval(str_replace('count:', '', $target));
-                $current_count = (int) get_user_meta($user_id, PSYCH_PATH_REFERRAL_USER_META_COUNT, true);
-                $referral_link = add_query_arg(PSYCH_PATH_REFERRAL_COOKIE, $user_id, home_url('/'));
+                $current_count = (int) get_user_meta($user_id, PSYCH_PATH_REFERR
+AL_USER_META_COUNT, true);
+                $referral_link = add_query_arg(PSYCH_PATH_REFERRAL_COOKIE, $user
+_id, home_url('/'));
 
-                $output .= "<p>تعداد دعوت‌های موفق: <strong>{$current_count} از {$required_count}</strong></p>";
+                $output .= "<p>تعداد دعوت‌های موفق: <strong>{$current_count} از
+{$required_count}</strong></p>";
                 $output .= "<p>لینک دعوت اختصاصی:</p>";
                 $output .= "<div class='psych-referral-box'>";
-                $output .= "<input type='text' readonly value='" . esc_url($referral_link) . "' id='psych-referral-link-input-{$station_details['station_node_id']}'>";
-                $output .= "<button class='psych-copy-btn' data-target='#psych-referral-link-input-{$station_details['station_node_id']}'>کپی</button>";
+                $output .= "<input type='text' readonly value='" . esc_url($refe
+rral_link) . "' id='psych-referral-link-input-{$station_details['station_node_id
+']}'>";
+                $output .= "<button class='psych-copy-btn' data-target='#psych-r
+eferral-link-input-{$station_details['station_node_id']}'>کپی</button>";
                 $output .= "</div>";
 
                 if ($current_count >= $required_count) {
-                    $output .= "<p style='color:green;'>شما به حد نصاب دعوت رسیده‌اید!</p>";
+                    $output .= "<p style='color:green;'>شما به حد نصاب دعوت رسی
+ده‌اید!</p>";
                     $can_complete = true;
                 }
                 break;
 
             case 'feedback':
                  $required_count = intval(str_replace('count:', '', $target));
-                 $current_count = (int) get_user_meta($user_id, PSYCH_PATH_FEEDBACK_USER_META_COUNT, true);
-                 $feedback_link = add_query_arg(['for_user' => $user_id], home_url('/feedback-form/'));
+                 $current_count = (int) get_user_meta($user_id, PSYCH_PATH_FEEDB
+ACK_USER_META_COUNT, true);
+                 $feedback_link = add_query_arg(['for_user' => $user_id], home_u
+rl('/feedback-form/'));
 
-                 $output .= "<p>تعداد بازخوردهای دریافت شده: <strong>{$current_count} از {$required_count}</strong></p>";
-                 $output .= "<p>این لینک را برای دوستانی که می‌خواهید از آنها بازخورد بگیرید، ارسال کنید:</p>";
+                 $output .= "<p>تعداد بازخوردهای دریافت شده: <strong>{$current_c
+ount} از {$required_count}</strong></p>";
+                 $output .= "<p>این لینک را برای دوستانی که می‌خواهید از آنها ب
+ازخورد بگیرید، ارسال کنید:</p>";
                  $output .= "<div class='psych-referral-box'>";
-                 $output .= "<input type='text' readonly value='" . esc_url($feedback_link) . "' id='psych-feedback-link-input-{$station_details['station_node_id']}'>";
-                 $output .= "<button class='psych-copy-btn' data-target='#psych-feedback-link-input-{$station_details['station_node_id']}'>کپی</button>";
+                 $output .= "<input type='text' readonly value='" . esc_url($fee
+dback_link) . "' id='psych-feedback-link-input-{$station_details['station_node_i
+d']}'>";
+                 $output .= "<button class='psych-copy-btn' data-target='#psych-
+feedback-link-input-{$station_details['station_node_id']}'>کپی</button>";
                  $output .= "</div>";
 
                  if ($current_count >= $required_count) {
-                     $output .= "<p style='color:green;'>شما به تعداد بازخورد مورد نیاز رسیده‌اید!</p>";
+                     $output .= "<p style='color:green;'>شما به تعداد بازخورد م
+ورد نیاز رسیده‌اید!</p>";
                      $can_complete = true;
                  }
                  break;
@@ -1246,8 +1430,10 @@ public function register_result_content($atts, $content = null) {
 
         if ($can_complete) {
             $disabled_attr = ($type === 'share') ? 'disabled' : '';
-            $button_text = $context['is_impersonating'] ? 'تکمیل (نمایش مربی)' : 'تکمیل ماموریت';
-            $output .= "<button class='psych-complete-mission-btn' {$disabled_attr} onclick='psych_complete_mission_inline(this)'>{$button_text}</button>";
+            $button_text = $context['is_impersonating'] ? 'تکمیل (نمایش مربی)' :
+ 'تکمیل ماموریت';
+            $output .= "<button class='psych-complete-mission-btn' {$disabled_at
+tr} onclick='psych_complete_mission_inline(this)'>{$button_text}</button>";
         }
 
         $output .= "</div>";
@@ -1262,7 +1448,8 @@ public function register_result_content($atts, $content = null) {
             wp_send_json_error(['message' => 'نشست منقضی شده است'], 403);
         }
 
-        $station_details = json_decode(stripslashes($_POST['station_data'] ?? ''), true);
+        $station_details = json_decode(stripslashes($_POST['station_data'] ?? ''
+), true);
         $context = $this->get_viewing_context();
         $user_id = $context['viewed_user_id'];
 
@@ -1271,7 +1458,8 @@ public function register_result_content($atts, $content = null) {
         }
 
         // محاسبه وضعیت جدید
-        $station_details = $this->calculate_station_status($user_id, $station_details, true);
+        $station_details = $this->calculate_station_status($user_id, $station_de
+tails, true);
 
         ob_start();
         echo $this->render_inline_station_content($station_details);
@@ -1291,7 +1479,8 @@ public function register_result_content($atts, $content = null) {
 public function ajax_complete_mission() {
     // 1. Security and initial validation
     if (!check_ajax_referer(PSYCH_PATH_AJAX_NONCE, 'nonce', false)) {
-        wp_send_json_error(['message' => 'Session expired. Please refresh the page.'], 403);
+        wp_send_json_error(['message' => 'Session expired. Please refresh the pa
+ge.'], 403);
     }
 
     $context = $this->get_viewing_context();
@@ -1302,9 +1491,11 @@ public function ajax_complete_mission() {
     }
 
     $node_id = sanitize_key($_POST['node_id'] ?? '');
-    $station_data = json_decode(stripslashes($_POST['station_data'] ?? ''), true);
+    $station_data = json_decode(stripslashes($_POST['station_data'] ?? ''), true
+);
     // New: Get custom rewards from the button click
-    $custom_rewards = isset($_POST['custom_rewards']) ? sanitize_text_field($_POST['custom_rewards']) : null;
+    $custom_rewards = isset($_POST['custom_rewards']) ? sanitize_text_field($_PO
+ST['custom_rewards']) : null;
 
     if (!$node_id || !$station_data) {
         wp_send_json_error(['message' => 'Invalid data sent.']);
@@ -1333,18 +1524,22 @@ public function ajax_complete_mission() {
             break;
         case 'purchase':
             if (function_exists('wc_customer_bought_product')) {
-                $product_id = intval(str_replace('product_id:', '', $mission_target));
+                $product_id = intval(str_replace('product_id:', '', $mission_tar
+get));
                 $user_obj = get_userdata($user_id);
-                if ($product_id > 0 && $user_obj && wc_customer_bought_product($user_obj->user_email, $user_id, $product_id)) {
+                if ($product_id > 0 && $user_obj && wc_customer_bought_product($
+user_obj->user_email, $user_id, $product_id)) {
                     $condition_met = true;
                 } else {
-                    $error_message = 'برای تکمیل این ماموریت، ابتدا باید محصول مورد نظر را خریداری کنید.';
+                    $error_message = 'برای تکمیل این ماموریت، ابتدا باید محصول
+مورد نظر را خریداری کنید.';
                 }
             }
             break;
         case 'gform':
             // برای گرویتی فرم، بررسی با توجه به داده‌های قبلی انجام می‌شود
-            $condition_met = $this->is_station_completed($user_id, $node_id, $station_data);
+            $condition_met = $this->is_station_completed($user_id, $node_id, $st
+ation_data);
             if (!$condition_met) {
                 $error_message = 'ابتدا باید فرم مربوطه را ارسال کنید.';
             }
@@ -1352,7 +1547,8 @@ public function ajax_complete_mission() {
         case 'custom_test':
             if (function_exists('psych_user_has_completed_test')) {
                 $test_id = intval(str_replace('test_id:', '', $mission_target));
-                if ($test_id > 0 && psych_user_has_completed_test($user_id, $test_id)) {
+                if ($test_id > 0 && psych_user_has_completed_test($user_id, $tes
+t_id)) {
                     $condition_met = true;
                 } else {
                     $error_message = 'ابتدا باید در آزمون مربوطه شرکت کنید.';
@@ -1361,37 +1557,47 @@ public function ajax_complete_mission() {
             break;
         case 'achieve_badge':
             if (function_exists('psych_user_has_badge')) {
-                $badge_id = intval(str_replace('badge_id:', '', $mission_target));
-                if ($badge_id > 0 && psych_user_has_badge($user_id, $badge_id)) {
+                $badge_id = intval(str_replace('badge_id:', '', $mission_target)
+);
+                if ($badge_id > 0 && psych_user_has_badge($user_id, $badge_id))
+{
                     $condition_met = true;
                 } else {
-                    $error_message = 'برای تکمیل این ماموریت، ابتدا باید نشان مورد نیاز را کسب کنید.';
+                    $error_message = 'برای تکمیل این ماموریت، ابتدا باید نشان م
+ورد نیاز را کسب کنید.';
                 }
             }
             break;
         case 'referral':
-            $required_count = intval(str_replace('count:', '', $mission_target));
-            $current_count = (int) get_user_meta($user_id, PSYCH_PATH_REFERRAL_USER_META_COUNT, true);
+            $required_count = intval(str_replace('count:', '', $mission_target))
+;
+            $current_count = (int) get_user_meta($user_id, PSYCH_PATH_REFERRAL_U
+SER_META_COUNT, true);
             if ($required_count > 0 && $current_count >= $required_count) {
                 $condition_met = true;
             } else {
-                $error_message = "شما باید حداقل {$required_count} نفر را دعوت کنید. (تعداد فعلی: {$current_count})";
+                $error_message = "شما باید حداقل {$required_count} نفر را دعوت
+کنید. (تعداد فعلی: {$current_count})";
             }
             break;
         case 'feedback':
-            $required_count = intval(str_replace('count:', '', $mission_target));
-            $current_count = (int) get_user_meta($user_id, PSYCH_PATH_FEEDBACK_USER_META_COUNT, true);
+            $required_count = intval(str_replace('count:', '', $mission_target))
+;
+            $current_count = (int) get_user_meta($user_id, PSYCH_PATH_FEEDBACK_U
+SER_META_COUNT, true);
             if ($required_count > 0 && $current_count >= $required_count) {
                 $condition_met = true;
             } else {
-                $error_message = "شما باید حداقل {$required_count} بازخورد دریافت کنید. (تعداد فعلی: {$current_count})";
+                $error_message = "شما باید حداقل {$required_count} بازخورد دریا
+فت کنید. (تعداد فعلی: {$current_count})";
             }
             break;
     }
 
     // 4. اگر شرایط برقرار بود، ماموریت را تکمیل و پاداش‌ها را ارسال کن
     if ($condition_met) {
-        $result = $this->mark_station_as_completed($user_id, $node_id, $station_data, true, $custom_rewards);
+        $result = $this->mark_station_as_completed($user_id, $node_id, $station_
+data, true, $custom_rewards);
 
         if ($result['success']) {
             // Refresh station data to pass to the rendering function
@@ -1400,10 +1606,13 @@ public function ajax_complete_mission() {
             $station_data['is_unlocked'] = true;
 
             // Render the new content for the accordion
-            $new_inline_html = $this->render_inline_station_content($station_data);
+            $new_inline_html = $this->render_inline_station_content($station_dat
+a);
 
-            // Check if a station was revealed, which requires a full path refresh
-            $full_refresh_needed = isset($result['rewards_summary']['revealed_station_flag']);
+            // Check if a station was revealed, which requires a full path refre
+sh
+            $full_refresh_needed = isset($result['rewards_summary']['revealed_st
+ation_flag']);
 
             wp_send_json_success([
                 'message' => 'ماموریت با موفقیت تکمیل شد!',
@@ -1431,7 +1640,8 @@ public function ajax_complete_mission() {
  */
 // فایل: path-engine.php
 
-private function mark_station_as_completed($user_id, $node_id, $station_data, $fire_rewards = true, $custom_rewards = null) {
+private function mark_station_as_completed($user_id, $node_id, $station_data, $f
+ire_rewards = true, $custom_rewards = null) {
     $completed = get_user_meta($user_id, PSYCH_PATH_META_COMPLETED, true) ?: [];
     if (isset($completed[$node_id])) {
         return ['success' => false];
@@ -1447,10 +1657,12 @@ private function mark_station_as_completed($user_id, $node_id, $station_data, $f
     $rewards_summary = [];
     if ($fire_rewards) {
         // Pass the custom rewards string to the processor
-        $rewards_summary = $this->process_rewards($user_id, $station_data, $custom_rewards);
+        $rewards_summary = $this->process_rewards($user_id, $station_data, $cust
+om_rewards);
     }
 
-    do_action('psych_path_station_completed', $user_id, $node_id, $station_data);
+    do_action('psych_path_station_completed', $user_id, $node_id, $station_data)
+;
 
     return [
         'success' => true,
@@ -1461,8 +1673,10 @@ private function mark_station_as_completed($user_id, $node_id, $station_data, $f
 /**
  * Public wrapper to allow external modules to complete a station.
  */
-public function public_mark_station_as_completed($user_id, $node_id, $station_data) {
-    // A bit of a hack to get the full station data, as the external module might not have it.
+public function public_mark_station_as_completed($user_id, $node_id, $station_da
+ta) {
+    // A bit of a hack to get the full station data, as the external module migh
+t not have it.
     // In a real scenario, the station data should be passed more robustly.
     $found_station = null;
     foreach ($this->path_data as $path_id => $path) {
@@ -1475,11 +1689,13 @@ public function public_mark_station_as_completed($user_id, $node_id, $station_da
     }
 
     if ($found_station) {
-        return $this->mark_station_as_completed($user_id, $node_id, $found_station, true);
+        return $this->mark_station_as_completed($user_id, $node_id, $found_stati
+on, true);
     }
 
     // Fallback if station data not pre-loaded
-    return $this->mark_station_as_completed($user_id, $node_id, $station_data, true);
+    return $this->mark_station_as_completed($user_id, $node_id, $station_data, t
+rue);
 }
 
 /**
@@ -1487,9 +1703,12 @@ public function public_mark_station_as_completed($user_id, $node_id, $station_da
  */
 // فایل: path-engine.php
 
-private function process_rewards($user_id, $station_data, $custom_rewards = null) {
-    // Use custom rewards from button if available, otherwise use station's default rewards
-    $rewards_string = !empty($custom_rewards) ? $custom_rewards : ($station_data['rewards'] ?? '');
+private function process_rewards($user_id, $station_data, $custom_rewards = null
+) {
+    // Use custom rewards from button if available, otherwise use station's defa
+ult rewards
+    $rewards_string = !empty($custom_rewards) ? $custom_rewards : ($station_data
+['rewards'] ?? '');
 
     if (empty($rewards_string)) {
         return [];
@@ -1503,45 +1722,55 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
         $parts = explode(':', $reward, 2);
         $type = trim($parts[0] ?? '');
         $value = trim($parts[1] ?? '');
-        $reason = "پاداش تکمیل ایستگاه: " . ($station_data['title'] ?? 'ناشناس');
+        $reason = "پاداش تکمیل ایستگاه: " . ($station_data['title'] ?? 'ناشناس')
+;
 
         switch ($type) {
             case 'add_points':
                 if (function_exists('psych_gamification_add_points')) {
                     $points = intval($value);
                     if ($points > 0) {
-                        psych_gamification_add_points($user_id, $points, $reason, $custom_notification);
+                        psych_gamification_add_points($user_id, $points, $reason
+, $custom_notification);
                         $rewards_summary['points'] = $points;
                     }
                 }
                 break;
 
             case 'award_badge':
-                if (function_exists('psych_award_badge_to_user') && function_exists('psych_get_badge_name')) {
+                if (function_exists('psych_award_badge_to_user') && function_exi
+sts('psych_get_badge_name')) {
                     $badge_id = intval($value);
                     if ($badge_id > 0) {
-                        psych_award_badge_to_user($user_id, $badge_id, $custom_notification);
-                        $rewards_summary['badge'] = psych_get_badge_name($badge_id);
+                        psych_award_badge_to_user($user_id, $badge_id, $custom_n
+otification);
+                        $rewards_summary['badge'] = psych_get_badge_name($badge_
+id);
                     }
                 }
                 break;
 
             case 'send_sms':
                 if (function_exists('psych_send_sms_by_template')) {
-                    psych_send_sms_by_template($user_id, $value, ['station_title' => $station_data['title']]);
+                    psych_send_sms_by_template($user_id, $value, ['station_title
+' => $station_data['title']]);
                 }
                 break;
 
             case 'unlock_station': // Alias for activate_station
             case 'activate_station':
                 if (!empty($value)) {
-                    $rewards_summary['next_station_message'] = "ایستگاه " . $value . " برای شما فعال شد!";
-                    $rewards_summary['unlocked_station_id'] = sanitize_key($value);
+                    $rewards_summary['next_station_message'] = "ایستگاه " . $val
+ue . " برای شما فعال شد!";
+                    $rewards_summary['unlocked_station_id'] = sanitize_key($valu
+e);
                 }
                 break;
             case 'reveal_station':
-                if (!empty($value) && function_exists('psych_complete_mission_by_flag')) {
-                    // This reward sets a flag, which in turn makes a station with a corresponding visibility_flag appear.
+                if (!empty($value) && function_exists('psych_complete_mission_by
+_flag')) {
+                    // This reward sets a flag, which in turn makes a station wi
+th a corresponding visibility_flag appear.
                     psych_complete_mission_by_flag($value, $user_id);
                     // We can also add a toast notification for this
                     $rewards_summary['revealed_station_flag'] = $value;
@@ -1576,8 +1805,10 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
         $required_submissions = 1; // Default
         foreach ($this->path_data as $path) {
             foreach ($path['stations'] as $station) {
-                if ($station['station_node_id'] === self::$current_station_node_id) {
-                    $required_submissions = $station['mission_required_submissions'] ?? 1;
+                if ($station['station_node_id'] === self::$current_station_node_
+id) {
+                    $required_submissions = $station['mission_required_submissio
+ns'] ?? 1;
                     break 2;
                 }
             }
@@ -1605,14 +1836,18 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
 
         // Find the hidden fields in the form submission
         foreach ($form['fields'] as $field) {
-            if (isset($field->inputName) && $field->inputName === 'station_node_id_hidden') {
+            if (isset($field->inputName) && $field->inputName === 'station_node_
+id_hidden') {
                 $station_node_id = rgar($entry, (string) $field->id);
             }
-            if (isset($field->inputName) && $field->inputName === 'psych_target_user_id') {
+            if (isset($field->inputName) && $field->inputName === 'psych_target_
+user_id') {
                 $target_user_id = rgar($entry, (string) $field->id);
             }
-            if (isset($field->inputName) && $field->inputName === 'psych_required_submissions') {
-                $required_submissions = max(1, intval(rgar($entry, (string) $field->id)));
+            if (isset($field->inputName) && $field->inputName === 'psych_require
+d_submissions') {
+                $required_submissions = max(1, intval(rgar($entry, (string) $fie
+ld->id)));
             }
         }
 
@@ -1621,7 +1856,8 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
         }
 
         // Determine the correct user to credit
-        $user_to_credit = !empty($target_user_id) && get_userdata($target_user_id) !== false
+        $user_to_credit = !empty($target_user_id) && get_userdata($target_user_i
+d) !== false
             ? (int) $target_user_id
             : (int) ($entry['created_by'] ?? 0);
 
@@ -1654,13 +1890,17 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
         ]);
     }
 
-    public function handle_feedback_submission($feedback_giver_id, $user_id_receiving_feedback) {
-        $count = (int) get_user_meta($user_id_receiving_feedback, PSYCH_PATH_FEEDBACK_USER_META_COUNT, true);
+    public function handle_feedback_submission($feedback_giver_id, $user_id_rece
+iving_feedback) {
+        $count = (int) get_user_meta($user_id_receiving_feedback, PSYCH_PATH_FEE
+DBACK_USER_META_COUNT, true);
         $count++;
-        update_user_meta($user_id_receiving_feedback, PSYCH_PATH_FEEDBACK_USER_META_COUNT, $count);
+        update_user_meta($user_id_receiving_feedback, PSYCH_PATH_FEEDBACK_USER_M
+ETA_COUNT, $count);
 
         // Fire action for other integrations
-        do_action('psych_path_feedback_count_updated', $user_id_receiving_feedback, $count, $feedback_giver_id);
+        do_action('psych_path_feedback_count_updated', $user_id_receiving_feedba
+ck, $count, $feedback_giver_id);
     }
 
     public function capture_referral_code() {
@@ -1678,11 +1918,14 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
                 ];
 
                 if (PHP_VERSION_ID >= 70300) {
-                    setcookie(PSYCH_PATH_REFERRAL_COOKIE, $referrer_id, $cookie_options);
+                    setcookie(PSYCH_PATH_REFERRAL_COOKIE, $referrer_id, $cookie_
+options);
                 } else {
-                    setcookie(PSYCH_PATH_REFERRAL_COOKIE, $referrer_id, $cookie_options['expires'],
+                    setcookie(PSYCH_PATH_REFERRAL_COOKIE, $referrer_id, $cookie_
+options['expires'],
                              $cookie_options['path'], $cookie_options['domain'],
-                             $cookie_options['secure'], $cookie_options['httponly']);
+                             $cookie_options['secure'], $cookie_options['httponl
+y']);
                 }
             }
         }
@@ -1694,18 +1937,23 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
 
             if (get_userdata($referrer_id)) {
                 // Store who referred the new user
-                update_user_meta($new_user_id, PSYCH_PATH_REFERRED_BY_USER_META, $referrer_id);
+                update_user_meta($new_user_id, PSYCH_PATH_REFERRED_BY_USER_META,
+ $referrer_id);
 
                 // Increment the referrer's count
-                $count = (int) get_user_meta($referrer_id, PSYCH_PATH_REFERRAL_USER_META_COUNT, true);
+                $count = (int) get_user_meta($referrer_id, PSYCH_PATH_REFERRAL_U
+SER_META_COUNT, true);
                 $count++;
-                update_user_meta($referrer_id, PSYCH_PATH_REFERRAL_USER_META_COUNT, $count);
+                update_user_meta($referrer_id, PSYCH_PATH_REFERRAL_USER_META_COU
+NT, $count);
 
                 // Clear the cookie
-                setcookie(PSYCH_PATH_REFERRAL_COOKIE, '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN);
+                setcookie(PSYCH_PATH_REFERRAL_COOKIE, '', time() - 3600, COOKIEP
+ATH, COOKIE_DOMAIN);
 
                 // Fire action for other integrations
-                do_action('psych_path_referral_successful', $referrer_id, $new_user_id, $count);
+                do_action('psych_path_referral_successful', $referrer_id, $new_u
+ser_id, $count);
             }
         }
     }
@@ -1716,9 +1964,12 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
 
     public function enqueue_assets() {
         if ($this->is_shortcode_rendered) {
-            wp_enqueue_style('font-awesome-psych-path', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css', [], '6.4.0');
+            wp_enqueue_style('font-awesome-psych-path', 'https://cdnjs.cloudflar
+e.com/ajax/libs/font-awesome/6.4.0/css/all.min.css', [], '6.4.0');
             wp_enqueue_script('jquery');
-			        wp_enqueue_script('canvas-confetti', 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js', [], '1.9.3', true);
+                                wp_enqueue_script('canvas-confetti', 'https://cd
+n.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js', [], '1.9
+.3', true);
 
         }
     }
@@ -1728,12 +1979,15 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
     /* فقط روی فرم‌هایی با این کلاس اعمال می‌شود */
     .psych-convo-gform .gform_body > .gform_page { display: none; }
     .psych-convo-gform .gform_body > .gform_page.active { display: block; }
-    .psych-convo-gform .gform_page_footer { display: flex; gap:8px; justify-content:flex-end; margin-top:24px; }
+    .psych-convo-gform .gform_page_footer { display: flex; gap:8px; justify-cont
+ent:flex-end; margin-top:24px; }
     .psych-convo-gform .psych-gform-progress {
-        width:100%;background:#f2f2f2;border-radius:8px;overflow:hidden;margin-bottom:24px;height:8px;position:relative;
+        width:100%;background:#f2f2f2;border-radius:8px;overflow:hidden;margin-b
+ottom:24px;height:8px;position:relative;
     }
     .psych-convo-gform .psych-gform-progress-bar {
-        background: linear-gradient(90deg,#1a73e8,#43e97b); height:100%; border-radius:8px; transition:.3s;width:0%;
+        background: linear-gradient(90deg,#1a73e8,#43e97b); height:100%; border-
+radius:8px; transition:.3s;width:0%;
     }
     .psych-convo-gform .psych-gform-pagenum {
         margin-bottom:16px;font-weight:bold;text-align:center;
@@ -1749,7 +2003,9 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
 
             // progress bar + page label only once
             if ($form.find(".psych-gform-progress").length==0) {
-                $form.find(".gform_body").prepend('<div class="psych-gform-pagenum"></div><div class="psych-gform-progress"><div class="psych-gform-progress-bar"></div></div>');
+                $form.find(".gform_body").prepend('<div class="psych-gform-pagen
+um"></div><div class="psych-gform-progress"><div class="psych-gform-progress-bar
+"></div></div>');
             }
 
             let idx = 0, total = $pages.length;
@@ -1758,15 +2014,21 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
             function showPage(i){
                 $pages.removeClass("active").eq(i).addClass("active");
                 var progress = Math.floor(100 * (i+1)/total);
-                $form.find(".psych-gform-progress-bar").css("width", progress+"%");
-                $form.find(".psych-gform-pagenum").text('سوال '+toPersian(i+1)+' از '+toPersian(total));
+                $form.find(".psych-gform-progress-bar").css("width", progress+"%
+");
+                $form.find(".psych-gform-pagenum").text('سوال '+toPersian(i+1)+'
+ از '+toPersian(total));
                 $pages.find(".gform_page_footer").hide();
                 if ($form.find(".psych-gform-nav").length == 0) {
                     $form.find(".gform_body").append(`
-                        <div class="psych-gform-nav" style="display:flex;gap:8px;justify-content:center;">
-                            <button type="button" class="psych-gform-prev" style="display:none">قبلی</button>
-                            <button type="button" class="psych-gform-next">بعدی</button>
-                            <button type="submit" class="psych-gform-submit" style="display:none">پایان</button>
+                        <div class="psych-gform-nav" style="display:flex;gap:8px
+;justify-content:center;">
+                            <button type="button" class="psych-gform-prev" style
+="display:none">قبلی</button>
+                            <button type="button" class="psych-gform-next">بعدی<
+/button>
+                            <button type="submit" class="psych-gform-submit" sty
+le="display:none">پایان</button>
                         </div>
                     `);
                 }
@@ -1776,7 +2038,8 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
             }
 
             // nav handlers
-            $form.off('click.psych').on('click.psych','.psych-gform-next',function(e){
+            $form.off('click.psych').on('click.psych','.psych-gform-next',functi
+on(e){
                 e.preventDefault();
                 idx = Math.min(idx+1,total-1); showPage(idx);
             });
@@ -1785,12 +2048,15 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
                 idx = Math.max(idx-1,0); showPage(idx);
             });
 
-            $form.on('click.psych input.psych','input[type=radio],input[type=checkbox]',function(){
-                if (idx<total-1) { setTimeout(()=>{$form.find('.psych-gform-next').trigger('click');},170);}
+            $form.on('click.psych input.psych','input[type=radio],input[type=che
+ckbox]',function(){
+                if (idx<total-1) { setTimeout(()=>{$form.find('.psych-gform-next
+').trigger('click');},170);}
             });
 
             // تبدیل اعداد به فارسی
-            function toPersian(n){ return n.toString().replace(/\d/g, d=>'۰۱۲۳۴۵۶۷۸۹'[d]); }
+            function toPersian(n){ return n.toString().replace(/\d/g, d=>'۰۱۲۳۴
+۵۶۷۸۹'[d]); }
         });
     });
     </script>
@@ -1809,12 +2075,16 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
     private function render_station_modal_html_and_css() {
         ?>
         <!-- Enhanced Modal with Multiple Display Modes -->
-        <div class="psych-modal-overlay" id="psych-station-modal" style="display: none;">
+        <div class="psych-modal-overlay" id="psych-station-modal" style="display
+: none;">
         <div class="psych-modal-container">
             <button class="psych-modal-close" title="بستن" aria-label="بستن">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M18 6L6 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M6 6L18 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmln
+s="http://www.w3.org/2000/svg">
+                    <path d="M18 6L6 18" stroke="currentColor" stroke-width="1.5
+" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M6 6L18 18" stroke="currentColor" stroke-width="1.5
+" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </button>
             <h2 class="psych-modal-title"></h2>
@@ -1824,12 +2094,16 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
     <div id="psych-toast-container"></div>
 
         <style>
-            /* ================================================================= */
-            /* Enhanced CSS with Mobile-First Approach & Multiple Display Modes */
-            /* ================================================================= */
+            /* =================================================================
+ */
+            /* Enhanced CSS with Mobile-First Approach & Multiple Display Modes
+*/
+            /* =================================================================
+ */
 
             /* CSS Variables for Theming (Modern Standard) */
-            /* ================================================================= */
+            /* =================================================================
+ */
 /* PSYCH PATH ENGINE - COMPLETE CSS STYLES */
 /* ================================================================= */
 
@@ -1856,7 +2130,8 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
     --psych-gray-900: #212529;
     --psych-white: #ffffff;
     --psych-black: #000000;
-    --psych-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --psych-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+'Helvetica Neue', Arial, sans-serif;
     --psych-border-radius: 8px;
     --psych-border-radius-lg: 12px;
     --psych-border-radius-xl: 16px;
@@ -1900,7 +2175,8 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
 .psych-rewards-header i { font-size: 48px; margin-bottom: 10px; }
 .psych-rewards-header h3 { margin: 0; font-size: 22px; }
 .psych-rewards-body { padding: 25px; }
-.psych-rewards-body ul { list-style: none; padding: 0; margin: 0; text-align: right; }
+.psych-rewards-body ul { list-style: none; padding: 0; margin: 0; text-align: ri
+ght; }
 .psych-rewards-body li {
     font-size: 16px;
     color: #34495e;
@@ -1941,8 +2217,10 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
             align-items: center;
             gap: 12px;
         }
-        .psych-toast.success { background: linear-gradient(135deg, #28a745, #20a038); }
-        .psych-toast.error { background: linear-gradient(135deg, #dc3545, #e04353); }
+        .psych-toast.success { background: linear-gradient(135deg, #28a745, #20a
+038); }
+        .psych-toast.error { background: linear-gradient(135deg, #dc3545, #e0435
+3); }
         .psych-toast i { font-size: 20px; margin-right: 8px; }
 
 /* ================================================================= */
@@ -2072,7 +2350,8 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), trans
+parent);
     animation: shimmer 2s infinite;
 }
 
@@ -2117,7 +2396,8 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
     top: 0;
     bottom: 0;
     width: 3px;
-    background: linear-gradient(to bottom, var(--psych-gray-300), var(--psych-primary-color));
+    background: linear-gradient(to bottom, var(--psych-gray-300), var(--psych-pr
+imary-color));
     transform: translateX(-50%);
     z-index: 0;
 }
@@ -2236,7 +2516,8 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, var(--psych-primary-color), var(--psych-success-color));
+    background: linear-gradient(90deg, var(--psych-primary-color), var(--psych-s
+uccess-color));
     opacity: 0;
     transition: var(--psych-transition);
 }
@@ -2365,7 +2646,8 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
 .psych-treasure-map {
     position: relative;
     height: 370px;
-    background: repeating-linear-gradient(135deg, #f6e7c1 0 20px, #ecd999 20px 40px);
+    background: repeating-linear-gradient(135deg, #f6e7c1 0 20px, #ecd999 20px 4
+0px);
     border-radius: 18px;
     overflow: hidden;
     margin: 32px 0;
@@ -2453,7 +2735,8 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
     height: 8px;
     top: 25px;
     left: 58px;
-    background: repeating-linear-gradient(90deg, #ceb253 8px, #fffbe4 2px, #ceb253 14px);
+    background: repeating-linear-gradient(90deg, #ceb253 8px, #fffbe4 2px, #ceb2
+53 14px);
     border-radius: 8px;
     z-index: 1;
     opacity: .5;
@@ -2949,7 +3232,8 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
     color: var(--psych-gray-800);
     line-height: 1.3;
     border-bottom: 1px solid var(--psych-gray-200);
-    background: linear-gradient(135deg, var(--psych-gray-100), var(--psych-white));
+    background: linear-gradient(135deg, var(--psych-gray-100), var(--psych-white
+));
 }
 
 /* Modal Content */
@@ -3121,7 +3405,8 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
 
 private function render_station_modal_javascript() {
     // This new version uses global functions and inline `onclick` attributes
-    // to avoid issues with other plugins breaking jQuery's document.ready event.
+    // to avoid issues with other plugins breaking jQuery's document.ready event
+.
     ?>
     <script>
     (function() {
@@ -3141,7 +3426,8 @@ private function render_station_modal_javascript() {
             const stationItem = findClosest(button, '[data-station-node-id]');
             if (!stationItem) return;
 
-            const stationDetails = JSON.parse(stationItem.getAttribute('data-station-details'));
+            const stationDetails = JSON.parse(stationItem.getAttribute('data-sta
+tion-details'));
             if (!stationDetails) return;
 
             const modal = document.getElementById('psych-station-modal');
@@ -3149,34 +3435,45 @@ private function render_station_modal_javascript() {
             const modalContent = modal.querySelector('.psych-modal-content');
 
             modalTitle.textContent = stationDetails.title;
-            modalContent.innerHTML = '<div class="psych-loading-spinner"></div>';
+            modalContent.innerHTML = '<div class="psych-loading-spinner"></div>'
+;
             modal.style.display = 'flex';
             document.body.classList.add('modal-open');
             document.body.style.overflow = 'hidden';
 
             // Store details for the completion button inside the modal
-            modal.setAttribute('data-current-station-details', JSON.stringify(stationDetails));
-            modal.setAttribute('data-current-path-id', findClosest(button, '.psych-path-container').id);
+            modal.setAttribute('data-current-station-details', JSON.stringify(st
+ationDetails));
+            modal.setAttribute('data-current-path-id', findClosest(button, '.psy
+ch-path-container').id);
 
             const formData = new FormData();
             formData.append('action', 'psych_path_get_station_content');
-            formData.append('nonce', '<?php echo wp_create_nonce(PSYCH_PATH_AJAX_NONCE); ?>');
+            formData.append('nonce', '<?php echo wp_create_nonce(PSYCH_PATH_AJAX
+_NONCE); ?>');
             formData.append('station_data', JSON.stringify(stationDetails));
 
-            fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+            fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST'
+, body: formData })
                 .then(response => response.json())
                 .then(res => {
-                    modalContent.innerHTML = res.success ? res.data.html : `<div class="psych-alert psych-alert-danger">${res.data.message || 'خطا'}</div>`;
-                    if (res.success && stationDetails.mission_type === 'gform') {
-                        const formId = parseInt(stationDetails.mission_target.replace('form_id:', ''), 10);
+                    modalContent.innerHTML = res.success ? res.data.html : `<div
+ class="psych-alert psych-alert-danger">${res.data.message || 'خطا'}</div>`;
+                    if (res.success && stationDetails.mission_type === 'gform')
+{
+                        const formId = parseInt(stationDetails.mission_target.re
+place('form_id:', ''), 10);
                         if (formId > 0 && typeof jQuery !== 'undefined') {
-                            // Trigger the Gravity Forms render event to initialize the form.
-                            jQuery(document).trigger('gform_post_render', [formId, 1]);
+                            // Trigger the Gravity Forms render event to initial
+ize the form.
+                            jQuery(document).trigger('gform_post_render', [formI
+d, 1]);
                         }
                     }
                 })
                 .catch(() => {
-                    modalContent.innerHTML = '<div class="psych-alert psych-alert-danger">خطای سرور.</div>';
+                    modalContent.innerHTML = '<div class="psych-alert psych-aler
+t-danger">خطای سرور.</div>';
                 });
         };
 
@@ -3187,45 +3484,60 @@ private function render_station_modal_javascript() {
             const pathContainer = findClosest(button, '.psych-path-container');
             if (!stationItem || !pathContainer) return;
 
-            const stationDetails = JSON.parse(stationItem.getAttribute('data-station-details'));
+            const stationDetails = JSON.parse(stationItem.getAttribute('data-sta
+tion-details'));
             if (!stationDetails) return;
 
             const originalHtml = button.innerHTML;
-            const spinner = '<span class="psych-loading-spinner" style="width:16px; height:16px; border-width:2px; display:inline-block; vertical-align:middle; margin-right:8px; border-style:solid; border-radius:50%; border-color:currentColor; border-top-color:transparent; animation:spin 1s linear infinite;"></span>';
+            const spinner = '<span class="psych-loading-spinner" style="width:16
+px; height:16px; border-width:2px; display:inline-block; vertical-align:middle;
+margin-right:8px; border-style:solid; border-radius:50%; border-color:currentCol
+or; border-top-color:transparent; animation:spin 1s linear infinite;"></span>';
             button.disabled = true;
             button.innerHTML = spinner + 'در حال پردازش...';
 
             const formData = new FormData();
             formData.append('action', 'psych_path_complete_mission');
-            formData.append('nonce', '<?php echo wp_create_nonce(PSYCH_PATH_AJAX_NONCE); ?>');
+            formData.append('nonce', '<?php echo wp_create_nonce(PSYCH_PATH_AJAX
+_NONCE); ?>');
             formData.append('node_id', stationDetails.station_node_id);
             formData.append('station_data', JSON.stringify(stationDetails));
 
             // New: Add custom rewards from button if it exists
             if (button.hasAttribute('data-rewards')) {
-                formData.append('custom_rewards', button.getAttribute('data-rewards'));
+                formData.append('custom_rewards', button.getAttribute('data-rewa
+rds'));
             }
 
-            fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+            fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST'
+, body: formData })
                 .then(response => response.json())
                 .then(response => {
                     if (response.success) {
-                        // If a station was revealed, the simplest way to show it is to reload.
+                        // If a station was revealed, the simplest way to show i
+t is to reload.
                         if (response.data.full_path_refresh) {
-                            psych_show_rewards_notification(response.data.rewards);
-                            // Wait for the user to close the rewards popup before reloading.
-                            document.addEventListener('psych_rewards_closed', function() {
+                            psych_show_rewards_notification(response.data.reward
+s);
+                            // Wait for the user to close the rewards popup befo
+re reloading.
+                            document.addEventListener('psych_rewards_closed', fu
+nction() {
                                 location.reload();
                             }, { once: true });
                             return;
                         }
 
-                        const modal = document.getElementById('psych-station-modal');
-                        if (modal.style.display !== 'none') psych_close_station_modal();
+                        const modal = document.getElementById('psych-station-mod
+al');
+                        if (modal.style.display !== 'none') psych_close_station_
+modal();
 
                         if (response.data.new_html) {
-                            const missionContent = stationItem.querySelector('.psych-accordion-mission-content');
-                            if(missionContent) missionContent.innerHTML = response.data.new_html;
+                            const missionContent = stationItem.querySelector('.p
+sych-accordion-mission-content');
+                            if(missionContent) missionContent.innerHTML = respon
+se.data.new_html;
                         }
 
                         stationItem.classList.add('completed');
@@ -3236,8 +3548,10 @@ private function render_station_modal_javascript() {
                         psych_refresh_next_station(stationItem);
 
                         // Unlock a specific station if defined in rewards
-                        if (response.data.rewards && response.data.rewards.unlocked_station_id) {
-                            psych_force_unlock_station(response.data.rewards.unlocked_station_id);
+                        if (response.data.rewards && response.data.rewards.unloc
+ked_station_id) {
+                            psych_force_unlock_station(response.data.rewards.unl
+ocked_station_id);
                         }
 
                     } else {
@@ -3262,26 +3576,36 @@ private function render_station_modal_javascript() {
 
         function psych_show_rewards_notification(rewards) {
             let rewardsHtml = '<ul>';
-            if (rewards && rewards.points) rewardsHtml += `<li><i class="fas fa-star"></i> شما <strong>${rewards.points}</strong> امتیاز کسب کردید!</li>`;
-            if (rewards && rewards.badge) rewardsHtml += `<li><i class="fas fa-medal"></i> نشان <strong>"${rewards.badge}"</strong> را دریافت نمودید!</li>`;
-            if (rewards && rewards.next_station_message) rewardsHtml += `<li><i class="fas fa-arrow-right"></i> ${rewards.next_station_message}</li>`;
-            if (rewardsHtml === '<ul>') rewardsHtml += '<li><i class="fas fa-check-circle"></i> با موفقیت انجام شد!</li>';
+            if (rewards && rewards.points) rewardsHtml += `<li><i class="fas fa-
+star"></i> شما <strong>${rewards.points}</strong> امتیاز کسب کردید!</li>`;
+            if (rewards && rewards.badge) rewardsHtml += `<li><i class="fas fa-m
+edal"></i> نشان <strong>"${rewards.badge}"</strong> را دریافت نمودید!</li>`;
+            if (rewards && rewards.next_station_message) rewardsHtml += `<li><i
+class="fas fa-arrow-right"></i> ${rewards.next_station_message}</li>`;
+            if (rewardsHtml === '<ul>') rewardsHtml += '<li><i class="fas fa-che
+ck-circle"></i> با موفقیت انجام شد!</li>';
             rewardsHtml += '</ul>';
 
             const notification = document.createElement('div');
             notification.className = 'psych-rewards-overlay';
-            notification.innerHTML = `<div class="psych-rewards-popup"><div class="psych-rewards-header"><i class="fas fa-gift"></i><h3>عالی بود!</h3></div><div class="psych-rewards-body">${rewardsHtml}</div><button class="psych-rewards-close">ادامه می‌دهم</button></div>`;
+            notification.innerHTML = `<div class="psych-rewards-popup"><div clas
+s="psych-rewards-header"><i class="fas fa-gift"></i><h3>عالی بود!</h3></div><div
+ class="psych-rewards-body">${rewardsHtml}</div><button class="psych-rewards-clo
+se">ادامه می‌دهم</button></div>`;
             document.body.appendChild(notification);
 
-            if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
+            if (typeof confetti === 'function') confetti({ particleCount: 150, s
+pread: 90, origin: { y: 0.6 } });
 
             notification.addEventListener('click', function(e) {
-                if (e.target.matches('.psych-rewards-close, .psych-rewards-overlay')) {
+                if (e.target.matches('.psych-rewards-close, .psych-rewards-overl
+ay')) {
                     notification.style.opacity = '0';
                     setTimeout(() => {
                         notification.remove();
                         // Dispatch a custom event that can be listened for.
-                        document.dispatchEvent(new CustomEvent('psych_rewards_closed'));
+                        document.dispatchEvent(new CustomEvent('psych_rewards_cl
+osed'));
                     }, 300);
                 }
             });
@@ -3291,50 +3615,67 @@ private function render_station_modal_javascript() {
             if (!pathContainer) return;
 
             const userCompletedStations = {};
-            pathContainer.querySelectorAll('.completed[data-station-node-id]').forEach(el => {
-                userCompletedStations[el.getAttribute('data-station-node-id')] = true;
+            pathContainer.querySelectorAll('.completed[data-station-node-id]').f
+orEach(el => {
+                userCompletedStations[el.getAttribute('data-station-node-id')] =
+ true;
             });
 
             let previousStationCompleted = true;
 
-            pathContainer.querySelectorAll('[data-station-node-id]').forEach(station => {
-                const details = JSON.parse(station.getAttribute('data-station-details')) || {};
+            pathContainer.querySelectorAll('[data-station-node-id]').forEach(sta
+tion => {
+                const details = JSON.parse(station.getAttribute('data-station-de
+tails')) || {};
                 const nodeId = details.station_node_id;
-                let isUnlocked = details.unlock_trigger === 'independent' || previousStationCompleted;
+                let isUnlocked = details.unlock_trigger === 'independent' || pre
+viousStationCompleted;
 
                 // Find elements within the station card/item
                 const badge = station.querySelector('.psych-status-badge');
-                const icon = station.querySelector('.psych-timeline-icon i, .psych-accordion-icon i, .psych-card-icon i');
+                const icon = station.querySelector('.psych-timeline-icon i, .psy
+ch-accordion-icon i, .psych-card-icon i');
                 const listNumber = station.querySelector('.psych-list-number');
-                const button = station.querySelector('.psych-station-action-btn, .psych-accordion-action-btn, .psych-card-action-btn, .psych-list-action-btn');
+                const button = station.querySelector('.psych-station-action-btn,
+ .psych-accordion-action-btn, .psych-card-action-btn, .psych-list-action-btn');
 
                 if (userCompletedStations[nodeId]) {
-                    station.className = station.className.replace(/ open | locked /g, ' ').trim() + ' completed';
+                    station.className = station.className.replace(/ open | locke
+d /g, ' ').trim() + ' completed';
                     if (badge) {
-                        badge.className = badge.className.replace(/ open | locked /g, ' ').trim() + ' completed';
-                        badge.innerHTML = '<i class="fas fa-check"></i> تکمیل شده';
+                        badge.className = badge.className.replace(/ open | locke
+d /g, ' ').trim() + ' completed';
+                        badge.innerHTML = '<i class="fas fa-check"></i> تکمیل ش
+ده';
                     }
                     if (icon) icon.className = 'fas fa-check-circle';
-                    if (listNumber) listNumber.innerHTML = '<i class="fas fa-check"></i>';
+                    if (listNumber) listNumber.innerHTML = '<i class="fas fa-che
+ck"></i>';
                     if (button) {
                         button.textContent = 'مشاهده نتیجه';
                         button.disabled = false;
                     }
                 } else if (isUnlocked) {
-                    station.className = station.className.replace(/ locked | completed /g, ' ').trim() + ' open';
+                    station.className = station.className.replace(/ locked | com
+pleted /g, ' ').trim() + ' open';
                     if (badge) {
-                        badge.className = badge.className.replace(/ locked | completed /g, ' ').trim() + ' open';
+                        badge.className = badge.className.replace(/ locked | com
+pleted /g, ' ').trim() + ' open';
                         badge.innerHTML = '<i class="fas fa-unlock"></i> باز';
                     }
-                    if (icon) icon.className = details.icon || 'fas fa-door-open';
+                    if (icon) icon.className = details.icon || 'fas fa-door-open
+';
                     if (button) {
-                        button.textContent = details.mission_button_text || 'مشاهده ماموریت';
+                        button.textContent = details.mission_button_text || 'مش
+اهده ماموریت';
                         button.disabled = false;
                     }
                 } else {
-                    station.className = station.className.replace(/ open | completed /g, ' ').trim() + ' locked';
+                    station.className = station.className.replace(/ open | compl
+eted /g, ' ').trim() + ' locked';
                     if (badge) {
-                        badge.className = badge.className.replace(/ open | completed /g, ' ').trim() + ' locked';
+                        badge.className = badge.className.replace(/ open | compl
+eted /g, ' ').trim() + ' locked';
                         badge.innerHTML = '<i class="fas fa-lock"></i> قفل';
                     }
                     if (icon) icon.className = details.icon || 'fas fa-lock';
@@ -3345,20 +3686,28 @@ private function render_station_modal_javascript() {
                 }
 
                 if (details.unlock_trigger === 'sequential') {
-                    previousStationCompleted = userCompletedStations[nodeId] || false;
+                    previousStationCompleted = userCompletedStations[nodeId] ||
+false;
                 }
             });
 
             // Update progress bar
-            const total = pathContainer.querySelectorAll('[data-station-node-id]').length;
+            const total = pathContainer.querySelectorAll('[data-station-node-id]
+').length;
             const completedCount = Object.keys(userCompletedStations).length;
-            const percentage = total > 0 ? Math.round((completedCount / total) * 100) : 0;
-            const progressText = pathContainer.querySelector('.psych-progress-text');
-            const progressPercentage = pathContainer.querySelector('.psych-progress-percentage');
-            const progressFill = pathContainer.querySelector('.psych-progress-fill');
+            const percentage = total > 0 ? Math.round((completedCount / total) *
+ 100) : 0;
+            const progressText = pathContainer.querySelector('.psych-progress-te
+xt');
+            const progressPercentage = pathContainer.querySelector('.psych-progr
+ess-percentage');
+            const progressFill = pathContainer.querySelector('.psych-progress-fi
+ll');
 
-            if(progressText) progressText.textContent = `پیشرفت: ${completedCount} از ${total} ایستگاه`;
-            if(progressPercentage) progressPercentage.textContent = `${percentage}%`;
+            if(progressText) progressText.textContent = `پیشرفت: ${completedCoun
+t} از ${total} ایستگاه`;
+            if(progressPercentage) progressPercentage.textContent = `${percentag
+e}%`;
             if(progressFill) progressFill.style.width = `${percentage}%`;
         }
 
@@ -3366,23 +3715,32 @@ private function render_station_modal_javascript() {
             if (!stationItem) return;
             const nextStation = stationItem.nextElementSibling;
 
-            if (nextStation && nextStation.matches('.psych-accordion-item') && nextStation.classList.contains('locked')) {
-                const stationData = nextStation.getAttribute('data-station-details');
+            if (nextStation && nextStation.matches('.psych-accordion-item') && n
+extStation.classList.contains('locked')) {
+                const stationData = nextStation.getAttribute('data-station-detai
+ls');
 
                 const formData = new FormData();
-                formData.append('action', 'psych_path_get_inline_station_content');
-                formData.append('nonce', '<?php echo wp_create_nonce(PSYCH_PATH_AJAX_NONCE); ?>');
+                formData.append('action', 'psych_path_get_inline_station_content
+');
+                formData.append('nonce', '<?php echo wp_create_nonce(PSYCH_PATH_
+AJAX_NONCE); ?>');
                 formData.append('station_data', stationData);
 
-                fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+                fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'P
+OST', body: formData })
                     .then(response => response.json())
                     .then(res => {
                         if (res.success) {
-                            nextStation.setAttribute('data-station-details', JSON.stringify(res.data.station_data));
-                            nextStation.querySelector('.psych-accordion-mission-content').innerHTML = res.data.html;
+                            nextStation.setAttribute('data-station-details', JSO
+N.stringify(res.data.station_data));
+                            nextStation.querySelector('.psych-accordion-mission-
+content').innerHTML = res.data.html;
                             nextStation.classList.remove('locked');
                             nextStation.classList.add(res.data.status);
-                            nextStation.querySelector('.psych-status-badge').outerHTML = res.data.html.match(/<span class="psych-status-badge[^>]*>.*?<\/span>/)[0] || '';
+                            nextStation.querySelector('.psych-status-badge').out
+erHTML = res.data.html.match(/<span class="psych-status-badge[^>]*>.*?<\/span>/)
+[0] || '';
                         }
                     });
             }
@@ -3390,33 +3748,45 @@ private function render_station_modal_javascript() {
 
         function psych_force_unlock_station(stationId) {
             if (!stationId) return;
-            const stationToUnlock = document.querySelector(`[data-station-node-id="${stationId}"]`);
+            const stationToUnlock = document.querySelector(`[data-station-node-i
+d="${stationId}"]`);
 
-            if (stationToUnlock && stationToUnlock.matches('.psych-accordion-item') && stationToUnlock.classList.contains('locked')) {
-                const stationData = stationToUnlock.getAttribute('data-station-details');
+            if (stationToUnlock && stationToUnlock.matches('.psych-accordion-ite
+m') && stationToUnlock.classList.contains('locked')) {
+                const stationData = stationToUnlock.getAttribute('data-station-d
+etails');
 
                 const formData = new FormData();
-                formData.append('action', 'psych_path_get_inline_station_content');
-                formData.append('nonce', '<?php echo wp_create_nonce(PSYCH_PATH_AJAX_NONCE); ?>');
+                formData.append('action', 'psych_path_get_inline_station_content
+');
+                formData.append('nonce', '<?php echo wp_create_nonce(PSYCH_PATH_
+AJAX_NONCE); ?>');
                 formData.append('station_data', stationData);
 
-                fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+                fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'P
+OST', body: formData })
                     .then(response => response.json())
                     .then(res => {
                         if (res.success) {
-                            stationToUnlock.setAttribute('data-station-details', JSON.stringify(res.data.station_data));
-                            const contentArea = stationToUnlock.querySelector('.psych-accordion-mission-content');
-                            if(contentArea) contentArea.innerHTML = res.data.html;
+                            stationToUnlock.setAttribute('data-station-details',
+ JSON.stringify(res.data.station_data));
+                            const contentArea = stationToUnlock.querySelector('.
+psych-accordion-mission-content');
+                            if(contentArea) contentArea.innerHTML = res.data.htm
+l;
                             stationToUnlock.classList.remove('locked');
                             stationToUnlock.classList.add(res.data.status);
-                             const statusBadge = stationToUnlock.querySelector('.psych-status-badge');
-                            if(statusBadge) statusBadge.outerHTML = res.data.html.match(/<span class="psych-status-badge[^>]*>.*?<\/span>/)[0] || '';
+                             const statusBadge = stationToUnlock.querySelector('
+.psych-status-badge');
+                            if(statusBadge) statusBadge.outerHTML = res.data.htm
+l.match(/<span class="psych-status-badge[^>]*>.*?<\/span>/)[0] || '';
                         }
                     });
             }
         }
 
-        // Attach listeners for modal close and accordion toggle using vanilla JS
+        // Attach listeners for modal close and accordion toggle using vanilla J
+S
         document.addEventListener('click', function(e) {
             // Close modal
             if (e.target.matches('.psych-modal-close, .psych-modal-overlay')) {
@@ -3427,13 +3797,15 @@ private function render_station_modal_javascript() {
             if (header && !e.target.matches('button, a')) {
                 const content = header.nextElementSibling;
                 if (content && content.matches('.psych-accordion-content')) {
-                    content.style.display = content.style.display === 'block' ? 'none' : 'block';
+                    content.style.display = content.style.display === 'block' ?
+'none' : 'block';
                 }
             }
         });
 
         document.addEventListener('keydown', function(e) {
-            if (e.key === "Escape" && document.getElementById('psych-station-modal').style.display !== 'none') {
+            if (e.key === "Escape" && document.getElementById('psych-station-mod
+al').style.display !== 'none') {
                 psych_close_station_modal();
             }
         });

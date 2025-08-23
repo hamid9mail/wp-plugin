@@ -2,7 +2,8 @@
 /**
  * Admin User Dashboard Module for Psych Complete System
  *
- * Provides a centralized dashboard for admins to view and manage individual user data,
+ * Provides a centralized dashboard for admins to view and manage individual use
+r data,
  * including path progress, gamification stats, and personal notes.
  *
  * @package Psych_Complete_System
@@ -32,18 +33,24 @@ final class Psych_Admin_Dashboard_Module {
     }
 
     private function __construct() {
-        // Hooks are initialized in the init() method, called by the main plugin loader.
+        // Hooks are initialized in the init() method, called by the main plugin
+ loader.
     }
 
     public function init() {
         add_action('admin_menu', [$this, 'add_admin_submenu_page'], 99);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_scripts']);
         add_action('wp_ajax_psych_search_users', [$this, 'ajax_search_users']);
-        add_action('wp_ajax_psych_get_user_dashboard_data', [$this, 'ajax_get_user_dashboard_data']);
-        add_action('wp_ajax_psych_mark_station_status', [$this, 'ajax_mark_station_status']);
-        add_action('wp_ajax_psych_admin_update_points', [$this, 'ajax_admin_update_points']);
-        add_action('wp_ajax_psych_admin_toggle_badge', [$this, 'ajax_admin_toggle_badge']);
-        add_action('wp_ajax_psych_admin_save_note', [$this, 'ajax_admin_save_note']);
+        add_action('wp_ajax_psych_get_user_dashboard_data', [$this, 'ajax_get_us
+er_dashboard_data']);
+        add_action('wp_ajax_psych_mark_station_status', [$this, 'ajax_mark_stati
+on_status']);
+        add_action('wp_ajax_psych_admin_update_points', [$this, 'ajax_admin_upda
+te_points']);
+        add_action('wp_ajax_psych_admin_toggle_badge', [$this, 'ajax_admin_toggl
+e_badge']);
+        add_action('wp_ajax_psych_admin_save_note', [$this, 'ajax_admin_save_not
+e']);
     }
 
     public function add_admin_submenu_page() {
@@ -65,25 +72,32 @@ final class Psych_Admin_Dashboard_Module {
     public function render_dashboard_page() {
         ?>
         <div class="wrap psych-admin-dashboard">
-            <h1><span class="dashicons dashicons-dashboard" style="color:#2271b1;"></span> داشبورد کاربر</h1>
-            <p>در این صفحه می‌توانید اطلاعات یک کاربر خاص را مشاهده و مدیریت کنید.</p>
+            <h1><span class="dashicons dashicons-dashboard" style="color:#2271b1
+;"></span> داشبورد کاربر</h1>
+            <p>در این صفحه می‌توانید اطلاعات یک کاربر خاص را مشاهده و مدیریت کن
+ید.</p>
 
             <div class="psych-admin-card">
-                <h3><span class="dashicons dashicons-search"></span> جستجوی کاربر</h3>
-                <p>برای شروع، کاربر مورد نظر را با نام، ایمیل یا شناسه کاربری جستجو کنید.</p>
-                <input type="text" id="psych-user-search-input" placeholder="جستجو..." style="width: 100%; max-width: 400px; padding: 8px;">
+                <h3><span class="dashicons dashicons-search"></span> جستجوی کار
+بر</h3>
+                <p>برای شروع، کاربر مورد نظر را با نام، ایمیل یا شناسه کاربری ج
+ستجو کنید.</p>
+                <input type="text" id="psych-user-search-input" placeholder="جس
+تجو..." style="width: 100%; max-width: 400px; padding: 8px;">
                 <div id="psych-user-search-results"></div>
             </div>
 
             <div id="psych-user-data-container" style="display: none;">
                 <h2 id="psych-selected-user-name"></h2>
                 <div class="nav-tab-wrapper">
-                    <a href="#path-progress" class="nav-tab nav-tab-active">مسیر رشد</a>
+                    <a href="#path-progress" class="nav-tab nav-tab-active">مسی
+ر رشد</a>
                     <a href="#gamification" class="nav-tab">گیمیفیکیشن</a>
                     <a href="#details" class="nav-tab">جزئیات و یادداشت</a>
                 </div>
 
-                <div class="psych-tab-content active" id="tab-path-progress"></div>
+                <div class="psych-tab-content active" id="tab-path-progress"></d
+iv>
                 <div class="psych-tab-content" id="tab-gamification"></div>
                 <div class="psych-tab-content" id="tab-details"></div>
             </div>
@@ -94,7 +108,8 @@ final class Psych_Admin_Dashboard_Module {
     public function enqueue_admin_scripts($hook) {
         // The hook for a submenu page is toplevel_page_slug_page_submenu_slug
         // The correct hook is `psych-system_page_psych-user-dashboard`
-        // But WordPress can sometimes use the translated menu title. A more robust way is to use the value from add_submenu_page.
+        // But WordPress can sometimes use the translated menu title. A more rob
+ust way is to use the value from add_submenu_page.
         // However, for this fix, we will use the correct slug-based hook.
         if ('psych-system_page_psych-user-dashboard' !== $hook) {
              // A fallback for different environments
@@ -121,14 +136,17 @@ final class Psych_Admin_Dashboard_Module {
         ]);
 
         // Add the script content inline.
-        wp_add_inline_script('psych-admin-dashboard-js', $this->get_admin_dashboard_js());
+        wp_add_inline_script('psych-admin-dashboard-js', $this->get_admin_dashbo
+ard_js());
     }
 
     public function ajax_search_users() {
         check_ajax_referer('psych_user_dashboard_nonce', 'nonce');
-        if (!current_user_can('manage_options')) wp_send_json_error(['message' => 'دسترسی غیرمجاز.']);
+        if (!current_user_can('manage_options')) wp_send_json_error(['message' =
+> 'دسترسی غیرمجاز.']);
 
-        $search_term = isset($_POST['search_term']) ? sanitize_text_field($_POST['search_term']) : '';
+        $search_term = isset($_POST['search_term']) ? sanitize_text_field($_POST
+['search_term']) : '';
         if (empty($search_term)) {
             wp_send_json_success([]);
             return;
@@ -136,12 +154,14 @@ final class Psych_Admin_Dashboard_Module {
 
         $user_query = new WP_User_Query([
             'search'         => '*' . esc_attr($search_term) . '*',
-            'search_columns' => ['ID', 'user_login', 'user_email', 'user_nicename', 'display_name'],
+            'search_columns' => ['ID', 'user_login', 'user_email', 'user_nicenam
+e', 'display_name'],
             'number'         => 10,
         ]);
 
         $users_found = array_map(function($user) {
-            return ['id' => $user->ID, 'display_name' => $user->display_name, 'email' => $user->user_email];
+            return ['id' => $user->ID, 'display_name' => $user->display_name, 'e
+mail' => $user->user_email];
         }, $user_query->get_results());
 
         wp_send_json_success($users_found);
@@ -149,7 +169,8 @@ final class Psych_Admin_Dashboard_Module {
 
     public function ajax_get_user_dashboard_data() {
         check_ajax_referer('psych_user_dashboard_nonce', 'nonce');
-        if (!current_user_can('manage_options')) wp_send_json_error(['message' => 'دسترسی غیرمجاز.']);
+        if (!current_user_can('manage_options')) wp_send_json_error(['message' =
+> 'دسترسی غیرمجاز.']);
 
         $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
         if (!$user_id || !($user_data = get_userdata($user_id))) {
@@ -157,7 +178,8 @@ final class Psych_Admin_Dashboard_Module {
         }
 
         wp_send_json_success([
-            'userName' => $user_data->display_name . ' (' . $user_data->user_email . ')',
+            'userName' => $user_data->display_name . ' (' . $user_data->user_ema
+il . ')',
             'tabs' => [
                 'path_progress' => $this->render_path_progress_tab($user_id),
                 'gamification' => $this->render_gamification_tab($user_id),
@@ -167,38 +189,53 @@ final class Psych_Admin_Dashboard_Module {
     }
 
     private function render_path_progress_tab($user_id) {
-        $completed_stations_raw = get_user_meta($user_id, 'psych_path_completed_stations', true) ?: [];
+        $completed_stations_raw = get_user_meta($user_id, 'psych_path_completed_
+stations', true) ?: [];
         $html = '<h4>ایستگاه‌های تکمیل شده</h4>';
         if (!empty($completed_stations_raw)) {
             $html .= '<ul class="psych-station-list">';
             foreach ($completed_stations_raw as $node_id => $details) {
                 $html .= sprintf(
-                    '<li><code>%s</code> (تکمیل در: %s) <button class="button button-small psych-mark-incomplete" data-node-id="%s">علامت به عنوان تکمیل نشده</button></li>',
-                    esc_html($node_id), esc_html($details['completed_at'] ?? 'N/A'), esc_attr($node_id)
+                    '<li><code>%s</code> (تکمیل در: %s) <button class="button bu
+tton-small psych-mark-incomplete" data-node-id="%s">علامت به عنوان تکمیل نشده</b
+utton></li>',
+                    esc_html($node_id), esc_html($details['completed_at'] ?? 'N/
+A'), esc_attr($node_id)
                 );
             }
             $html .= '</ul>';
         } else {
             $html .= '<p>این کاربر هنوز هیچ ایستگاهی را تکمیل نکرده است.</p>';
         }
-        $html .= '<hr><h4>تکمیل دستی ایستگاه</h4><p>شناسه ایستگاه (Node ID) را برای تکمیل وارد کنید:</p>';
-        $html .= '<input type="text" id="psych-manual-node-id" placeholder="e.g., st_path_xyz_1">';
-        $html .= '<button class="button button-secondary" id="psych-mark-complete-manual">تکمیل کن</button>';
-        $html .= '<p class="description">محدودیت: به دلیل اینکه مسیرها به صورت داینامیک در صفحات ساخته می‌شوند، لیستی از تمام ایستگاه‌های موجود وجود ندارد. برای تکمیل دستی، باید شناسه دقیق ایستگاه را بدانید.</p>';
+        $html .= '<hr><h4>تکمیل دستی ایستگاه</h4><p>شناسه ایستگاه (Node ID) را
+برای تکمیل وارد کنید:</p>';
+        $html .= '<input type="text" id="psych-manual-node-id" placeholder="e.g.
+, st_path_xyz_1">';
+        $html .= '<button class="button button-secondary" id="psych-mark-complet
+e-manual">تکمیل کن</button>';
+        $html .= '<p class="description">محدودیت: به دلیل اینکه مسیرها به صورت
+داینامیک در صفحات ساخته می‌شوند، لیستی از تمام ایستگاه‌های موجود وجود ندارد. بر
+ای تکمیل دستی، باید شناسه دقیق ایستگاه را بدانید.</p>';
         return $html;
     }
 
     private function render_gamification_tab($user_id) {
-        if (!class_exists('Psych_Gamification_Center')) return '<p>ماژول گیمیفیکیشن فعال نیست.</p>';
+        if (!class_exists('Psych_Gamification_Center')) return '<p>ماژول گیمیفی
+کیشن فعال نیست.</p>';
 
         $instance = Psych_Gamification_Center::get_instance();
         $points = (int) get_user_meta($user_id, 'psych_total_points', true);
         $level_info = $instance->get_user_level($user_id);
 
         $html = "<h4>امتیازات و سطوح</h4>";
-        $html .= "<p><strong>امتیاز کل:</strong> " . number_format_i18n($points) . "</p>";
-        $html .= "<p><strong>سطح فعلی:</strong> " . esc_html($level_info['name']) . "</p>";
-        $html .= '<div class="psych-admin-form-inline"><input type="number" id="psych-points-change" placeholder="مثلا: 50 یا -50"><input type="text" id="psych-points-reason" placeholder="دلیل (اختیاری)"><button class="button button-secondary" id="psych-update-points-btn">اعمال تغییر امتیاز</button></div>';
+        $html .= "<p><strong>امتیاز کل:</strong> " . number_format_i18n($points)
+ . "</p>";
+        $html .= "<p><strong>سطح فعلی:</strong> " . esc_html($level_info['name']
+) . "</p>";
+        $html .= '<div class="psych-admin-form-inline"><input type="number" id="
+psych-points-change" placeholder="مثلا: 50 یا -50"><input type="text" id="psych-
+points-reason" placeholder="دلیل (اختیاری)"><button class="button button-seconda
+ry" id="psych-update-points-btn">اعمال تغییر امتیاز</button></div>';
 
         $html .= '<hr><h4>نشان‌ها</h4>';
         $all_badges = $instance->get_badges();
@@ -208,9 +245,13 @@ final class Psych_Admin_Dashboard_Module {
         foreach ($all_badges as $slug => $badge) {
             $has_badge = in_array($slug, $user_badges);
             $html .= sprintf(
-                '<div class="psych-badge-item" style="border-right-color:%s"><span class="psych-badge-icon"><i class="%s"></i></span><span class="psych-badge-name">%s</span><button class="button %s" data-badge-slug="%s">%s</button></div>',
-                esc_attr($badge['color']), esc_attr($badge['icon']), esc_html($badge['name']),
-                $has_badge ? 'button-secondary psych-toggle-badge owned' : 'button-primary psych-toggle-badge',
+                '<div class="psych-badge-item" style="border-right-color:%s"><sp
+an class="psych-badge-icon"><i class="%s"></i></span><span class="psych-badge-na
+me">%s</span><button class="button %s" data-badge-slug="%s">%s</button></div>',
+                esc_attr($badge['color']), esc_attr($badge['icon']), esc_html($b
+adge['name']),
+                $has_badge ? 'button-secondary psych-toggle-badge owned' : 'butt
+on-primary psych-toggle-badge',
                 esc_attr($slug), $has_badge ? 'حذف نشان' : 'اعطای نشان'
             );
         }
@@ -219,12 +260,19 @@ final class Psych_Admin_Dashboard_Module {
     }
 
     private function render_details_tab($user_id) {
-        $referral_count = (int) get_user_meta($user_id, 'psych_referral_count', true);
-        $feedback_count = (int) get_user_meta($user_id, 'psych_feedback_received_count', true);
-        $notebook_content = get_user_meta($user_id, 'psych_user_notebook', true);
+        $referral_count = (int) get_user_meta($user_id, 'psych_referral_count',
+true);
+        $feedback_count = (int) get_user_meta($user_id, 'psych_feedback_received
+_count', true);
+        $notebook_content = get_user_meta($user_id, 'psych_user_notebook', true)
+;
 
-        $html = sprintf('<h4>آمار دیگر</h4><ul><li>تعداد دعوت موفق: %d</li><li>تعداد بازخورد دریافتی: %d</li></ul><hr>', $referral_count, $feedback_count);
-        $html .= sprintf('<h4>دفترچه یادداشت کاربر</h4><textarea id="psych-user-notebook-content" rows="10" style="width:100%%;">%s</textarea><button class="button button-primary" id="psych-save-notebook-btn">ذخیره یادداشت</button>', esc_textarea($notebook_content));
+        $html = sprintf('<h4>آمار دیگر</h4><ul><li>تعداد دعوت موفق: %d</li><li>
+تعداد بازخورد دریافتی: %d</li></ul><hr>', $referral_count, $feedback_count);
+        $html .= sprintf('<h4>دفترچه یادداشت کاربر</h4><textarea id="psych-user-
+notebook-content" rows="10" style="width:100%%;">%s</textarea><button class="but
+ton button-primary" id="psych-save-notebook-btn">ذخیره یادداشت</button>', esc_te
+xtarea($notebook_content));
         return $html;
     }
 
@@ -233,24 +281,32 @@ final class Psych_Admin_Dashboard_Module {
         if (!current_user_can('manage_options')) wp_send_json_error();
 
         $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
-        $node_id = isset($_POST['node_id']) ? sanitize_key($_POST['node_id']) : '';
-        $action  = isset($_POST['action']) ? sanitize_key($_POST['action']) : '';
+        $node_id = isset($_POST['node_id']) ? sanitize_key($_POST['node_id']) :
+'';
+        $action  = isset($_POST['action']) ? sanitize_key($_POST['action']) : ''
+;
 
-        if (!$user_id || empty($node_id) || empty($action)) wp_send_json_error(['message' => 'اطلاعات ناقص است.']);
+        if (!$user_id || empty($node_id) || empty($action)) wp_send_json_error([
+'message' => 'اطلاعات ناقص است.']);
 
-        $completed_stations = get_user_meta($user_id, 'psych_path_completed_stations', true) ?: [];
+        $completed_stations = get_user_meta($user_id, 'psych_path_completed_stat
+ions', true) ?: [];
 
         if ($action === 'psych_mark_station_complete') {
             if (!isset($completed_stations[$node_id])) {
-                $completed_stations[$node_id] = ['completed_at' => current_time('mysql'), 'completed_by' => 'admin'];
+                $completed_stations[$node_id] = ['completed_at' => current_time(
+'mysql'), 'completed_by' => 'admin'];
             }
         } elseif ($action === 'psych_mark_station_incomplete') {
-            if (isset($completed_stations[$node_id])) unset($completed_stations[$node_id]);
+            if (isset($completed_stations[$node_id])) unset($completed_stations[
+$node_id]);
         }
 
-        update_user_meta($user_id, 'psych_path_completed_stations', $completed_stations);
+        update_user_meta($user_id, 'psych_path_completed_stations', $completed_s
+tations);
         wp_cache_delete($user_id, 'user_meta');
-        wp_send_json_success(['message' => 'وضعیت ایستگاه با موفقیت تغییر کرد.']);
+        wp_send_json_success(['message' => 'وضعیت ایستگاه با موفقیت تغییر کرد.']
+);
     }
 
     public function ajax_admin_update_points() {
@@ -259,13 +315,18 @@ final class Psych_Admin_Dashboard_Module {
 
         $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
         $points  = isset($_POST['points']) ? intval($_POST['points']) : 0;
-        $reason  = isset($_POST['reason']) && !empty($_POST['reason']) ? sanitize_text_field($_POST['reason']) : 'تغییر توسط مدیر';
+        $reason  = isset($_POST['reason']) && !empty($_POST['reason']) ? sanitiz
+e_text_field($_POST['reason']) : 'تغییر توسط مدیر';
 
-        if (!$user_id || $points === 0) wp_send_json_error(['message' => 'اطلاعات ناقص است.']);
-        if (!class_exists('Psych_Gamification_Center')) wp_send_json_error(['message' => 'ماژول گیمیفیکیشن فعال نیست.']);
+        if (!$user_id || $points === 0) wp_send_json_error(['message' => 'اطلاع
+ات ناقص است.']);
+        if (!class_exists('Psych_Gamification_Center')) wp_send_json_error(['mes
+sage' => 'ماژول گیمیفیکیشن فعال نیست.']);
 
-        Psych_Gamification_Center::get_instance()->add_points($user_id, $points, $reason);
-        wp_send_json_success(['message' => 'امتیاز کاربر با موفقیت بروزرسانی شد.']);
+        Psych_Gamification_Center::get_instance()->add_points($user_id, $points,
+ $reason);
+        wp_send_json_success(['message' => 'امتیاز کاربر با موفقیت بروزرسانی شد.
+']);
     }
 
     public function ajax_admin_toggle_badge() {
@@ -273,10 +334,13 @@ final class Psych_Admin_Dashboard_Module {
         if (!current_user_can('manage_options')) wp_send_json_error();
 
         $user_id    = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
-        $badge_slug = isset($_POST['badge_slug']) ? sanitize_key($_POST['badge_slug']) : '';
+        $badge_slug = isset($_POST['badge_slug']) ? sanitize_key($_POST['badge_s
+lug']) : '';
 
-        if (!$user_id || empty($badge_slug)) wp_send_json_error(['message' => 'اطلاعات ناقص است.']);
-        if (!class_exists('Psych_Gamification_Center')) wp_send_json_error(['message' => 'ماژول گیمیفیکیشن فعال نیست.']);
+        if (!$user_id || empty($badge_slug)) wp_send_json_error(['message' => '
+اطلاعات ناقص است.']);
+        if (!class_exists('Psych_Gamification_Center')) wp_send_json_error(['mes
+sage' => 'ماژول گیمیفیکیشن فعال نیست.']);
 
         $user_badges = get_user_meta($user_id, 'psych_user_badges', true) ?: [];
         $has_badge = in_array($badge_slug, $user_badges);
@@ -287,7 +351,8 @@ final class Psych_Admin_Dashboard_Module {
             wp_cache_delete($user_id, 'user_meta');
             wp_send_json_success(['message' => 'نشان با موفقیت حذف شد.']);
         } else {
-            Psych_Gamification_Center::get_instance()->award_badge($user_id, $badge_slug);
+            Psych_Gamification_Center::get_instance()->award_badge($user_id, $ba
+dge_slug);
             wp_send_json_success(['message' => 'نشان با موفقیت اعطا شد.']);
         }
     }
@@ -297,7 +362,8 @@ final class Psych_Admin_Dashboard_Module {
         if (!current_user_can('manage_options')) wp_send_json_error();
 
         $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
-        $content = isset($_POST['content']) ? wp_kses_post($_POST['content']) : '';
+        $content = isset($_POST['content']) ? wp_kses_post($_POST['content']) :
+'';
 
         if (!$user_id) wp_send_json_error(['message' => 'کاربر نامعتبر است.']);
 
@@ -310,7 +376,8 @@ final class Psych_Admin_Dashboard_Module {
         return <<<'EOD'
 jQuery(document).ready(function($) {
     let searchTimeout;
-    let currentUserId = null; // Variable to store the currently selected user's ID
+    let currentUserId = null; // Variable to store the currently selected user's
+ ID
 
     const searchInput = $('#psych-user-search-input');
     const searchResults = $('#psych-user-search-results');
@@ -327,7 +394,8 @@ jQuery(document).ready(function($) {
         }
 
         searchTimeout = setTimeout(function() {
-            searchResults.html('<span class="spinner is-active" style="float:none;"></span>').show();
+            searchResults.html('<span class="spinner is-active" style="float:non
+e;"></span>').show();
             $.post(psychAdminDashboard.ajax_url, {
                 action: 'psych_search_users',
                 nonce: psychAdminDashboard.nonce,
@@ -379,12 +447,15 @@ jQuery(document).ready(function($) {
                 $('#tab-details').html(data.tabs.details);
 
                 // Set the first tab as active
-                $('.nav-tab').removeClass('nav-tab-active').first().addClass('nav-tab-active');
-                $('.psych-tab-content').removeClass('active').first().addClass('active');
+                $('.nav-tab').removeClass('nav-tab-active').first().addClass('na
+v-tab-active');
+                $('.psych-tab-content').removeClass('active').first().addClass('
+active');
 
             } else {
                 $('#psych-selected-user-name').text('خطا');
-                dataContainer.find('.psych-tab-content').html('<p>خطا در بارگذاری اطلاعات: ' + response.data.message + '</p>');
+                dataContainer.find('.psych-tab-content').html('<p>خطا در بارگذا
+ری اطلاعات: ' + response.data.message + '</p>');
             }
         });
     }
@@ -402,15 +473,18 @@ jQuery(document).ready(function($) {
     // --- Path Progress Actions ---
     dataContainer.on('click', '.psych-mark-incomplete', function() {
         const nodeId = $(this).data('node-id');
-        if (currentUserId && confirm(`آیا مطمئن هستید که می‌خواهید ایستگاه ${nodeId} را برای این کاربر به حالت "تکمیل نشده" برگردانید؟`)) {
-            updateStationStatus('psych_mark_station_incomplete', currentUserId, nodeId);
+        if (currentUserId && confirm(`آیا مطمئن هستید که می‌خواهید ایستگاه ${nod
+eId} را برای این کاربر به حالت "تکمیل نشده" برگردانید؟`)) {
+            updateStationStatus('psych_mark_station_incomplete', currentUserId,
+nodeId);
         }
     });
 
     dataContainer.on('click', '#psych-mark-complete-manual', function() {
         const nodeId = $('#psych-manual-node-id').val();
         if (nodeId && currentUserId) {
-            updateStationStatus('psych_mark_station_complete', currentUserId, nodeId);
+            updateStationStatus('psych_mark_station_complete', currentUserId, no
+deId);
         } else {
             alert('لطفا شناسه ایستگاه را وارد کنید.');
         }
@@ -427,7 +501,8 @@ jQuery(document).ready(function($) {
             if (response.success) {
                 selectUser(userId); // Refresh data
             } else {
-                alert('خطا: ' + (response.data ? response.data.message : 'Unknown error'));
+                alert('خطا: ' + (response.data ? response.data.message : 'Unknow
+n error'));
                 selectUser(userId);
             }
         });
@@ -467,7 +542,8 @@ jQuery(document).ready(function($) {
             if (response.success) {
                 selectUser(userId);
             } else {
-                alert('خطا: ' + (response.data ? response.data.message : 'Unknown error'));
+                alert('خطا: ' + (response.data ? response.data.message : 'Unknow
+n error'));
                 selectUser(userId);
             }
         });
@@ -484,7 +560,8 @@ jQuery(document).ready(function($) {
             if (response.success) {
                 selectUser(userId);
             } else {
-                alert('خطا: ' + (response.data ? response.data.message : 'Unknown error'));
+                alert('خطا: ' + (response.data ? response.data.message : 'Unknow
+n error'));
                 selectUser(userId);
             }
         });
@@ -514,19 +591,27 @@ jQuery(document).ready(function($) {
     // --- Initial Styling ---
     const styles = `
         .psych-admin-dashboard .psych-admin-card { margin-bottom: 20px; }
-        #psych-user-search-results { border: 1px solid #ddd; background: #fff; margin-top: 5px; max-width: 400px; }
+        #psych-user-search-results { border: 1px solid #ddd; background: #fff; m
+argin-top: 5px; max-width: 400px; }
         .psych-user-list { margin: 0; padding: 0; list-style: none; }
-        .psych-user-list-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .psych-user-list-item { padding: 10px; border-bottom: 1px solid #eee; cu
+rsor: pointer; }
         .psych-user-list-item:last-child { border-bottom: none; }
         .psych-user-list-item:hover { background: #f0f0f0; }
-        .psych-tab-content { display: none; padding: 20px; border: 1px solid #ccc; border-top: none; background: #fff; }
+        .psych-tab-content { display: none; padding: 20px; border: 1px solid #cc
+c; border-top: none; background: #fff; }
         .psych-tab-content.active { display: block; }
-        .psych-station-list, .psych-admin-dashboard ul { list-style: disc; padding-right: 20px; }
-        .psych-station-list li, .psych-admin-dashboard ul li { margin-bottom: 10px; }
+        .psych-station-list, .psych-admin-dashboard ul { list-style: disc; paddi
+ng-right: 20px; }
+        .psych-station-list li, .psych-admin-dashboard ul li { margin-bottom: 10
+px; }
         .nav-tab-wrapper { margin-bottom: 0 !important; }
-        .psych-admin-form-inline, .psych-badge-item { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
-        .psych-badges-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
-        .psych-badge-item { background: #f9f9f9; padding: 10px; border-radius: 4px; border-right: 3px solid; }
+        .psych-admin-form-inline, .psych-badge-item { display: flex; gap: 10px;
+align-items: center; margin-bottom: 10px; }
+        .psych-badges-grid { display: grid; grid-template-columns: repeat(auto-f
+ill, minmax(250px, 1fr)); gap: 15px; }
+        .psych-badge-item { background: #f9f9f9; padding: 10px; border-radius: 4
+px; border-right: 3px solid; }
     `;
     $('head').append('<style>' + styles + '</style>');
 });

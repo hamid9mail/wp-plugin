@@ -1,13 +1,16 @@
 <?php
 /**
- * Plugin Name: Psych Complete System - Dashboard Display (Enhanced Integration Edition)
- * Description: ماژول جامع داشبورد کاربری با یکپارچگی کامل و پشتیبانی از تمام ماژول‌ها
+ * Plugin Name: Psych Complete System - Dashboard Display (Enhanced Integration
+Edition)
+ * Description: ماژول جامع داشبورد کاربری با یکپارچگی کامل و پشتیبانی از تمام م
+اژول‌ها
  * Version: 6.0.0 (Enhanced Integration Edition)
  * Author: Enhanced Integration Team
  *
- * فایل: dashboard-display.php  
+ * فایل: dashboard-display.php
  * این نسخه Enhanced شامل:
- * - هماهنگی کامل با Coach Module , Path Engine .2, Interactive Content .3, Gamification Center .5, Report Card 
+ * - هماهنگی کامل با Coach Module , Path Engine .2, Interactive Content .3, Gami
+fication Center .5, Report Card
  * - پشتیبانی کامل از Coach Impersonation
  * - استفاده از API Functions استاندارد
  * - داشبورد تعاملی و واکنش‌گرا
@@ -28,10 +31,10 @@ final class Psych_Dashboard_Display_Enhanced {
 
     const VERSION = '6.0.0';
     private static $instance = null;
-    
+
     private $viewing_context = null;
     private $cache_expiry = 300; // 5 minutes cache
-    
+
     /**
      * Singleton pattern
      */
@@ -73,11 +76,13 @@ final class Psych_Dashboard_Display_Enhanced {
         add_action('wp_enqueue_scripts', [$this, 'enqueue_frontend_assets']);
         add_action('admin_menu', [$this, 'add_admin_menu']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
-        
+
         // AJAX handlers
-        add_action('wp_ajax_psych_dashboard_refresh', [$this, 'ajax_refresh_dashboard']);
-        add_action('wp_ajax_psych_dashboard_toggle_widget', [$this, 'ajax_toggle_widget']);
-        
+        add_action('wp_ajax_psych_dashboard_refresh', [$this, 'ajax_refresh_dash
+board']);
+        add_action('wp_ajax_psych_dashboard_toggle_widget', [$this, 'ajax_toggle
+_widget']);
+
         // Cache clearing hooks
         add_action('psych_points_awarded', [$this, 'clear_user_cache']);
         add_action('psych_user_earned_badge', [$this, 'clear_user_cache']);
@@ -86,25 +91,29 @@ final class Psych_Dashboard_Display_Enhanced {
 
     public function enqueue_frontend_assets() {
     global $post;
-    
+
     // اضافه کردن Font Awesome - آخرین نسخه 6.7.2
-    wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css', [], '6.7.2');
-    
+    wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/fon
+t-awesome/6.7.2/css/all.min.css', [], '6.7.2');
+
     // Only load on pages with dashboard shortcodes
-    if (is_a($post, 'WP_Post') && $this->has_dashboard_shortcode($post->post_content)) {
+    if (is_a($post, 'WP_Post') && $this->has_dashboard_shortcode($post->post_con
+tent)) {
         wp_enqueue_script('jquery');
-        wp_enqueue_script('chart-js', 'https://cdn.jsdelivr.net/npm/chart.js', [], '3.9.1', true);
-        
-        wp_enqueue_script('psych-dashboard', false, ['jquery', 'chart-js'], self::VERSION, true);
+        wp_enqueue_script('chart-js', 'https://cdn.jsdelivr.net/npm/chart.js', [
+], '3.9.1', true);
+
+        wp_enqueue_script('psych-dashboard', false, ['jquery', 'chart-js'], self
+::VERSION, true);
         wp_add_inline_script('psych-dashboard', $this->get_frontend_js());
-        
+
         wp_localize_script('psych-dashboard', 'psych_dashboard', [
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('psych_dashboard_nonce'),
             'viewing_context' => $this->get_viewing_context(),
             'refresh_interval' => 60000 // 1 minute
         ]);
-        
+
         add_action('wp_head', [$this, 'print_frontend_styles']);
     }
 }
@@ -113,15 +122,19 @@ final class Psych_Dashboard_Display_Enhanced {
 
     public function enqueue_admin_assets($hook) {
         if (strpos($hook, 'psych-dashboard') !== false) {
-            wp_enqueue_script('chart-js', 'https://cdn.jsdelivr.net/npm/chart.js', [], '3.9.1', true);
-            wp_enqueue_script('psych-dashboard-admin', false, ['jquery', 'chart-js'], self::VERSION, true);
-            wp_add_inline_script('psych-dashboard-admin', $this->get_admin_js());
-            
-            wp_localize_script('psych-dashboard-admin', 'psych_dashboard_admin', [
+            wp_enqueue_script('chart-js', 'https://cdn.jsdelivr.net/npm/chart.js
+', [], '3.9.1', true);
+            wp_enqueue_script('psych-dashboard-admin', false, ['jquery', 'chart-
+js'], self::VERSION, true);
+            wp_add_inline_script('psych-dashboard-admin', $this->get_admin_js())
+;
+
+            wp_localize_script('psych-dashboard-admin', 'psych_dashboard_admin',
+ [
                 'ajax_url' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('psych_dashboard_admin_nonce')
             ]);
-            
+
             add_action('admin_head', [$this, 'print_admin_styles']);
         }
     }
@@ -129,7 +142,7 @@ final class Psych_Dashboard_Display_Enhanced {
     private function has_dashboard_shortcode($content) {
         $shortcodes = [
             'psych_dashboard',
-            'psych_gamified_header', 
+            'psych_gamified_header',
             'psych_user_performance_header',
             'psych_user_points_display',
             'psych_user_level_display',
@@ -138,13 +151,13 @@ final class Psych_Dashboard_Display_Enhanced {
             'psych_user_leaderboard',
             'psych_achievement_timeline'
         ];
-        
+
         foreach ($shortcodes as $shortcode) {
             if (has_shortcode($content, $shortcode)) {
                 return true;
             }
         }
-        
+
         return false;
     }
 
@@ -161,14 +174,14 @@ final class Psych_Dashboard_Display_Enhanced {
                 border-radius: 8px;
                 margin: 20px 0;
             }
-            
+
             .psych-admin-stats {
                 display: grid;
                 grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
                 gap: 15px;
                 margin: 20px 0;
             }
-            
+
             .psych-admin-stat {
                 background: #fff;
                 padding: 15px;
@@ -176,19 +189,20 @@ final class Psych_Dashboard_Display_Enhanced {
                 text-align: center;
                 border-left: 4px solid #3498db;
             }
-            
+
             .psych-admin-stat h3 {
                 margin: 0 0 10px 0;
                 color: #3498db;
                 font-size: 24px;
             }
-            
+
             .psych-admin-stat p {
                 margin: 0;
                 color: #666;
                 font-size: 14px;
             }
-			/* =================================================================== */
+                        /* =====================================================
+============== */
 /* ENHANCED LEVEL DISPLAY STYLES */
 /* =================================================================== */
 
@@ -328,7 +342,8 @@ final class Psych_Dashboard_Display_Enhanced {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), trans
+parent);
     animation: shimmer 2s infinite;
 }
 
@@ -524,7 +539,8 @@ final class Psych_Dashboard_Display_Enhanced {
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), trans
+parent);
     transition: left 0.5s;
 }
 
@@ -750,16 +766,16 @@ final class Psych_Dashboard_Display_Enhanced {
     .psych-badges-collection {
         padding: 25px 20px;
     }
-    
+
     .psych-badge-item {
         padding: 18px 12px 15px;
         min-height: 145px;
     }
-    
+
     .psych-badge-icon {
         font-size: 36px;
     }
-    
+
     /* تنظیم ستون‌ها برای تبلت */
     .psych-columns-5 .psych-badges-grid,
     .psych-columns-6 .psych-badges-grid {
@@ -772,46 +788,46 @@ final class Psych_Dashboard_Display_Enhanced {
     .psych-badges-collection {
         padding: 20px 15px;
     }
-    
+
     .psych-badges-grid {
         gap: 15px;
     }
-    
+
     .psych-badge-item {
         padding: 15px 10px 12px;
         min-height: 130px;
     }
-    
+
     .psych-badge-icon {
         font-size: 32px;
         margin-bottom: 10px;
     }
-    
+
     .psych-badge-name {
         font-size: 13px;
     }
-    
+
     .psych-badge-description {
         font-size: 11px;
     }
-    
+
     .psych-badges-stats {
         gap: 15px;
     }
-    
+
     .psych-badges-stat {
         min-width: 80px;
         padding: 12px 15px;
     }
-    
+
     .psych-badges-stat-value {
         font-size: 20px;
     }
-    
+
     .psych-badges-stat-label {
         font-size: 12px;
     }
-    
+
     /* تنظیم ستون‌ها برای موبایل بزرگ */
     .psych-columns-4 .psych-badges-grid,
     .psych-columns-5 .psych-badges-grid,
@@ -825,30 +841,30 @@ final class Psych_Dashboard_Display_Enhanced {
     .psych-badges-collection {
         padding: 15px 10px;
     }
-    
+
     .psych-badges-grid {
         gap: 12px;
     }
-    
+
     .psych-badge-item {
         padding: 12px 8px 10px;
         min-height: 115px;
     }
-    
+
     .psych-badge-icon {
         font-size: 28px;
         margin-bottom: 8px;
     }
-    
+
     .psych-badge-name {
         font-size: 12px;
         margin-bottom: 6px;
     }
-    
+
     .psych-badge-description {
         font-size: 10px;
     }
-    
+
     .psych-badge-earned {
         width: 22px;
         height: 22px;
@@ -856,17 +872,17 @@ final class Psych_Dashboard_Display_Enhanced {
         top: 8px;
         right: 8px;
     }
-    
+
     .psych-badges-stats {
         flex-direction: column;
         gap: 10px;
     }
-    
+
     .psych-badges-stat {
         min-width: auto;
         padding: 10px 12px;
     }
-    
+
     /* تنظیم ستون‌ها برای موبایل کوچک */
     .psych-columns-3 .psych-badges-grid,
     .psych-columns-4 .psych-badges-grid,
@@ -909,12 +925,12 @@ final class Psych_Dashboard_Display_Enhanced {
     .psych-badge-item {
         animation: fadeInUp 0.5s ease-out;
     }
-    
+
     .psych-badge-item:nth-child(2) { animation-delay: 0.1s; }
     .psych-badge-item:nth-child(3) { animation-delay: 0.2s; }
     .psych-badge-item:nth-child(4) { animation-delay: 0.3s; }
     .psych-badge-item:nth-child(5) { animation-delay: 0.4s; }
-    
+
     @keyframes fadeInUp {
         from {
             opacity: 0;
@@ -926,439 +942,476 @@ final class Psych_Dashboard_Display_Enhanced {
         }
     }
 }
-        </style>  
-        <?php  
-    }  
+        </style>
+        <?php
+    }
 
-    // =====================================================================  
-    // FRONTEND JAVASCRIPT  
-    // =====================================================================  
+    // =====================================================================
+    // FRONTEND JAVASCRIPT
+    // =====================================================================
 
-    private function get_frontend_js() {  
-        return '  
-        window.PsychDashboard = {  
-            init: function() {  
-                this.initProgressBars();  
-                this.initCharts();  
-                this.initWidgetToggles();  
-                this.initAutoRefresh();  
-                this.initScrollAnimations();  
-            },  
+    private function get_frontend_js() {
+        return '
+        window.PsychDashboard = {
+            init: function() {
+                this.initProgressBars();
+                this.initCharts();
+                this.initWidgetToggles();
+                this.initAutoRefresh();
+                this.initScrollAnimations();
+            },
 
-            initProgressBars: function() {  
-                // Animate progress bars  
-                setTimeout(() => {  
-                    jQuery(".psych-level-progress-fill, .psych-gh-level-progress-bar").each(function() {  
-                        var percent = jQuery(this).data("percent") || 0;  
-                        jQuery(this).css("width", percent + "%");  
-                    });  
+            initProgressBars: function() {
+                // Animate progress bars
+                setTimeout(() => {
+                    jQuery(".psych-level-progress-fill, .psych-gh-level-progress
+-bar").each(function() {
+                        var percent = jQuery(this).data("percent") || 0;
+                        jQuery(this).css("width", percent + "%");
+                    });
 
-                    jQuery(".psych-path-progress-line").each(function() {  
-                        var percent = jQuery(this).data("percent") || 0;  
-                        jQuery(this).css("width", percent + "%");  
-                    });  
-                }, 500);  
-            },  
+                    jQuery(".psych-path-progress-line").each(function() {
+                        var percent = jQuery(this).data("percent") || 0;
+                        jQuery(this).css("width", percent + "%");
+                    });
+                }, 500);
+            },
 
-            initCharts: function() {  
-                // Initialize any charts if Chart.js is available  
-                if (typeof Chart !== "undefined") {  
-                    this.initProgressChart();  
-                    this.initBadgesChart();  
-                }  
-            },  
+            initCharts: function() {
+                // Initialize any charts if Chart.js is available
+                if (typeof Chart !== "undefined") {
+                    this.initProgressChart();
+                    this.initBadgesChart();
+                }
+            },
 
-            initProgressChart: function() {  
-                var chartEl = document.getElementById("psych-progress-chart");  
-                if (!chartEl) return;  
+            initProgressChart: function() {
+                var chartEl = document.getElementById("psych-progress-chart");
+                if (!chartEl) return;
 
-                var data = JSON.parse(chartEl.dataset.chartData || "{}");  
-                
-                new Chart(chartEl, {  
-                    type: "line",  
-                    data: {  
-                        labels: data.labels || [],  
-                        datasets: [{  
-                            label: "پیشرفت امتیازات",  
-                            data: data.points || [],  
-                            borderColor: "#3498db",  
-                            backgroundColor: "rgba(52, 152, 219, 0.1)",  
-                            tension: 0.4,  
-                            fill: true  
-                        }]  
-                    },  
-                    options: {  
-                        responsive: true,  
-                        maintainAspectRatio: false,  
-                        plugins: {  
-                            legend: {  
-                                display: false  
-                            }  
-                        },  
-                        scales: {  
-                            y: {  
-                                beginAtZero: true  
-                            }  
-                        }  
-                    }  
-                });  
-            },  
+                var data = JSON.parse(chartEl.dataset.chartData || "{}");
 
-            initBadgesChart: function() {  
-                var chartEl = document.getElementById("psych-badges-chart");  
-                if (!chartEl) return;  
+                new Chart(chartEl, {
+                    type: "line",
+                    data: {
+                        labels: data.labels || [],
+                        datasets: [{
+                            label: "پیشرفت امتیازات",
+                            data: data.points || [],
+                            borderColor: "#3498db",
+                            backgroundColor: "rgba(52, 152, 219, 0.1)",
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            },
 
-                var data = JSON.parse(chartEl.dataset.chartData || "{}");  
-                
-                new Chart(chartEl, {  
-                    type: "doughnut",  
-                    data: {  
-                        labels: ["کسب شده", "باقی‌مانده"],  
-                        datasets: [{  
-                            data: [data.earned || 0, data.remaining || 0],  
-                            backgroundColor: ["#27ae60", "#ecf0f1"],  
-                            borderWidth: 0  
-                        }]  
-                    },  
-                    options: {  
-                        responsive: true,  
-                        maintainAspectRatio: false,  
-                        plugins: {  
-                            legend: {  
-                                position: "bottom"  
-                            }  
-                        }  
-                    }  
-                });  
-            },  
+            initBadgesChart: function() {
+                var chartEl = document.getElementById("psych-badges-chart");
+                if (!chartEl) return;
 
-            initWidgetToggles: function() {  
-                jQuery(".psych-widget-toggle").on("click", function() {  
-                    var $widget = jQuery(this).closest(".psych-dashboard-widget");  
-                    var $content = $widget.find(".psych-widget-content");  
-                    var widgetId = $widget.data("widget-id");  
+                var data = JSON.parse(chartEl.dataset.chartData || "{}");
 
-                    $content.slideToggle(300, function() {  
-                        var isCollapsed = !$content.is(":visible");  
-                        jQuery(this).toggleClass("collapsed", isCollapsed);  
-                        
-                        // Save state  
-                        if (widgetId) {  
-                            PsychDashboard.saveWidgetState(widgetId, isCollapsed);  
-                        }  
-                    });  
-                });  
-            },  
+                new Chart(chartEl, {
+                    type: "doughnut",
+                    data: {
+                        labels: ["کسب شده", "باقی‌مانده"],
+                        datasets: [{
+                            data: [data.earned || 0, data.remaining || 0],
+                            backgroundColor: ["#27ae60", "#ecf0f1"],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: "bottom"
+                            }
+                        }
+                    }
+                });
+            },
 
-            saveWidgetState: function(widgetId, isCollapsed) {  
-                jQuery.post(psych_dashboard.ajax_url, {  
-                    action: "psych_dashboard_toggle_widget",  
-                    nonce: psych_dashboard.nonce,  
-                    widget_id: widgetId,  
-                    collapsed: isCollapsed  
-                });  
-            },  
+            initWidgetToggles: function() {
+                jQuery(".psych-widget-toggle").on("click", function() {
+                    var $widget = jQuery(this).closest(".psych-dashboard-widget"
+);
+                    var $content = $widget.find(".psych-widget-content");
+                    var widgetId = $widget.data("widget-id");
 
-            initAutoRefresh: function() {  
-                if (psych_dashboard.refresh_interval > 0) {  
-                    setInterval(() => {  
-                        this.refreshDashboard();  
-                    }, psych_dashboard.refresh_interval);  
-                }  
-            },  
+                    $content.slideToggle(300, function() {
+                        var isCollapsed = !$content.is(":visible");
+                        jQuery(this).toggleClass("collapsed", isCollapsed);
 
-            refreshDashboard: function() {  
-                // Refresh dynamic content without full page reload  
-                jQuery.post(psych_dashboard.ajax_url, {  
-                    action: "psych_dashboard_refresh",  
-                    nonce: psych_dashboard.nonce  
-                }).done(function(response) {  
-                    if (response.success) {  
-                        // Update points display  
-                        if (response.data.points !== undefined) {  
-                            jQuery(".psych-points-value").text(response.data.points.toLocaleString());  
-                        }  
-                        
-                        // Update level progress  
-                        if (response.data.level_progress !== undefined) {  
-                            jQuery(".psych-level-progress-fill").css("width", response.data.level_progress + "%");  
-                        }  
-                        
-                        // Update badges count  
-                        if (response.data.badges_count !== undefined) {  
-                            jQuery(".psych-badges-count").text(response.data.badges_count);  
-                        }  
-                    }  
-                });  
-            },  
+                        // Save state
+                        if (widgetId) {
+                            PsychDashboard.saveWidgetState(widgetId, isCollapsed
+);
+                        }
+                    });
+                });
+            },
 
-            initScrollAnimations: function() {  
-                // Intersection Observer for animations  
-                if ("IntersectionObserver" in window) {  
-                    var observer = new IntersectionObserver(function(entries) {  
-                        entries.forEach(function(entry) {  
-                            if (entry.isIntersecting) {  
-                                entry.target.classList.add("psych-animate-in");  
-                            }  
-                        });  
-                    }, {  
-                        threshold: 0.1  
-                    });  
+            saveWidgetState: function(widgetId, isCollapsed) {
+                jQuery.post(psych_dashboard.ajax_url, {
+                    action: "psych_dashboard_toggle_widget",
+                    nonce: psych_dashboard.nonce,
+                    widget_id: widgetId,
+                    collapsed: isCollapsed
+                });
+            },
 
-                    jQuery(".psych-dashboard-widget").each(function() {  
-                        observer.observe(this);  
-                    });  
-                }  
-            }  
-        };  
+            initAutoRefresh: function() {
+                if (psych_dashboard.refresh_interval > 0) {
+                    setInterval(() => {
+                        this.refreshDashboard();
+                    }, psych_dashboard.refresh_interval);
+                }
+            },
 
-        jQuery(document).ready(function() {  
-            PsychDashboard.init();  
-        });  
-        ';  
-    }  
+            refreshDashboard: function() {
+                // Refresh dynamic content without full page reload
+                jQuery.post(psych_dashboard.ajax_url, {
+                    action: "psych_dashboard_refresh",
+                    nonce: psych_dashboard.nonce
+                }).done(function(response) {
+                    if (response.success) {
+                        // Update points display
+                        if (response.data.points !== undefined) {
+                            jQuery(".psych-points-value").text(response.data.poi
+nts.toLocaleString());
+                        }
 
-    // =====================================================================  
-    // SHORTCODE REGISTRATIONS  
-    // =====================================================================  
+                        // Update level progress
+                        if (response.data.level_progress !== undefined) {
+                            jQuery(".psych-level-progress-fill").css("width", re
+sponse.data.level_progress + "%");
+                        }
 
-    public function register_shortcodes() {  
-        add_shortcode('psych_dashboard', [$this, 'render_main_dashboard']);  
-        add_shortcode('psych_gamified_header', [$this, 'render_gamified_header']);  
-        add_shortcode('psych_user_performance_header', [$this, 'render_performance_header']);  
-        add_shortcode('psych_user_points_display', [$this, 'render_points_display']);  
-        add_shortcode('psych_user_level_display', [$this, 'render_level_display']);  
-        add_shortcode('psych_user_badges_collection', [$this, 'render_badges_collection']);  
-        add_shortcode('psych_progress_path', [$this, 'render_progress_path']);  
-        add_shortcode('psych_user_leaderboard', [$this, 'render_leaderboard']);  
-        add_shortcode('psych_achievement_timeline', [$this, 'render_achievement_timeline']);  
-    }  
+                        // Update badges count
+                        if (response.data.badges_count !== undefined) {
+                            jQuery(".psych-badges-count").text(response.data.bad
+ges_count);
+                        }
+                    }
+                });
+            },
 
-    // =====================================================================  
-    // MAIN DASHBOARD SHORTCODE  
-    // =====================================================================  
+            initScrollAnimations: function() {
+                // Intersection Observer for animations
+                if ("IntersectionObserver" in window) {
+                    var observer = new IntersectionObserver(function(entries) {
 
-    public function render_main_dashboard($atts) {  
-        $atts = shortcode_atts([  
-            'user_id' => 0,  
-            'layout' => 'grid', // grid, list, compact  
-            'widgets' => 'points,level,badges,path,leaderboard,timeline',  
-            'columns' => 'auto'  
-        ], $atts);  
+                        entries.forEach(function(entry) {
+                            if (entry.isIntersecting) {
+                                entry.target.classList.add("psych-animate-in");
 
-        $context = $this->get_viewing_context();  
-        $user_id = $atts['user_id'] ?: $context['viewed_user_id'];  
+                            }
+                        });
+                    }, {
+                        threshold: 0.1
+                    });
 
-        if (!$user_id) {  
-            return '<div class="psych-error">کاربر مشخص نشده است.</div>';  
-        }  
+                    jQuery(".psych-dashboard-widget").each(function() {
+                        observer.observe(this);
+                    });
+                }
+            }
+        };
 
-        $widgets = array_map('trim', explode(',', $atts['widgets']));  
-        $columns_class = $this->get_columns_class($atts['columns'], count($widgets));  
+        jQuery(document).ready(function() {
+            PsychDashboard.init();
+        });
+        ';
+    }
 
-        ob_start();  
-        ?>  
-        <div class="psych-dashboard-container">  
-            <?php if ($context['is_impersonating']): ?>  
-                <div class="psych-impersonation-notice">  
-                    <i class="fas fa-eye"></i>  
-                    شما در حال مشاهده داشبورد <strong><?php echo esc_html(get_userdata($user_id)->display_name); ?></strong> هستید  
-                </div>  
-            <?php endif; ?>  
+    // =====================================================================
+    // SHORTCODE REGISTRATIONS
+    // =====================================================================
 
-            <div class="psych-dashboard-grid <?php echo esc_attr($columns_class); ?>">  
-                <?php foreach ($widgets as $widget): ?>  
-                    <?php $this->render_dashboard_widget($widget, $user_id, $context); ?>  
-                <?php endforeach; ?>  
-            </div>  
-        </div>  
-        <?php  
-        return ob_get_clean();  
-    }  
+    public function register_shortcodes() {
+        add_shortcode('psych_dashboard', [$this, 'render_main_dashboard']);
+        add_shortcode('psych_gamified_header', [$this, 'render_gamified_header']
+);
+        add_shortcode('psych_user_performance_header', [$this, 'render_performan
+ce_header']);
+        add_shortcode('psych_user_points_display', [$this, 'render_points_displa
+y']);
+        add_shortcode('psych_user_level_display', [$this, 'render_level_display'
+]);
+        add_shortcode('psych_user_badges_collection', [$this, 'render_badges_col
+lection']);
+        add_shortcode('psych_progress_path', [$this, 'render_progress_path']);
+        add_shortcode('psych_user_leaderboard', [$this, 'render_leaderboard']);
 
-    private function get_columns_class($columns, $widget_count) {  
-        if ($columns === 'auto') {  
-            if ($widget_count <= 2) return 'columns-2';  
-            if ($widget_count <= 3) return 'columns-3';  
-            return 'columns-4';  
-        }  
-        
-        return 'columns-' . intval($columns);  
-    }  
+        add_shortcode('psych_achievement_timeline', [$this, 'render_achievement_
+timeline']);
+    }
 
-    private function render_dashboard_widget($widget_type, $user_id, $context) {  
-        $widget_data = $this->get_widget_data($widget_type, $user_id);  
-        
-        if (!$widget_data) return;  
+    // =====================================================================
+    // MAIN DASHBOARD SHORTCODE
+    // =====================================================================
 
-        ?>  
-        <div class="psych-dashboard-widget" data-widget-id="<?php echo esc_attr($widget_type); ?>">  
-            <div class="psych-widget-header">  
-                <h3 class="psych-widget-title">  
-                    <i class="<?php echo esc_attr($widget_data['icon']); ?>"></i>  
-                    <?php echo esc_html($widget_data['title']); ?>  
-                </h3>  
-                <div class="psych-widget-actions">  
-                    <button class="psych-widget-toggle" title="بستن/باز کردن">  
-                        <i class="fas fa-chevron-up"></i>  
-                    </button>  
-                </div>  
-            </div>  
-            <div class="psych-widget-content">  
-                <?php echo $widget_data['content']; ?>  
-            </div>  
-        </div>  
-        <?php  
-    }  
+    public function render_main_dashboard($atts) {
+        $atts = shortcode_atts([
+            'user_id' => 0,
+            'layout' => 'grid', // grid, list, compact
+            'widgets' => 'points,level,badges,path,leaderboard,timeline',
+            'columns' => 'auto'
+        ], $atts);
 
-    private function get_widget_data($widget_type, $user_id) {  
-        $widget_map = [  
-            'points' => [  
-                'title' => 'امتیازات',  
-                'icon' => 'fas fa-star',  
-                'content' => $this->render_points_widget($user_id)  
-            ],  
-            'level' => [  
-                'title' => 'سطح',  
-                'icon' => 'fas fa-trophy',  
-                'content' => $this->render_level_widget($user_id)  
-            ],  
-            'badges' => [  
-                'title' => 'نشان‌ها',  
-                'icon' => 'fas fa-medal',  
-                'content' => $this->render_badges_widget($user_id)  
-            ],  
-            'path' => [  
-                'title' => 'مسیر یادگیری',  
-                'icon' => 'fas fa-route',  
-                'content' => $this->render_path_widget($user_id)  
-            ],  
-            'leaderboard' => [  
-                'title' => 'رتبه‌بندی',  
-                'icon' => 'fas fa-list-ol',  
-                'content' => $this->render_leaderboard_widget($user_id)  
-            ],  
-            'timeline' => [  
-                'title' => 'دستاوردهای اخیر',  
-                'icon' => 'fas fa-history',  
-                'content' => $this->render_timeline_widget($user_id)  
-            ]  
-        ];  
+        $context = $this->get_viewing_context();
+        $user_id = $atts['user_id'] ?: $context['viewed_user_id'];
 
-        return $widget_map[$widget_type] ?? null;  
-    }  
+        if (!$user_id) {
+            return '<div class="psych-error">کاربر مشخص نشده است.</div>';
+        }
 
-    // =====================================================================  
-    // INDIVIDUAL SHORTCODE IMPLEMENTATIONS  
-    // =====================================================================  
+        $widgets = array_map('trim', explode(',', $atts['widgets']));
+        $columns_class = $this->get_columns_class($atts['columns'], count($widge
+ts));
 
-    public function render_gamified_header($atts) {  
-        $atts = shortcode_atts([  
-            'user_id' => 0,  
-            'show_avatar' => 'true',  
-            'show_level_progress' => 'true'  
-        ], $atts);  
+        ob_start();
+        ?>
+        <div class="psych-dashboard-container">
+            <?php if ($context['is_impersonating']): ?>
+                <div class="psych-impersonation-notice">
+                    <i class="fas fa-eye"></i>
+                    شما در حال مشاهده داشبورد <strong><?php echo esc_html(get_us
+erdata($user_id)->display_name); ?></strong> هستید
+                </div>
+            <?php endif; ?>
 
-        $context = $this->get_viewing_context();  
-        $user_id = $atts['user_id'] ?: $context['viewed_user_id'];  
+            <div class="psych-dashboard-grid <?php echo esc_attr($columns_class)
+; ?>">
+                <?php foreach ($widgets as $widget): ?>
+                    <?php $this->render_dashboard_widget($widget, $user_id, $con
+text); ?>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
 
-        if (!$user_id) return '';  
+    private function get_columns_class($columns, $widget_count) {
+        if ($columns === 'auto') {
+            if ($widget_count <= 2) return 'columns-2';
+            if ($widget_count <= 3) return 'columns-3';
+            return 'columns-4';
+        }
 
-        $user_data = $this->get_cached_user_data($user_id);  
-        
-        ob_start();  
-        ?>  
-        <div class="psych-gamified-header">  
-            <div class="psych-gh-user">  
-                <?php if ($atts['show_avatar'] === 'true'): ?>  
-                    <img src="<?php echo esc_url(get_avatar_url($user_id, ['size' => 40])); ?>"   
-                         alt="آواتار" class="psych-gh-avatar">  
-                <?php endif; ?>  
-                <div class="psych-gh-user-info">  
-                    <h3><?php echo esc_html($user_data['display_name']); ?></h3>  
-                    <p><?php echo esc_html($user_data['level']['name']); ?></p>  
-                </div>  
-            </div>  
-            
-            <div class="psych-gh-stats">  
-                <div class="psych-gh-stat">  
-                    <i class="fas fa-star" style="color: #f1c40f;"></i>  
-                    <span><?php echo number_format_i18n($user_data['points']); ?></span>  
-                </div>  
-                <div class="psych-gh-stat">  
-                    <i class="fas fa-trophy" style="color: #e67e22;"></i>  
-                    <span><?php echo number_format_i18n($user_data['badges_count']); ?></span>  
-                </div>  
-                <?php if ($atts['show_level_progress'] === 'true' && $user_data['level']['points_to_next'] > 0): ?>  
-                    <div class="psych-gh-stat">  
-                        <span>تا سطح بعد:</span>  
-                        <div class="psych-gh-level-progress">  
-                            <div class="psych-gh-level-progress-bar"   
-                                 data-percent="<?php echo esc_attr($user_data['level']['progress_percentage']); ?>"></div>  
-                        </div>  
-                    </div>  
-                <?php endif; ?>  
-            </div>  
-        </div>  
-        <?php  
-        return ob_get_clean();  
-    }  
+        return 'columns-' . intval($columns);
+    }
 
-    public function render_performance_header($atts) {  
-        $atts = shortcode_atts([  
-            'user_id' => 0,  
-            'show_stats' => 'points,badges,level,progress'  
-        ], $atts);  
+    private function render_dashboard_widget($widget_type, $user_id, $context) {
 
-        $context = $this->get_viewing_context();  
-        $user_id = $atts['user_id'] ?: $context['viewed_user_id'];  
+        $widget_data = $this->get_widget_data($widget_type, $user_id);
 
-        if (!$user_id) return '';  
+        if (!$widget_data) return;
 
-        $user_data = $this->get_cached_user_data($user_id);  
-        $stats = array_map('trim', explode(',', $atts['show_stats']));  
+        ?>
+        <div class="psych-dashboard-widget" data-widget-id="<?php echo esc_attr(
+$widget_type); ?>">
+            <div class="psych-widget-header">
+                <h3 class="psych-widget-title">
+                    <i class="<?php echo esc_attr($widget_data['icon']); ?>"></i
+>
+                    <?php echo esc_html($widget_data['title']); ?>
+                </h3>
+                <div class="psych-widget-actions">
+                    <button class="psych-widget-toggle" title="بستن/باز کردن">
+                        <i class="fas fa-chevron-up"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="psych-widget-content">
+                <?php echo $widget_data['content']; ?>
+            </div>
+        </div>
+        <?php
+    }
 
-        ob_start();  
-        ?>  
-        <div class="psych-perf-header">  
-            <div class="psych-perf-user">  
-                <img src="<?php echo esc_url(get_avatar_url($user_id, ['size' => 80])); ?>"   
-                     alt="آواتار" class="psych-perf-avatar">  
-                <div>  
-                    <h2 class="psych-perf-user-name"><?php echo esc_html($user_data['display_name']); ?></h2>  
-                    <div class="psych-perf-user-level" style="color: <?php echo esc_attr($user_data['level']['color']); ?>">  
-                        <i class="<?php echo esc_attr($user_data['level']['icon']); ?>"></i>  
-                        <?php echo esc_html($user_data['level']['name']); ?>  
-                    </div>  
-                </div>  
-            </div>  
-            
-            <div class="psych-perf-stats">  
-                <?php if (in_array('points', $stats)): ?>  
-                    <div class="psych-perf-stat">  
-                        <div class="psych-perf-stat-value"><?php echo number_format_i18n($user_data['points']); ?></div>  
-                        <div class="psych-perf-stat-label">امتیاز</div>  
-                    </div>  
-                <?php endif; ?>  
-                
-                <?php if (in_array('badges', $stats)): ?>  
-                    <div class="psych-perf-stat">  
-                        <div class="psych-perf-stat-value"><?php echo number_format_i18n($user_data['badges_count']); ?></div>  
-                        <div class="psych-perf-stat-label">نشان</div>  
-                    </div>  
-                <?php endif; ?>  
-                
-                <?php if (in_array('progress', $stats) && isset($user_data['path_progress'])): ?>  
-                    <div class="psych-perf-stat">  
-                        <div class="psych-perf-stat-value"><?php echo $user_data['path_progress']; ?>%</div>  
-                        <div class="psych-perf-stat-label">پیشرفت</div>  
-                    </div>  
-                <?php endif; ?>  
-            </div>  
-        </div>  
-        <?php  
-        return ob_get_clean();  
-    }  
+    private function get_widget_data($widget_type, $user_id) {
+        $widget_map = [
+            'points' => [
+                'title' => 'امتیازات',
+                'icon' => 'fas fa-star',
+                'content' => $this->render_points_widget($user_id)
+            ],
+            'level' => [
+                'title' => 'سطح',
+                'icon' => 'fas fa-trophy',
+                'content' => $this->render_level_widget($user_id)
+            ],
+            'badges' => [
+                'title' => 'نشان‌ها',
+                'icon' => 'fas fa-medal',
+                'content' => $this->render_badges_widget($user_id)
+            ],
+            'path' => [
+                'title' => 'مسیر یادگیری',
+                'icon' => 'fas fa-route',
+                'content' => $this->render_path_widget($user_id)
+            ],
+            'leaderboard' => [
+                'title' => 'رتبه‌بندی',
+                'icon' => 'fas fa-list-ol',
+                'content' => $this->render_leaderboard_widget($user_id)
+            ],
+            'timeline' => [
+                'title' => 'دستاوردهای اخیر',
+                'icon' => 'fas fa-history',
+                'content' => $this->render_timeline_widget($user_id)
+            ]
+        ];
+
+        return $widget_map[$widget_type] ?? null;
+    }
+
+    // =====================================================================
+    // INDIVIDUAL SHORTCODE IMPLEMENTATIONS
+    // =====================================================================
+
+    public function render_gamified_header($atts) {
+        $atts = shortcode_atts([
+            'user_id' => 0,
+            'show_avatar' => 'true',
+            'show_level_progress' => 'true'
+        ], $atts);
+
+        $context = $this->get_viewing_context();
+        $user_id = $atts['user_id'] ?: $context['viewed_user_id'];
+
+        if (!$user_id) return '';
+
+        $user_data = $this->get_cached_user_data($user_id);
+
+        ob_start();
+        ?>
+        <div class="psych-gamified-header">
+            <div class="psych-gh-user">
+                <?php if ($atts['show_avatar'] === 'true'): ?>
+                    <img src="<?php echo esc_url(get_avatar_url($user_id, ['size
+' => 40])); ?>"
+                         alt="آواتار" class="psych-gh-avatar">
+                <?php endif; ?>
+                <div class="psych-gh-user-info">
+                    <h3><?php echo esc_html($user_data['display_name']); ?></h3>
+
+                    <p><?php echo esc_html($user_data['level']['name']); ?></p>
+
+                </div>
+            </div>
+
+            <div class="psych-gh-stats">
+                <div class="psych-gh-stat">
+                    <i class="fas fa-star" style="color: #f1c40f;"></i>
+                    <span><?php echo number_format_i18n($user_data['points']); ?
+></span>
+                </div>
+                <div class="psych-gh-stat">
+                    <i class="fas fa-trophy" style="color: #e67e22;"></i>
+                    <span><?php echo number_format_i18n($user_data['badges_count
+']); ?></span>
+                </div>
+                <?php if ($atts['show_level_progress'] === 'true' && $user_data[
+'level']['points_to_next'] > 0): ?>
+                    <div class="psych-gh-stat">
+                        <span>تا سطح بعد:</span>
+                        <div class="psych-gh-level-progress">
+                            <div class="psych-gh-level-progress-bar"
+                                 data-percent="<?php echo esc_attr($user_data['l
+evel']['progress_percentage']); ?>"></div>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    public function render_performance_header($atts) {
+        $atts = shortcode_atts([
+            'user_id' => 0,
+            'show_stats' => 'points,badges,level,progress'
+        ], $atts);
+
+        $context = $this->get_viewing_context();
+        $user_id = $atts['user_id'] ?: $context['viewed_user_id'];
+
+        if (!$user_id) return '';
+
+        $user_data = $this->get_cached_user_data($user_id);
+        $stats = array_map('trim', explode(',', $atts['show_stats']));
+
+        ob_start();
+        ?>
+        <div class="psych-perf-header">
+            <div class="psych-perf-user">
+                <img src="<?php echo esc_url(get_avatar_url($user_id, ['size' =>
+ 80])); ?>"
+                     alt="آواتار" class="psych-perf-avatar">
+                <div>
+                    <h2 class="psych-perf-user-name"><?php echo esc_html($user_d
+ata['display_name']); ?></h2>
+                    <div class="psych-perf-user-level" style="color: <?php echo
+esc_attr($user_data['level']['color']); ?>">
+                        <i class="<?php echo esc_attr($user_data['level']['icon'
+]); ?>"></i>
+                        <?php echo esc_html($user_data['level']['name']); ?>
+                    </div>
+                </div>
+            </div>
+
+            <div class="psych-perf-stats">
+                <?php if (in_array('points', $stats)): ?>
+                    <div class="psych-perf-stat">
+                        <div class="psych-perf-stat-value"><?php echo number_for
+mat_i18n($user_data['points']); ?></div>
+                        <div class="psych-perf-stat-label">امتیاز</div>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (in_array('badges', $stats)): ?>
+                    <div class="psych-perf-stat">
+                        <div class="psych-perf-stat-value"><?php echo number_for
+mat_i18n($user_data['badges_count']); ?></div>
+                        <div class="psych-perf-stat-label">نشان</div>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (in_array('progress', $stats) && isset($user_data['path
+_progress'])): ?>
+                    <div class="psych-perf-stat">
+                        <div class="psych-perf-stat-value"><?php echo $user_data
+['path_progress']; ?>%</div>
+                        <div class="psych-perf-stat-label">پیشرفت</div>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
 
     public function render_points_display($atts) {
     $atts = shortcode_atts([
@@ -1376,17 +1429,21 @@ final class Psych_Dashboard_Display_Enhanced {
 
     $user_data = $this->get_cached_user_data($user_id);
     $points = $user_data['points'];
-    
+
     // محاسبه trend در صورت درخواست
     $trend_data = '';
     if ($atts['show_trend'] === 'true') {
-        $previous_points = get_user_meta($user_id, 'psych_points_last_week', true) ?: 0;
+        $previous_points = get_user_meta($user_id, 'psych_points_last_week', tru
+e) ?: 0;
         $change = $points - $previous_points;
-        $trend_class = $change > 0 ? 'positive' : ($change < 0 ? 'negative' : 'neutral');
-        $trend_icon = $change > 0 ? 'fa-arrow-up' : ($change < 0 ? 'fa-arrow-down' : 'fa-minus');
-        
+        $trend_class = $change > 0 ? 'positive' : ($change < 0 ? 'negative' : 'n
+eutral');
+        $trend_icon = $change > 0 ? 'fa-arrow-up' : ($change < 0 ? 'fa-arrow-dow
+n' : 'fa-minus');
+
         $trend_data = sprintf(
-            '<div class="psych-points-trend %s"><i class="fas %s"></i> %s</div>',
+            '<div class="psych-points-trend %s"><i class="fas %s"></i> %s</div>'
+,
             $trend_class,
             $trend_icon,
             $change != 0 ? sprintf('%+d این هفته', $change) : 'بدون تغییر'
@@ -1397,9 +1454,10 @@ final class Psych_Dashboard_Display_Enhanced {
 
     ob_start();
     ?>
-    <div class="psych-points-display style-<?php echo esc_attr($atts['style']); ?> <?php echo esc_attr($animated_class); ?>">
+    <div class="psych-points-display style-<?php echo esc_attr($atts['style']);
+?> <?php echo esc_attr($animated_class); ?>">
         <div class="psych-points-content">
-            <div class="psych-points-value" 
+            <div class="psych-points-value"
                  data-count="<?php echo esc_attr($points); ?>">
                 <?php echo number_format_i18n($points); ?>
             </div>
@@ -1432,45 +1490,59 @@ final class Psych_Dashboard_Display_Enhanced {
 
     ob_start();
     ?>
-    <div class="psych-level-display style-<?php echo esc_attr($atts['style']); ?>">
+    <div class="psych-level-display style-<?php echo esc_attr($atts['style']); ?
+>">
         <div class="psych-level-header">
-            <div class="psych-level-icon" style="background: <?php echo esc_attr($level['color'] ?: 'var(--psych-primary)'); ?>">
-                <i class="<?php echo esc_attr($level['icon'] ?: 'fas fa-trophy'); ?>"></i>
+            <div class="psych-level-icon" style="background: <?php echo esc_attr
+($level['color'] ?: 'var(--psych-primary)'); ?>">
+                <i class="<?php echo esc_attr($level['icon'] ?: 'fas fa-trophy')
+; ?>"></i>
             </div>
             <div class="psych-level-info">
-                <h3 class="psych-level-name"><?php echo esc_html($level['name'] ?: 'مبتدی'); ?></h3>
-                <div class="psych-level-number">سطح <?php echo intval($level['level'] ?: 1); ?></div>
+                <h3 class="psych-level-name"><?php echo esc_html($level['name']
+?: 'مبتدی'); ?></h3>
+                <div class="psych-level-number">سطح <?php echo intval($level['le
+vel'] ?: 1); ?></div>
             </div>
         </div>
 
-        <?php if ($atts['show_progress'] === 'true' && ($level['points_to_next'] ?? 0) > 0): ?>
+        <?php if ($atts['show_progress'] === 'true' && ($level['points_to_next']
+ ?? 0) > 0): ?>
             <div class="psych-level-progress">
                 <div class="psych-level-progress-bar">
                     <div class="psych-level-progress-fill"
-                         data-percent="<?php echo esc_attr($level['progress_percentage'] ?: 0); ?>"
-                         style="width: <?php echo esc_attr($level['progress_percentage'] ?: 0); ?>%"></div>
+                         data-percent="<?php echo esc_attr($level['progress_perc
+entage'] ?: 0); ?>"
+                         style="width: <?php echo esc_attr($level['progress_perc
+entage'] ?: 0); ?>%"></div>
                 </div>
                 <div class="psych-level-progress-text">
-                    <span class="current"><?php echo number_format_i18n($level['current_points'] ?: 0); ?></span>
+                    <span class="current"><?php echo number_format_i18n($level['
+current_points'] ?: 0); ?></span>
                     /
-                    <span class="target"><?php echo number_format_i18n($level['points_required'] ?: 100); ?></span>
+                    <span class="target"><?php echo number_format_i18n($level['p
+oints_required'] ?: 100); ?></span>
                     امتیاز
                 </div>
                 <?php if ($atts['show_next_level'] === 'true'): ?>
                     <div class="psych-level-next">
-                        <?php echo number_format_i18n($level['points_to_next']); ?> امتیاز تا 
-                        <strong><?php echo esc_html($level['next_level_name'] ?: 'سطح بعدی'); ?></strong>
+                        <?php echo number_format_i18n($level['points_to_next']);
+ ?> امتیاز تا
+                        <strong><?php echo esc_html($level['next_level_name'] ?:
+ 'سطح بعدی'); ?></strong>
                     </div>
                 <?php endif; ?>
             </div>
         <?php endif; ?>
 
-        <?php if ($atts['show_rewards'] === 'true' && !empty($level['rewards'])): ?>
+        <?php if ($atts['show_rewards'] === 'true' && !empty($level['rewards']))
+: ?>
             <div class="psych-level-rewards">
                 <h4>جوایز این سطح:</h4>
                 <ul class="psych-rewards-list">
                     <?php foreach ($level['rewards'] as $reward): ?>
-                        <li><i class="fas fa-gift"></i> <?php echo esc_html($reward); ?></li>
+                        <li><i class="fas fa-gift"></i> <?php echo esc_html($rew
+ard); ?></li>
                     <?php endforeach; ?>
                 </ul>
             </div>
@@ -1501,8 +1573,9 @@ final class Psych_Dashboard_Display_Enhanced {
 
     $badges_data = $this->get_user_badges_data($user_id);
     $limit = intval($atts['limit']);
-    $columns = max(1, min(6, intval($atts['columns']))); // محدود کردن ستون‌ها بین 1 تا 6
-    
+    $columns = max(1, min(6, intval($atts['columns']))); // محدود کردن ستون‌ها
+بین 1 تا 6
+
     // کلاس‌های مخصوص ستون‌ها و استایل
     $container_classes = [
         'psych-badges-collection-container',
@@ -1514,66 +1587,81 @@ final class Psych_Dashboard_Display_Enhanced {
     ?>
     <div class="<?php echo esc_attr(implode(' ', $container_classes)); ?>">
         <div class="psych-badges-collection">
-            
+
             <?php if ($atts['show_progress'] === 'true'): ?>
             <div class="psych-badges-header">
                 <div class="psych-badges-stats">
                     <div class="psych-badges-stat">
-                        <span class="psych-badges-stat-value"><?php echo count($badges_data['earned']); ?></span>
+                        <span class="psych-badges-stat-value"><?php echo count($
+badges_data['earned']); ?></span>
                         <span class="psych-badges-stat-label">کسب شده</span>
                     </div>
                     <div class="psych-badges-stat">
-                        <span class="psych-badges-stat-value"><?php echo count($badges_data['available']); ?></span>
+                        <span class="psych-badges-stat-value"><?php echo count($
+badges_data['available']); ?></span>
                         <span class="psych-badges-stat-label">در دسترس</span>
                     </div>
                     <div class="psych-badges-stat">
-                        <span class="psych-badges-stat-value"><?php echo count($badges_data['earned']) + count($badges_data['available']); ?></span>
+                        <span class="psych-badges-stat-value"><?php echo count($
+badges_data['earned']) + count($badges_data['available']); ?></span>
                         <span class="psych-badges-stat-label">کل نشان‌ها</span>
                     </div>
                 </div>
             </div>
             <?php endif; ?>
 
-            <?php if (!empty($badges_data['earned']) || (!empty($badges_data['available']) && $atts['show_locked'] === 'true')): ?>
-                
+            <?php if (!empty($badges_data['earned']) || (!empty($badges_data['av
+ailable']) && $atts['show_locked'] === 'true')): ?>
+
                 <div class="psych-badges-grid">
                     <?php
                     $displayed = 0;
-                    $all_badges = array_merge($badges_data['earned'], ($atts['show_locked'] === 'true' ? $badges_data['available'] : []));
-                    
+                    $all_badges = array_merge($badges_data['earned'], ($atts['sh
+ow_locked'] === 'true' ? $badges_data['available'] : []));
+
                     foreach ($all_badges as $badge):
                         if ($displayed >= $limit) break;
                         $displayed++;
-                        
-                        $is_earned = in_array($badge, $badges_data['earned'], true);
+
+                        $is_earned = in_array($badge, $badges_data['earned'], tr
+ue);
                         $badge_class = $is_earned ? 'earned' : 'locked';
                     ?>
-                        <div class="psych-badge-item <?php echo esc_attr($badge_class); ?>" 
-                             data-badge-id="<?php echo esc_attr($badge['id']); ?>">
-                            
+                        <div class="psych-badge-item <?php echo esc_attr($badge_
+class); ?>"
+                             data-badge-id="<?php echo esc_attr($badge['id']); ?
+>">
+
                             <?php if ($is_earned): ?>
                             <div class="psych-badge-earned">
                                 <i class="fas fa-check"></i>
                             </div>
                             <?php endif; ?>
-                            
+
                             <div class="psych-badge-icon">
-                                <i class="<?php echo esc_attr($badge['icon'] ?: ($is_earned ? 'fas fa-award' : 'fas fa-lock')); ?>"></i>
+                                <i class="<?php echo esc_attr($badge['icon'] ?:
+($is_earned ? 'fas fa-award' : 'fas fa-lock')); ?>"></i>
                             </div>
-                            
+
                             <div class="psych-badge-content">
-                                <h4 class="psych-badge-name"><?php echo esc_html($badge['name']); ?></h4>
-                                <p class="psych-badge-description"><?php echo esc_html($badge['description']); ?></p>
-                                
-                                <?php if ($is_earned && isset($badge['earned_date'])): ?>
+                                <h4 class="psych-badge-name"><?php echo esc_html
+($badge['name']); ?></h4>
+                                <p class="psych-badge-description"><?php echo es
+c_html($badge['description']); ?></p>
+
+                                <?php if ($is_earned && isset($badge['earned_dat
+e'])): ?>
                                 <div class="psych-badge-date">
                                     <i class="fas fa-calendar-alt"></i>
-                                    <?php echo esc_html(date_i18n('j F Y', strtotime($badge['earned_date']))); ?>
+                                    <?php echo esc_html(date_i18n('j F Y', strto
+time($badge['earned_date']))); ?>
                                 </div>
-                                <?php elseif (!$is_earned && isset($badge['requirement'])): ?>
+                                <?php elseif (!$is_earned && isset($badge['requi
+rement'])): ?>
                                 <div class="psych-badge-requirement">
                                     <i class="fas fa-info-circle"></i>
-                                    <?php echo esc_html($badge['requirement']); ?>
+                                    <?php echo esc_html($badge['requirement']);
+?>
                                 </div>
                                 <?php endif; ?>
                             </div>
@@ -1587,10 +1675,11 @@ final class Psych_Dashboard_Display_Enhanced {
                         <i class="fas fa-medal"></i>
                     </div>
                     <p>هنوز نشانی کسب نشده است.</p>
-                    <small>با شرکت در فعالیت‌ها و کسب امتیاز نشان‌های خود را دریافت کنید.</small>
+                    <small>با شرکت در فعالیت‌ها و کسب امتیاز نشان‌های خود را در
+یافت کنید.</small>
                 </div>
             <?php endif; ?>
-            
+
         </div>
     </div>
     <?php
@@ -1598,259 +1687,285 @@ final class Psych_Dashboard_Display_Enhanced {
 }
 
 
-    public function render_progress_path($atts) {  
-        $atts = shortcode_atts([  
-            'user_id' => 0,  
-            'path_id' => 0,  
-            'show_progress_line' => 'true'  
-        ], $atts);  
+    public function render_progress_path($atts) {
+        $atts = shortcode_atts([
+            'user_id' => 0,
+            'path_id' => 0,
+            'show_progress_line' => 'true'
+        ], $atts);
 
-        $context = $this->get_viewing_context();  
-        $user_id = $atts['user_id'] ?: $context['viewed_user_id'];  
+        $context = $this->get_viewing_context();
+        $user_id = $atts['user_id'] ?: $context['viewed_user_id'];
 
-        if (!$user_id) return '';  
+        if (!$user_id) return '';
 
-        $path_data = $this->get_user_path_data($user_id, $atts['path_id']);  
+        $path_data = $this->get_user_path_data($user_id, $atts['path_id']);
 
-        if (empty($path_data['stations'])) {  
-            return '<div class="psych-empty-state">  
-                        <i class="fas fa-route"></i>  
-                        <p>مسیری انتخاب نشده است.</p>  
-                    </div>';  
-        }  
+        if (empty($path_data['stations'])) {
+            return '<div class="psych-empty-state">
+                        <i class="fas fa-route"></i>
+                        <p>مسیری انتخاب نشده است.</p>
+                    </div>';
+        }
 
-        ob_start();  
-        ?>  
-        <div class="psych-progress-path">  
-            <?php if ($atts['show_progress_line'] === 'true'): ?>  
-                <div class="psych-path-line">  
-                    <div class="psych-path-progress-line"   
-                         data-percent="<?php echo esc_attr($path_data['completion_percentage']); ?>"></div>  
-                </div>  
-            <?php endif; ?>  
-            
-            <div class="psych-path-stations">  
-                <?php foreach ($path_data['stations'] as $station): ?>  
-                    <div class="psych-path-station <?php echo esc_attr($station['status']); ?>">  
-                        <div class="psych-station-circle">  
-                            <i class="<?php echo esc_attr($station['icon']); ?>"></i>  
-                        </div>  
-                        <h4 class="psych-station-title"><?php echo esc_html($station['title']); ?></h4>  
-                        <p class="psych-station-description"><?php echo esc_html($station['description']); ?></p>  
-                    </div>  
-                <?php endforeach; ?>  
-            </div>  
-        </div>  
-        <?php  
-        return ob_get_clean();  
-    }  
+        ob_start();
+        ?>
+        <div class="psych-progress-path">
+            <?php if ($atts['show_progress_line'] === 'true'): ?>
+                <div class="psych-path-line">
+                    <div class="psych-path-progress-line"
+                         data-percent="<?php echo esc_attr($path_data['completio
+n_percentage']); ?>"></div>
+                </div>
+            <?php endif; ?>
 
-    public function render_leaderboard($atts) {  
-        $atts = shortcode_atts([  
-            'limit' => 10,  
-            'show_current_user' => 'true',  
-            'highlight_top3' => 'true'  
-        ], $atts);  
+            <div class="psych-path-stations">
+                <?php foreach ($path_data['stations'] as $station): ?>
+                    <div class="psych-path-station <?php echo esc_attr($station[
+'status']); ?>">
+                        <div class="psych-station-circle">
+                            <i class="<?php echo esc_attr($station['icon']); ?>"
+></i>
+                        </div>
+                        <h4 class="psych-station-title"><?php echo esc_html($sta
+tion['title']); ?></h4>
+                        <p class="psych-station-description"><?php echo esc_html
+($station['description']); ?></p>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
 
-        $context = $this->get_viewing_context();  
-        $user_id = $context['viewed_user_id'];  
-        
-        $leaderboard_data = $this->get_leaderboard_data(intval($atts['limit']), $user_id);  
+    public function render_leaderboard($atts) {
+        $atts = shortcode_atts([
+            'limit' => 10,
+            'show_current_user' => 'true',
+            'highlight_top3' => 'true'
+        ], $atts);
 
-        ob_start();  
-        ?>  
-        <div class="psych-leaderboard">  
-            <div class="psych-leaderboard-header">  
-                <h3 class="psych-leaderboard-title">جدول امتیازات</h3>  
-            </div>  
-            
-            <ul class="psych-leaderboard-list">  
-                <?php foreach ($leaderboard_data['users'] as $index => $user): ?>  
-                    <li class="psych-leaderboard-item <?php echo $user['ID'] == $user_id ? 'current-user' : ''; ?>">  
-                        <div class="psych-leaderboard-rank <?php echo $this->get_rank_class($index + 1, $atts['highlight_top3']); ?>">  
-                            <?php echo $index + 1; ?>  
-                        </div>  
-                        <img src="<?php echo esc_url(get_avatar_url($user['ID'], ['size' => 40])); ?>"   
-                             alt="آواتار" class="psych-leaderboard-avatar">  
-                        <div class="psych-leaderboard-user">  
-                            <div class="psych-leaderboard-name"><?php echo esc_html($user['display_name']); ?></div>  
-                            <div class="psych-leaderboard-level"><?php echo esc_html($user['level_name']); ?></div>  
-                        </div>  
-                        <div class="psych-leaderboard-points"><?php echo number_format_i18n($user['points']); ?></div>  
-                    </li>  
-                <?php endforeach; ?>  
-            </ul>  
-            
-            <?php if ($atts['show_current_user'] === 'true' && $leaderboard_data['user_rank'] > intval($atts['limit'])): ?>  
-                <div class="psych-leaderboard-item current-user" style="margin-top: 10px; border-top: 2px solid var(--psych-light);">  
-                    <div class="psych-leaderboard-rank"><?php echo $leaderboard_data['user_rank']; ?></div>  
-                    <img src="<?php echo esc_url(get_avatar_url($user_id, ['size' => 40])); ?>"   
-                         alt="آواتار" class="psych-leaderboard-avatar">  
-                    <div class="psych-leaderboard-user">  
-                        <div class="psych-leaderboard-name"><?php echo esc_html($leaderboard_data['current_user']['display_name']); ?></div>  
-                        <div class="psych-leaderboard-level"><?php echo esc_html($leaderboard_data['current_user']['level_name']); ?></div>  
-                    </div>  
-                    <div class="psych-leaderboard-points"><?php echo number_format_i18n($leaderboard_data['current_user']['points']); ?></div>  
-                </div>  
-            <?php endif; ?>  
-        </div>  
-        <?php  
-        return ob_get_clean();  
-    }  
+        $context = $this->get_viewing_context();
+        $user_id = $context['viewed_user_id'];
 
-    public function render_achievement_timeline($atts) {  
-        $atts = shortcode_atts([  
-            'user_id' => 0,  
-            'limit' => 10,  
-            'show_empty' => 'true'  
-        ], $atts);  
+        $leaderboard_data = $this->get_leaderboard_data(intval($atts['limit']),
+$user_id);
 
-        $context = $this->get_viewing_context();  
-        $user_id = $atts['user_id'] ?: $context['viewed_user_id'];  
+        ob_start();
+        ?>
+        <div class="psych-leaderboard">
+            <div class="psych-leaderboard-header">
+                <h3 class="psych-leaderboard-title">جدول امتیازات</h3>
+            </div>
 
-        if (!$user_id) return '';  
+            <ul class="psych-leaderboard-list">
+                <?php foreach ($leaderboard_data['users'] as $index => $user): ?
+>
+                    <li class="psych-leaderboard-item <?php echo $user['ID'] ==
+$user_id ? 'current-user' : ''; ?>">
+                        <div class="psych-leaderboard-rank <?php echo $this->get
+_rank_class($index + 1, $atts['highlight_top3']); ?>">
+                            <?php echo $index + 1; ?>
+                        </div>
+                        <img src="<?php echo esc_url(get_avatar_url($user['ID'],
+ ['size' => 40])); ?>"
+                             alt="آواتار" class="psych-leaderboard-avatar">
+                        <div class="psych-leaderboard-user">
+                            <div class="psych-leaderboard-name"><?php echo esc_h
+tml($user['display_name']); ?></div>
+                            <div class="psych-leaderboard-level"><?php echo esc_
+html($user['level_name']); ?></div>
+                        </div>
+                        <div class="psych-leaderboard-points"><?php echo number_
+format_i18n($user['points']); ?></div>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
 
-        $achievements = $this->get_user_achievements($user_id, intval($atts['limit']));  
+            <?php if ($atts['show_current_user'] === 'true' && $leaderboard_data
+['user_rank'] > intval($atts['limit'])): ?>
+                <div class="psych-leaderboard-item current-user" style="margin-t
+op: 10px; border-top: 2px solid var(--psych-light);">
+                    <div class="psych-leaderboard-rank"><?php echo $leaderboard_
+data['user_rank']; ?></div>
+                    <img src="<?php echo esc_url(get_avatar_url($user_id, ['size
+' => 40])); ?>"
+                         alt="آواتار" class="psych-leaderboard-avatar">
+                    <div class="psych-leaderboard-user">
+                        <div class="psych-leaderboard-name"><?php echo esc_html(
+$leaderboard_data['current_user']['display_name']); ?></div>
+                        <div class="psych-leaderboard-level"><?php echo esc_html
+($leaderboard_data['current_user']['level_name']); ?></div>
+                    </div>
+                    <div class="psych-leaderboard-points"><?php echo number_form
+at_i18n($leaderboard_data['current_user']['points']); ?></div>
+                </div>
+            <?php endif; ?>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
 
-        ob_start();  
-        ?>  
-        <div class="psych-achievement-timeline">  
-            <?php if (!empty($achievements)): ?>  
-                <?php foreach ($achievements as $achievement): ?>  
-                    <div class="psych-timeline-item">  
-                        <div class="psych-timeline-content">  
-                            <h4 class="psych-timeline-title"><?php echo esc_html($achievement['title']); ?></h4>  
-                            <p class="psych-timeline-description"><?php echo esc_html($achievement['description']); ?></p>  
-                            <div class="psych-timeline-date"><?php echo human_time_diff(strtotime($achievement['date'])); ?> پیش</div>  
-                        </div>  
-                    </div>  
-                <?php endforeach; ?>  
-                <div class="psych-timeline-line"></div>  
-            <?php else: ?>  
-                <?php if ($atts['show_empty'] === 'true'): ?>  
-                    <div class="psych-empty-state">  
-                        <i class="fas fa-history"></i>  
-                        <p>هنوز دستاوردی ثبت نشده است.</p>  
-                    </div>  
-                <?php endif; ?>  
-            <?php endif; ?>  
-        </div>  
-        <?php  
-        return ob_get_clean();  
-    }  
+    public function render_achievement_timeline($atts) {
+        $atts = shortcode_atts([
+            'user_id' => 0,
+            'limit' => 10,
+            'show_empty' => 'true'
+        ], $atts);
 
-    // =====================================================================  
-    // WIDGET CONTENT RENDERERS  
-    // =====================================================================  
+        $context = $this->get_viewing_context();
+        $user_id = $atts['user_id'] ?: $context['viewed_user_id'];
 
-    private function render_points_widget($user_id) {  
-        return $this->render_points_display(['user_id' => $user_id]);  
-    }  
+        if (!$user_id) return '';
 
-    private function render_level_widget($user_id) {  
-        return $this->render_level_display(['user_id' => $user_id]);  
-    }  
+        $achievements = $this->get_user_achievements($user_id, intval($atts['lim
+it']));
 
-    private function render_badges_widget($user_id) {  
-        return $this->render_badges_collection(['user_id' => $user_id, 'limit' => 6]);  
-    }  
+        ob_start();
+        ?>
+        <div class="psych-achievement-timeline">
+            <?php if (!empty($achievements)): ?>
+                <?php foreach ($achievements as $achievement): ?>
+                    <div class="psych-timeline-item">
+                        <div class="psych-timeline-content">
+                            <h4 class="psych-timeline-title"><?php echo esc_html
+($achievement['title']); ?></h4>
+                            <p class="psych-timeline-description"><?php echo esc
+_html($achievement['description']); ?></p>
+                            <div class="psych-timeline-date"><?php echo human_ti
+me_diff(strtotime($achievement['date'])); ?> پیش</div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+                <div class="psych-timeline-line"></div>
+            <?php else: ?>
+                <?php if ($atts['show_empty'] === 'true'): ?>
+                    <div class="psych-empty-state">
+                        <i class="fas fa-history"></i>
+                        <p>هنوز دستاوردی ثبت نشده است.</p>
+                    </div>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
 
-    private function render_path_widget($user_id) {  
-        return $this->render_progress_path(['user_id' => $user_id]);  
-    }  
+    // =====================================================================
+    // WIDGET CONTENT RENDERERS
+    // =====================================================================
 
-    private function render_leaderboard_widget($user_id) {  
-        return $this->render_leaderboard(['limit' => 5]);  
-    }  
+    private function render_points_widget($user_id) {
+        return $this->render_points_display(['user_id' => $user_id]);
+    }
 
-    private function render_timeline_widget($user_id) {  
-        return $this->render_achievement_timeline(['user_id' => $user_id, 'limit' => 5]);  
-    }  
+    private function render_level_widget($user_id) {
+        return $this->render_level_display(['user_id' => $user_id]);
+    }
 
-    // =====================================================================  
-    // DATA RETRIEVAL METHODS (Integration with other modules)  
-    // =====================================================================  
+    private function render_badges_widget($user_id) {
+        return $this->render_badges_collection(['user_id' => $user_id, 'limit' =
+> 6]);
+    }
 
-    private function get_cached_user_data($user_id) {  
-        $cache_key = "psych_dashboard_user_data_{$user_id}";  
-        $cached_data = get_transient($cache_key);  
+    private function render_path_widget($user_id) {
+        return $this->render_progress_path(['user_id' => $user_id]);
+    }
 
-        if ($cached_data === false) {  
-            $cached_data = $this->fetch_user_data($user_id);  
-            set_transient($cache_key, $cached_data, $this->cache_expiry);  
-        }  
+    private function render_leaderboard_widget($user_id) {
+        return $this->render_leaderboard(['limit' => 5]);
+    }
 
-        return $cached_data;  
-    }  
+    private function render_timeline_widget($user_id) {
+        return $this->render_achievement_timeline(['user_id' => $user_id, 'limit
+' => 5]);
+    }
 
-    private function fetch_user_data($user_id) {  
-        $user = get_userdata($user_id);  
-        if (!$user) return null;  
+    // =====================================================================
+    // DATA RETRIEVAL METHODS (Integration with other modules)
+    // =====================================================================
 
-        // Get data from integrated modules  
-        $total_points = $this->get_user_total_points($user_id);  
-        $level_info = $this->get_user_level_info($user_id);  
-        $badges_count = $this->get_user_badges_count($user_id);  
-        $path_progress = $this->get_user_path_progress($user_id);  
+    private function get_cached_user_data($user_id) {
+        $cache_key = "psych_dashboard_user_data_{$user_id}";
+        $cached_data = get_transient($cache_key);
 
-        return [  
-            'ID' => $user_id,  
-            'display_name' => $user->display_name,  
-            'points' => $total_points,  
-            'level' => $level_info,  
-            'badges_count' => $badges_count,  
-            'path_progress' => $path_progress  
-        ];  
-    }  
+        if ($cached_data === false) {
+            $cached_data = $this->fetch_user_data($user_id);
+            set_transient($cache_key, $cached_data, $this->cache_expiry);
+        }
 
-    private function get_user_total_points($user_id) {  
-        // Integration with Gamification Center  
-        if (class_exists('Psych_Gamification_Center')) {  
-            $instance = Psych_Gamification_Center::get_instance();  
-            if (method_exists($instance, 'get_user_total_points')) {  
-                return $instance->get_user_total_points($user_id);  
-            }  
-        }  
-        
-        // Fallback  
-        return (int) get_user_meta($user_id, 'psych_total_points', true);  
-    }  
+        return $cached_data;
+    }
 
-    private function get_user_level_info($user_id) {  
-        // Integration with Gamification Center  
-        if (function_exists('psych_gamification_get_user_level_info')) {  
-            return psych_gamification_get_user_level_info($user_id);  
-        }  
-        
-        // Fallback  
-        return [  
-            'name' => 'تازه‌کار',  
-            'icon' => 'fas fa-seedling',  
-            'color' => '#95a5a6',  
-            'points_to_next' => 100,  
-            'current_points' => $this->get_user_total_points($user_id),  
-            'progress_percentage' => 0  
-        ];  
-    }  
+    private function fetch_user_data($user_id) {
+        $user = get_userdata($user_id);
+        if (!$user) return null;
 
-    private function get_user_badges_count($user_id) {  
-        // Integration with Gamification Center  
-        if (class_exists('Psych_Gamification_Center')) {  
-            $instance = Psych_Gamification_Center::get_instance();  
-            if (method_exists($instance, 'get_user_badges_count')) {  
-                return $instance->get_user_badges_count($user_id);  
-            }  
-        }  
-        
-        // Fallback  
-        $badges = get_user_meta($user_id, 'psych_user_badges', true) ?: [];  
-        return count($badges);  
-    }  
+        // Get data from integrated modules
+        $total_points = $this->get_user_total_points($user_id);
+        $level_info = $this->get_user_level_info($user_id);
+        $badges_count = $this->get_user_badges_count($user_id);
+        $path_progress = $this->get_user_path_progress($user_id);
+
+        return [
+            'ID' => $user_id,
+            'display_name' => $user->display_name,
+            'points' => $total_points,
+            'level' => $level_info,
+            'badges_count' => $badges_count,
+            'path_progress' => $path_progress
+        ];
+    }
+
+    private function get_user_total_points($user_id) {
+        // Integration with Gamification Center
+        if (class_exists('Psych_Gamification_Center')) {
+            $instance = Psych_Gamification_Center::get_instance();
+            if (method_exists($instance, 'get_user_total_points')) {
+                return $instance->get_user_total_points($user_id);
+            }
+        }
+
+        // Fallback
+        return (int) get_user_meta($user_id, 'psych_total_points', true);
+    }
+
+    private function get_user_level_info($user_id) {
+        // Integration with Gamification Center
+        if (function_exists('psych_gamification_get_user_level_info')) {
+            return psych_gamification_get_user_level_info($user_id);
+        }
+
+        // Fallback
+        return [
+            'name' => 'تازه‌کار',
+            'icon' => 'fas fa-seedling',
+            'color' => '#95a5a6',
+            'points_to_next' => 100,
+            'current_points' => $this->get_user_total_points($user_id),
+            'progress_percentage' => 0
+        ];
+    }
+
+    private function get_user_badges_count($user_id) {
+        // Integration with Gamification Center
+        if (class_exists('Psych_Gamification_Center')) {
+            $instance = Psych_Gamification_Center::get_instance();
+            if (method_exists($instance, 'get_user_badges_count')) {
+                return $instance->get_user_badges_count($user_id);
+            }
+        }
+
+        // Fallback
+        $badges = get_user_meta($user_id, 'psych_user_badges', true) ?: [];
+        return count($badges);
+    }
 
     private function get_user_badges_data($user_id) {
     $cache_key = "psych_user_badges_{$user_id}";
     $cached_data = get_transient($cache_key);
-    
+
     if ($cached_data !== false) {
         return $cached_data;
     }
@@ -1864,16 +1979,17 @@ final class Psych_Dashboard_Display_Enhanced {
     if (function_exists('psych_gamification_get_user_badges')) {
         $user_badges = psych_gamification_get_user_badges($user_id);
         $all_badges = psych_gamification_get_all_badges();
-        
+
         $earned_ids = wp_list_pluck($user_badges, 'badge_id');
-        
+
         foreach ($all_badges as $badge) {
             if (in_array($badge['id'], $earned_ids)) {
-                $earned_badge = array_filter($user_badges, function($ub) use ($badge) {
+                $earned_badge = array_filter($user_badges, function($ub) use ($b
+adge) {
                     return $ub['badge_id'] == $badge['id'];
                 });
                 $earned_badge = reset($earned_badge);
-                
+
                 $badges_data['earned'][] = [
                     'id' => $badge['id'],
                     'name' => $badge['name'],
@@ -1889,7 +2005,8 @@ final class Psych_Dashboard_Display_Enhanced {
                     'description' => $badge['description'],
                     'icon' => $badge['icon'] ?: 'fas fa-lock',
                     'color' => $badge['color'] ?: '#95a5a6',
-                    'requirement' => $badge['requirement'] ?? 'شرایط کسب این نشان را بررسی کنید'
+                    'requirement' => $badge['requirement'] ?? 'شرایط کسب این نش
+ان را بررسی کنید'
                 ];
             }
         }
@@ -1937,159 +2054,162 @@ final class Psych_Dashboard_Display_Enhanced {
 
     // Cache for 5 minutes
     set_transient($cache_key, $badges_data, 300);
-    
+
     return $badges_data;
 }
 
-    private function get_user_path_progress($user_id) {  
-        // Integration with Path Engine  
-        if (function_exists('psych_path_get_user_progress_percentage')) {  
-            return psych_path_get_user_progress_percentage($user_id);  
-        }  
-        
-        return 0;  
-    }  
+    private function get_user_path_progress($user_id) {
+        // Integration with Path Engine
+        if (function_exists('psych_path_get_user_progress_percentage')) {
+            return psych_path_get_user_progress_percentage($user_id);
+        }
 
-    private function get_user_path_data($user_id, $path_id = 0) {  
-        // Integration with Path Engine  
-        if (function_exists('psych_path_get_user_progress')) {  
-            return psych_path_get_user_progress($user_id, $path_id);  
-        }  
-        
-        // Fallback  
-        return [  
-            'completion_percentage' => 0,  
-            'stations' => []  
-        ];  
-    }  
+        return 0;
+    }
 
-    private function get_leaderboard_data($limit, $user_id) {  
-        global $wpdb;  
-        
-        // Get top users  
-        $query = $wpdb->prepare("  
-            SELECT u.ID, u.display_name,   
-                   COALESCE(um.meta_value, 0) as points  
-            FROM {$wpdb->users} u  
-            LEFT JOIN {$wpdb->usermeta} um ON u.ID = um.user_id   
-                AND um.meta_key = 'psych_total_points'  
-            ORDER BY CAST(COALESCE(um.meta_value, 0) AS UNSIGNED) DESC  
-            LIMIT %d  
-        ", $limit);  
-        
-        $top_users = $wpdb->get_results($query, ARRAY_A);  
-        
-        // Add level info to each user  
-        foreach ($top_users as &$user) {  
-            $level_info = $this->get_user_level_info($user['ID']);  
-            $user['level_name'] = $level_info['name'];  
-            $user['points'] = intval($user['points']);  
-        }  
-        
-        // Get current user rank  
-        $user_rank_query = $wpdb->prepare("  
-            SELECT COUNT(*) + 1 as rank  
-            FROM {$wpdb->usermeta} um1  
-            JOIN {$wpdb->usermeta} um2 ON um1.user_id = um2.user_id   
-                AND um2.meta_key = 'psych_total_points'  
-            WHERE um1.meta_key = 'psych_total_points'  
-                AND CAST(um1.meta_value AS UNSIGNED) >   
-                    (SELECT CAST(COALESCE(meta_value, 0) AS UNSIGNED)   
-                     FROM {$wpdb->usermeta}   
-                     WHERE user_id = %d AND meta_key = 'psych_total_points')  
-        ", $user_id);  
-        
-        $user_rank = $wpdb->get_var($user_rank_query) ?: 1;  
-        
-        // Get current user data  
-        $current_user_data = $this->get_cached_user_data($user_id);  
-        
-        return [  
-            'users' => $top_users,  
-            'user_rank' => $user_rank,  
-            'current_user' => [  
-                'display_name' => $current_user_data['display_name'],  
-                'level_name' => $current_user_data['level']['name'],  
-                'points' => $current_user_data['points']  
-            ]  
-        ];  
-    }  
+    private function get_user_path_data($user_id, $path_id = 0) {
+        // Integration with Path Engine
+        if (function_exists('psych_path_get_user_progress')) {
+            return psych_path_get_user_progress($user_id, $path_id);
+        }
 
-    private function get_user_achievements($user_id, $limit) {  
-        $achievements = [];  
-        
-        // Get recent badge achievements  
-        $badge_log = get_option('psych_badge_log', []);  
-        $user_badge_logs = array_filter($badge_log, function($log) use ($user_id) {  
-            return $log['user_id'] == $user_id;  
-        });  
-        
-        foreach ($user_badge_logs as $log) {  
-            $badge_name = function_exists('psych_get_badge_name') ?   
-                         psych_get_badge_name($log['badge_slug']) : 'نشان جدید';  
-            
-            $achievements[] = [  
-                'title' => "کسب نشان: {$badge_name}",  
-                'description' => "شما نشان {$badge_name} را کسب کردید.",  
-                'date' => $log['timestamp'],  
-                'type' => 'badge'  
-            ];  
-        }  
-        
-        // Get recent points achievements  
-        $points_log = get_option('psych_points_log', []);  
-        $user_points_logs = array_filter($points_log, function($log) use ($user_id) {  
-            return $log['user_id'] == $user_id;  
-        });  
-        
-        foreach ($user_points_logs as $log) {  
-            $achievements[] = [  
-                'title' => "کسب {$log['points']} امتیاز",  
-                'description' => $log['reason'],  
-                'date' => $log['timestamp'],  
-                'type' => 'points'  
-            ];  
-        }  
-        
-        // Sort by date and limit  
-        usort($achievements, function($a, $b) {  
-            return strtotime($b['date']) - strtotime($a['date']);  
-        });  
-        
-        return array_slice($achievements, 0, $limit);  
-    }  
+        // Fallback
+        return [
+            'completion_percentage' => 0,
+            'stations' => []
+        ];
+    }
 
-    private function get_rank_class($rank, $highlight_top3) {  
-        if ($highlight_top3 !== 'true') return '';  
-        
-        switch ($rank) {  
-            case 1: return 'gold';  
-            case 2: return 'silver';  
-            case 3: return 'bronze';  
-            default: return '';  
-        }  
-    }  
+    private function get_leaderboard_data($limit, $user_id) {
+        global $wpdb;
 
-    // =====================================================================  
-    // AJAX HANDLERS  
-    // =====================================================================  
+        // Get top users
+        $query = $wpdb->prepare("
+            SELECT u.ID, u.display_name,
+                   COALESCE(um.meta_value, 0) as points
+            FROM {$wpdb->users} u
+            LEFT JOIN {$wpdb->usermeta} um ON u.ID = um.user_id
+                AND um.meta_key = 'psych_total_points'
+            ORDER BY CAST(COALESCE(um.meta_value, 0) AS UNSIGNED) DESC
+            LIMIT %d
+        ", $limit);
 
-    public function ajax_refresh_dashboard() {  
-        if (!wp_verify_nonce($_POST['nonce'], 'psych_dashboard_nonce')) {  
-            wp_send_json_error(['message' => 'نشست منقضی شده است.']);  
-        }  
-        
-        $context = $this->get_viewing_context();  
-        $user_id = $context['viewed_user_id'];  
-        
-        // Clear cache and get fresh data  
-        $this->clear_user_cache($user_id);  
-        $user_data = $this->get_cached_user_data($user_id);  
-        
-        wp_send_json_success([  
-            'points' => $user_data['points'],  
-            'level_progress' => $user_data['level']['progress_percentage'],  
-            'badges_count' => $user_data['badges_count'],  
+        $top_users = $wpdb->get_results($query, ARRAY_A);
+
+        // Add level info to each user
+        foreach ($top_users as &$user) {
+            $level_info = $this->get_user_level_info($user['ID']);
+            $user['level_name'] = $level_info['name'];
+            $user['points'] = intval($user['points']);
+        }
+
+        // Get current user rank
+        $user_rank_query = $wpdb->prepare("
+            SELECT COUNT(*) + 1 as rank
+            FROM {$wpdb->usermeta} um1
+            JOIN {$wpdb->usermeta} um2 ON um1.user_id = um2.user_id
+                AND um2.meta_key = 'psych_total_points'
+            WHERE um1.meta_key = 'psych_total_points'
+                AND CAST(um1.meta_value AS UNSIGNED) >
+                    (SELECT CAST(COALESCE(meta_value, 0) AS UNSIGNED)
+                     FROM {$wpdb->usermeta}
+                     WHERE user_id = %d AND meta_key = 'psych_total_points')
+        ", $user_id);
+
+        $user_rank = $wpdb->get_var($user_rank_query) ?: 1;
+
+        // Get current user data
+        $current_user_data = $this->get_cached_user_data($user_id);
+
+        return [
+            'users' => $top_users,
+            'user_rank' => $user_rank,
+            'current_user' => [
+                'display_name' => $current_user_data['display_name'],
+                'level_name' => $current_user_data['level']['name'],
+                'points' => $current_user_data['points']
+            ]
+        ];
+    }
+
+    private function get_user_achievements($user_id, $limit) {
+        $achievements = [];
+
+        // Get recent badge achievements
+        $badge_log = get_option('psych_badge_log', []);
+        $user_badge_logs = array_filter($badge_log, function($log) use ($user_id
+) {
+            return $log['user_id'] == $user_id;
+        });
+
+        foreach ($user_badge_logs as $log) {
+            $badge_name = function_exists('psych_get_badge_name') ?
+                         psych_get_badge_name($log['badge_slug']) : 'نشان جدید';
+
+
+            $achievements[] = [
+                'title' => "کسب نشان: {$badge_name}",
+                'description' => "شما نشان {$badge_name} را کسب کردید.",
+                'date' => $log['timestamp'],
+                'type' => 'badge'
+            ];
+        }
+
+        // Get recent points achievements
+        $points_log = get_option('psych_points_log', []);
+        $user_points_logs = array_filter($points_log, function($log) use ($user_
+id) {
+            return $log['user_id'] == $user_id;
+        });
+
+        foreach ($user_points_logs as $log) {
+            $achievements[] = [
+                'title' => "کسب {$log['points']} امتیاز",
+                'description' => $log['reason'],
+                'date' => $log['timestamp'],
+                'type' => 'points'
+            ];
+        }
+
+        // Sort by date and limit
+        usort($achievements, function($a, $b) {
+            return strtotime($b['date']) - strtotime($a['date']);
+        });
+
+        return array_slice($achievements, 0, $limit);
+    }
+
+    private function get_rank_class($rank, $highlight_top3) {
+        if ($highlight_top3 !== 'true') return '';
+
+        switch ($rank) {
+            case 1: return 'gold';
+            case 2: return 'silver';
+            case 3: return 'bronze';
+            default: return '';
+        }
+    }
+
+    // =====================================================================
+    // AJAX HANDLERS
+    // =====================================================================
+
+    public function ajax_refresh_dashboard() {
+        if (!wp_verify_nonce($_POST['nonce'], 'psych_dashboard_nonce')) {
+            wp_send_json_error(['message' => 'نشست منقضی شده است.']);
+        }
+
+        $context = $this->get_viewing_context();
+        $user_id = $context['viewed_user_id'];
+
+        // Clear cache and get fresh data
+        $this->clear_user_cache($user_id);
+        $user_data = $this->get_cached_user_data($user_id);
+
+        wp_send_json_success([
+            'points' => $user_data['points'],
+            'level_progress' => $user_data['level']['progress_percentage'],
+            'badges_count' => $user_data['badges_count'],
                         'path_progress' => $user_data['path_progress']
         ]);
     }
@@ -2098,18 +2218,20 @@ final class Psych_Dashboard_Display_Enhanced {
         if (!wp_verify_nonce($_POST['nonce'], 'psych_dashboard_nonce')) {
             wp_send_json_error(['message' => 'نشست منقضی شده است.']);
         }
-        
+
         $widget_id = sanitize_key($_POST['widget_id']);
         $collapsed = $_POST['collapsed'] === 'true';
-        
+
         $context = $this->get_viewing_context();
         $user_id = $context['real_user_id'];
-        
+
         // Save widget state
-        $widget_states = get_user_meta($user_id, 'psych_dashboard_widget_states', true) ?: [];
+        $widget_states = get_user_meta($user_id, 'psych_dashboard_widget_states'
+, true) ?: [];
         $widget_states[$widget_id] = $collapsed;
-        update_user_meta($user_id, 'psych_dashboard_widget_states', $widget_states);
-        
+        update_user_meta($user_id, 'psych_dashboard_widget_states', $widget_stat
+es);
+
         wp_send_json_success(['message' => 'وضعیت ویجت ذخیره شد.']);
     }
 
@@ -2143,49 +2265,59 @@ final class Psych_Dashboard_Display_Enhanced {
         if (isset($_POST['save_settings'])) {
             $this->save_admin_settings();
         }
-        
-        $settings = get_option('psych_dashboard_settings', $this->get_default_settings());
+
+        $settings = get_option('psych_dashboard_settings', $this->get_default_se
+ttings());
         ?>
         <div class="wrap">
             <h1>تنظیمات داشبورد کاربری</h1>
-            
+
             <form method="post" action="">
-                <?php wp_nonce_field('psych_dashboard_settings', 'psych_dashboard_nonce'); ?>
-                
+                <?php wp_nonce_field('psych_dashboard_settings', 'psych_dashboar
+d_nonce'); ?>
+
                 <table class="form-table">
                     <tr>
                         <th scope="row">فعال‌سازی کش</th>
                         <td>
                             <label>
-                                <input type="checkbox" name="enable_cache" value="1" 
-                                       <?php checked($settings['enable_cache']); ?>>
+                                <input type="checkbox" name="enable_cache" value
+="1"
+                                       <?php checked($settings['enable_cache']);
+ ?>>
                                 استفاده از کش برای بهبود عملکرد
                             </label>
                         </td>
                     </tr>
-                    
+
                     <tr>
                         <th scope="row">مدت زمان کش (ثانیه)</th>
                         <td>
-                            <input type="number" name="cache_expiry" 
-                                   value="<?php echo esc_attr($settings['cache_expiry']); ?>" 
+                            <input type="number" name="cache_expiry"
+                                   value="<?php echo esc_attr($settings['cache_e
+xpiry']); ?>"
                                    min="60" max="3600" class="regular-text">
-                            <p class="description">مدت زمان نگهداری داده‌ها در کش (60 تا 3600 ثانیه)</p>
+                            <p class="description">مدت زمان نگهداری داده‌ها در
+کش (60 تا 3600 ثانیه)</p>
                         </td>
                     </tr>
-                    
+
                     <tr>
                         <th scope="row">بازه به‌روزرسانی خودکار</th>
                         <td>
                             <select name="auto_refresh">
-                                <option value="0" <?php selected($settings['auto_refresh'], 0); ?>>غیرفعال</option>
-                                <option value="30000" <?php selected($settings['auto_refresh'], 30000); ?>>30 ثانیه</option>
-                                <option value="60000" <?php selected($settings['auto_refresh'], 60000); ?>>1 دقیقه</option>
-                                <option value="300000" <?php selected($settings['auto_refresh'], 300000); ?>>5 دقیقه</option>
+                                <option value="0" <?php selected($settings['auto
+_refresh'], 0); ?>>غیرفعال</option>
+                                <option value="30000" <?php selected($settings['
+auto_refresh'], 30000); ?>>30 ثانیه</option>
+                                <option value="60000" <?php selected($settings['
+auto_refresh'], 60000); ?>>1 دقیقه</option>
+                                <option value="300000" <?php selected($settings[
+'auto_refresh'], 300000); ?>>5 دقیقه</option>
                             </select>
                         </td>
                     </tr>
-                    
+
                     <tr>
                         <th scope="row">ویجت‌های پیش‌فرض</th>
                         <td>
@@ -2199,32 +2331,40 @@ final class Psych_Dashboard_Display_Enhanced {
                                 'leaderboard' => 'رتبه‌بندی',
                                 'timeline' => 'دستاوردهای اخیر'
                             ];
-                            
+
                             foreach ($available_widgets as $key => $label):
                             ?>
-                                <label style="display: block; margin-bottom: 8px;">
-                                    <input type="checkbox" name="default_widgets[]" value="<?php echo esc_attr($key); ?>"
-                                           <?php checked(in_array($key, $default_widgets)); ?>>
+                                <label style="display: block; margin-bottom: 8px
+;">
+                                    <input type="checkbox" name="default_widgets
+[]" value="<?php echo esc_attr($key); ?>"
+                                           <?php checked(in_array($key, $default
+_widgets)); ?>>
                                     <?php echo esc_html($label); ?>
                                 </label>
                             <?php endforeach; ?>
                         </td>
                     </tr>
-                    
+
                     <tr>
                         <th scope="row">تعداد ستون‌های پیش‌فرض</th>
                         <td>
                             <select name="default_columns">
-                                <option value="auto" <?php selected($settings['default_columns'], 'auto'); ?>>خودکار</option>
-                                <option value="1" <?php selected($settings['default_columns'], '1'); ?>>1 ستون</option>
-                                <option value="2" <?php selected($settings['default_columns'], '2'); ?>>2 ستون</option>
-                                <option value="3" <?php selected($settings['default_columns'], '3'); ?>>3 ستون</option>
-                                <option value="4" <?php selected($settings['default_columns'], '4'); ?>>4 ستون</option>
+                                <option value="auto" <?php selected($settings['d
+efault_columns'], 'auto'); ?>>خودکار</option>
+                                <option value="1" <?php selected($settings['defa
+ult_columns'], '1'); ?>>1 ستون</option>
+                                <option value="2" <?php selected($settings['defa
+ult_columns'], '2'); ?>>2 ستون</option>
+                                <option value="3" <?php selected($settings['defa
+ult_columns'], '3'); ?>>3 ستون</option>
+                                <option value="4" <?php selected($settings['defa
+ult_columns'], '4'); ?>>4 ستون</option>
                             </select>
                         </td>
                     </tr>
                 </table>
-                
+
                 <h2>آمار سیستم</h2>
                 <table class="form-table">
                     <tr>
@@ -2233,17 +2373,23 @@ final class Psych_Dashboard_Display_Enhanced {
                             <?php
                             $stats = $this->get_system_stats();
                             ?>
-                            <p><strong>کل کاربران:</strong> <?php echo number_format_i18n($stats['total_users']); ?></p>
-                            <p><strong>کاربران فعال:</strong> <?php echo number_format_i18n($stats['active_users']); ?></p>
-                            <p><strong>کل امتیازات اعطا شده:</strong> <?php echo number_format_i18n($stats['total_points']); ?></p>
-                            <p><strong>کل نشان‌های کسب شده:</strong> <?php echo number_format_i18n($stats['total_badges']); ?></p>
+                            <p><strong>کل کاربران:</strong> <?php echo number_fo
+rmat_i18n($stats['total_users']); ?></p>
+                            <p><strong>کاربران فعال:</strong> <?php echo number_
+format_i18n($stats['active_users']); ?></p>
+                            <p><strong>کل امتیازات اعطا شده:</strong> <?php echo
+ number_format_i18n($stats['total_points']); ?></p>
+                            <p><strong>کل نشان‌های کسب شده:</strong> <?php echo
+number_format_i18n($stats['total_badges']); ?></p>
                         </td>
                     </tr>
                 </table>
-                
+
                 <p class="submit">
-                    <input type="submit" name="save_settings" class="button-primary" value="ذخیره تنظیمات">
-                    <input type="submit" name="clear_cache" class="button" value="پاک کردن کش">
+                    <input type="submit" name="save_settings" class="button-prim
+ary" value="ذخیره تنظیمات">
+                    <input type="submit" name="clear_cache" class="button" value
+="پاک کردن کش">
                 </p>
             </form>
         </div>
@@ -2251,16 +2397,18 @@ final class Psych_Dashboard_Display_Enhanced {
     }
 
     private function save_admin_settings() {
-        if (!wp_verify_nonce($_POST['psych_dashboard_nonce'], 'psych_dashboard_settings')) {
+        if (!wp_verify_nonce($_POST['psych_dashboard_nonce'], 'psych_dashboard_s
+ettings')) {
             wp_die('نشست منقضی شده است.');
         }
-        
+
         if (isset($_POST['clear_cache'])) {
             $this->clear_all_cache();
-            add_settings_error('psych_dashboard', 'cache_cleared', 'کش با موفقیت پاک شد.', 'updated');
+            add_settings_error('psych_dashboard', 'cache_cleared', 'کش با موفقی
+ت پاک شد.', 'updated');
             return;
         }
-        
+
         $settings = [
             'enable_cache' => isset($_POST['enable_cache']),
             'cache_expiry' => intval($_POST['cache_expiry']),
@@ -2268,15 +2416,16 @@ final class Psych_Dashboard_Display_Enhanced {
             'default_widgets' => $_POST['default_widgets'] ?? [],
             'default_columns' => sanitize_text_field($_POST['default_columns'])
         ];
-        
+
         // Validate settings
         if ($settings['cache_expiry'] < 60) $settings['cache_expiry'] = 60;
         if ($settings['cache_expiry'] > 3600) $settings['cache_expiry'] = 3600;
-        
+
         update_option('psych_dashboard_settings', $settings);
         $this->cache_expiry = $settings['cache_expiry'];
-        
-        add_settings_error('psych_dashboard', 'settings_saved', 'تنظیمات با موفقیت ذخیره شد.', 'updated');
+
+        add_settings_error('psych_dashboard', 'settings_saved', 'تنظیمات با موف
+قیت ذخیره شد.', 'updated');
     }
 
     private function get_default_settings() {
@@ -2291,46 +2440,46 @@ final class Psych_Dashboard_Display_Enhanced {
 
     private function get_system_stats() {
         global $wpdb;
-        
+
         $stats = [
             'total_users' => count_users()['total_users'],
             'active_users' => 0,
             'total_points' => 0,
             'total_badges' => 0
         ];
-        
+
         // Get active users (users with points)
         $stats['active_users'] = $wpdb->get_var("
-            SELECT COUNT(DISTINCT user_id) 
-            FROM {$wpdb->usermeta} 
-            WHERE meta_key = 'psych_total_points' 
+            SELECT COUNT(DISTINCT user_id)
+            FROM {$wpdb->usermeta}
+            WHERE meta_key = 'psych_total_points'
             AND CAST(meta_value AS UNSIGNED) > 0
         ");
-        
+
         // Get total points awarded
         $stats['total_points'] = $wpdb->get_var("
-            SELECT SUM(CAST(meta_value AS UNSIGNED)) 
-            FROM {$wpdb->usermeta} 
+            SELECT SUM(CAST(meta_value AS UNSIGNED))
+            FROM {$wpdb->usermeta}
             WHERE meta_key = 'psych_total_points'
         ") ?: 0;
-        
+
         // Get total badges earned
         $stats['total_badges'] = $wpdb->get_var("
-            SELECT COUNT(*) 
-            FROM {$wpdb->usermeta} 
+            SELECT COUNT(*)
+            FROM {$wpdb->usermeta}
             WHERE meta_key = 'psych_user_badges'
         ") ?: 0;
-        
+
         return $stats;
     }
 
     private function clear_all_cache() {
         global $wpdb;
-        
+
         // Delete all dashboard-related transients
         $wpdb->query("
-            DELETE FROM {$wpdb->options} 
-            WHERE option_name LIKE '_transient_psych_dashboard_%' 
+            DELETE FROM {$wpdb->options}
+            WHERE option_name LIKE '_transient_psych_dashboard_%'
             OR option_name LIKE '_transient_timeout_psych_dashboard_%'
             OR option_name LIKE '_transient_psych_user_%'
             OR option_name LIKE '_transient_timeout_psych_user_%'
@@ -2344,10 +2493,12 @@ final class Psych_Dashboard_Display_Enhanced {
     public function print_admin_styles() {
         ?>
          <style>
-        /* =================================================================== */
+        /* =================================================================== *
+/
         /* ADMIN PANEL STYLES */
-        /* =================================================================== */
-        
+        /* =================================================================== *
+/
+
         .psych-admin-wrap {
             background: #f1f1f1;
             margin: 20px 0 0 -20px;
@@ -2572,7 +2723,7 @@ final class Psych_Dashboard_Display_Enhanced {
             .psych-stats-container {
                 grid-template-columns: 1fr;
             }
-            
+
             .psych-award-form {
                 grid-template-columns: 1fr;
             }
@@ -2582,11 +2733,11 @@ final class Psych_Dashboard_Display_Enhanced {
             .psych-dashboard-cards {
                 grid-template-columns: 1fr;
             }
-            
+
             .psych-admin-wrap {
                 margin-left: 0;
             }
-            
+
             .psych-card {
                 flex-direction: column;
                 text-align: center;
@@ -2662,7 +2813,7 @@ final class Psych_Dashboard_Display_Enhanced {
                     }
                 });
             }
-            
+
             // Update stats every 30 seconds
             setInterval(updateStats, 30000);
         });
@@ -2735,14 +2886,15 @@ if (!function_exists('psych_dashboard_render_widget')) {
      * @param array $args
      * @return string
      */
-    function psych_dashboard_render_widget($widget_type, $user_id = 0, $args = []) {
+    function psych_dashboard_render_widget($widget_type, $user_id = 0, $args = [
+]) {
         $instance = Psych_Dashboard_Display_Enhanced::get_instance();
-        
+
         if (!$user_id) {
             $context = $instance->get_viewing_context();
             $user_id = $context['viewed_user_id'];
         }
-        
+
         $method_map = [
             'points' => 'render_points_display',
             'level' => 'render_level_display',
@@ -2751,12 +2903,12 @@ if (!function_exists('psych_dashboard_render_widget')) {
             'leaderboard' => 'render_leaderboard',
             'timeline' => 'render_achievement_timeline'
         ];
-        
+
         if (isset($method_map[$widget_type])) {
             $args['user_id'] = $user_id;
             return $instance->{$method_map[$widget_type]}($args);
         }
-        
+
         return '';
     }
 }
@@ -2773,15 +2925,16 @@ if (!class_exists('Psych_Dashboard_Display')) {
         public static function get_instance() {
             return Psych_Dashboard_Display_Enhanced::get_instance();
         }
-        
+
         public function render_gamified_header($user_id = 0) {
             $instance = Psych_Dashboard_Display_Enhanced::get_instance();
             return $instance->render_gamified_header(['user_id' => $user_id]);
         }
-        
+
         public function render_user_performance_header($user_id = 0) {
             $instance = Psych_Dashboard_Display_Enhanced::get_instance();
-            return $instance->render_performance_header(['user_id' => $user_id]);
+            return $instance->render_performance_header(['user_id' => $user_id])
+;
         }
     }
 }
@@ -2794,11 +2947,13 @@ register_activation_hook(__FILE__, function() {
     // Set default options
     if (!get_option('psych_dashboard_settings')) {
         $instance = Psych_Dashboard_Display_Enhanced::get_instance();
-        update_option('psych_dashboard_settings', $instance->get_default_settings());
+        update_option('psych_dashboard_settings', $instance->get_default_setting
+s());
     }
-    
+
     // Set version
-    update_option('psych_dashboard_version', Psych_Dashboard_Display_Enhanced::VERSION);
+    update_option('psych_dashboard_version', Psych_Dashboard_Display_Enhanced::V
+ERSION);
 });
 
 register_deactivation_hook(__FILE__, function() {
@@ -2826,7 +2981,8 @@ add_action('psych_dashboard_cleanup', function() {
 
 if (defined('WP_DEBUG') && WP_DEBUG) {
     add_action('psych_dashboard_loaded', function() {
-        error_log('Psych Dashboard Display Enhanced Integration Edition loaded successfully');
+        error_log('Psych Dashboard Display Enhanced Integration Edition loaded s
+uccessfully');
     });
 }
 
