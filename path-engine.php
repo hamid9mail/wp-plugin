@@ -3309,9 +3309,9 @@ private function render_station_modal_javascript() {
                 const button = station.querySelector('.psych-station-action-btn, .psych-accordion-action-btn, .psych-card-action-btn, .psych-list-action-btn');
 
                 if (userCompletedStations[nodeId]) {
-                    station.className = station.className.replace(/\b(open|locked)\b/g, '').trim() + ' completed';
+                    station.className = station.className.replace(/ open | locked /g, ' ').trim() + ' completed';
                     if (badge) {
-                        badge.className = badge.className.replace(/\b(open|locked)\b/g, '').trim() + ' completed';
+                        badge.className = badge.className.replace(/ open | locked /g, ' ').trim() + ' completed';
                         badge.innerHTML = '<i class="fas fa-check"></i> تکمیل شده';
                     }
                     if (icon) icon.className = 'fas fa-check-circle';
@@ -3321,9 +3321,9 @@ private function render_station_modal_javascript() {
                         button.disabled = false;
                     }
                 } else if (isUnlocked) {
-                    station.className = station.className.replace(/\b(locked|completed)\b/g, '').trim() + ' open';
+                    station.className = station.className.replace(/ locked | completed /g, ' ').trim() + ' open';
                     if (badge) {
-                        badge.className = badge.className.replace(/\b(locked|completed)\b/g, '').trim() + ' open';
+                        badge.className = badge.className.replace(/ locked | completed /g, ' ').trim() + ' open';
                         badge.innerHTML = '<i class="fas fa-unlock"></i> باز';
                     }
                     if (icon) icon.className = details.icon || 'fas fa-door-open';
@@ -3332,9 +3332,9 @@ private function render_station_modal_javascript() {
                         button.disabled = false;
                     }
                 } else {
-                    station.className = station.className.replace(/\b(open|completed)\b/g, '').trim() + ' locked';
+                    station.className = station.className.replace(/ open | completed /g, ' ').trim() + ' locked';
                     if (badge) {
-                        badge.className = badge.className.replace(/\b(open|completed)\b/g, '').trim() + ' locked';
+                        badge.className = badge.className.replace(/ open | completed /g, ' ').trim() + ' locked';
                         badge.innerHTML = '<i class="fas fa-lock"></i> قفل';
                     }
                     if (icon) icon.className = details.icon || 'fas fa-lock';
