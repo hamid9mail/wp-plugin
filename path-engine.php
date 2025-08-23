@@ -108,6 +108,7 @@ add_shortcode('result_content', [$this, 'register_result_content']);
         add_action('wp_ajax_psych_path_get_station_content', [$this, 'ajax_get_station_content']);
         add_action('wp_ajax_psych_path_get_inline_station_content', [$this, 'ajax_get_inline_station_content']); // ⭐ جدید
         add_action('wp_ajax_psych_path_complete_mission', [$this, 'ajax_complete_mission']);
+        add_action('wp_ajax_psych_path_get_path_state', [$this, 'ajax_get_path_state']); // New endpoint for state refresh
 
         // Assets and Footer Elements
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
@@ -115,6 +116,7 @@ add_shortcode('result_content', [$this, 'register_result_content']);
 
         // Integration Hooks
         add_action('gform_after_submission', [$this, 'handle_gform_submission'], 10, 2);
+        add_filter('gform_confirmation', [$this, 'gform_custom_confirmation'], 10, 4);
         add_action('psych_feedback_submitted', [$this, 'handle_feedback_submission'], 10, 2);
 
         // Referral System Hooks
@@ -1424,6 +1426,66 @@ public function ajax_complete_mission() {
         // 5. اگر شرایط برقرار نبود، خطای مناسب را برگردان
         wp_send_json_error(['message' => $error_message]);
     }
+}
+
+public function ajax_get_path_state() {
+    if (!check_ajax_referer(PSYCH_PATH_AJAX_NONCE, 'nonce', false)) {
+        wp_send_json_error(['message' => 'نشست شما منقضی شده است. لطفاً صفحه را رفرش کنید.'], 403);
+    }
+
+    $context = $this->get_viewing_context();
+    $user_id = $context['viewed_user_id'];
+    $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
+    $path_id = isset($_POST['path_id']) ? sanitize_key($_POST['path_id']) : '';
+
+
+    if (!$user_id || !$post_id || !$path_id) {
+        wp_send_json_error(['message' => 'اطلاعات ناقص است.'], 400);
+    }
+
+    $post = get_post($post_id);
+    if (!$post) {
+        wp_send_json_error(['message' => 'پست مورد نظر یافت نشد.'], 404);
+    }
+
+    // This is a bit of a hack. We need to re-run the shortcode processing to build the path data.
+    $this->path_data[$path_id] = ['stations' => []];
+    do_shortcode($post->post_content);
+    $this->process_stations($path_id, $user_id);
+
+    $stations = $this->path_data[$path_id]['stations'];
+    $visible_stations = $this->filter_visible_stations($stations, $user_id);
+
+    $station_states = [];
+    foreach($visible_stations as $station) {
+        // We need to re-calculate the button text for the new state
+        $station['mission_button_text'] = $this->get_button_text($station);
+        $station_states[$station['station_node_id']] = $station;
+    }
+
+    wp_send_json_success($station_states);
+}
+
+public function gform_custom_confirmation($confirmation, $form, $entry, $ajax) {
+    // Check if this was a mission submission by looking for our hidden field
+    $station_node_id = '';
+    foreach ($form['fields'] as $field) {
+        if (isset($field->inputName) && $field->inputName === 'station_node_id_hidden') {
+            $station_node_id = rgar($entry, (string) $field->id);
+            break;
+        }
+    }
+
+    if ($ajax && !empty($station_node_id)) {
+        $confirmation .= "<script type='text/javascript'>
+            if (typeof jQuery !== 'undefined') {
+                setTimeout(function() {
+                    jQuery(document).trigger('psych_gform_mission_submitted');
+                }, 500);
+            }
+        </script>";
+    }
+    return $confirmation;
 }
 
 /**
@@ -3120,8 +3182,6 @@ private function process_rewards($user_id, $station_data, $custom_rewards = null
 // فایل: path-engine.php
 
 private function render_station_modal_javascript() {
-    // This new version uses global functions and inline `onclick` attributes
-    // to avoid issues with other plugins breaking jQuery's document.ready event.
     ?>
     <script>
     (function() {
@@ -3134,13 +3194,100 @@ private function render_station_modal_javascript() {
             return null;
         }
 
-        // --- Global Functions ---
+        // --- NEW: Central State Update Function ---
+        window.psych_update_path_state = function(pathContainer) {
+            if (!pathContainer) {
+                console.error('Psych Path: Path container not found for state update.');
+                return;
+            }
+            const pathId = pathContainer.id;
+            const postId = pathContainer.getAttribute('data-post-id');
+            if (!postId) {
+                console.error('Psych Path: Post ID not found on path container.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('action', 'psych_path_get_path_state');
+            formData.append('nonce', '<?php echo wp_create_nonce(PSYCH_PATH_AJAX_NONCE); ?>');
+            formData.append('post_id', postId);
+            formData.append('path_id', pathId);
+
+            fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(res => {
+                    if (res.success) {
+                        psych_update_all_ui(pathContainer, res.data);
+                    } else {
+                        console.error('Psych Path: Failed to fetch path state.', res.data.message);
+                    }
+                });
+        };
+
+        // --- Corrected UI Update Function ---
+        function get_status_badge_html(status) {
+            const badges = {
+                completed: '<i class="fas fa-check"></i> تکمیل شده',
+                open: '<i class="fas fa-unlock"></i> باز',
+                locked: '<i class="fas fa-lock"></i> قفل',
+                restricted: '<i class="fas fa-ban"></i> محدود'
+            };
+            return badges[status] || badges['locked'];
+        }
+
+        function psych_update_all_ui(pathContainer, server_states) {
+            if (!pathContainer || !server_states) return;
+
+            Object.keys(server_states).forEach(nodeId => {
+                const stationEl = pathContainer.querySelector(`[data-station-node-id="${nodeId}"]`);
+                if (!stationEl) return;
+
+                const state = server_states[nodeId];
+
+                stationEl.setAttribute('data-station-details', JSON.stringify(state));
+
+                const badge = stationEl.querySelector('.psych-status-badge');
+                const icon = stationEl.querySelector('.psych-timeline-icon i, .psych-accordion-icon i, .psych-card-icon i');
+                const listNumber = stationEl.querySelector('.psych-list-number');
+                const button = stationEl.querySelector('.psych-station-action-btn, .psych-accordion-action-btn, .psych-card-action-btn, .psych-list-action-btn');
+
+                stationEl.className = stationEl.className.replace(/\b(completed|open|locked|restricted)\b/g, '').trim() + ' ' + state.status;
+
+                if (badge) {
+                    badge.className = 'psych-status-badge ' + state.status;
+                    badge.innerHTML = get_status_badge_html(state.status);
+                }
+                if (icon) icon.className = state.is_completed ? 'fas fa-check-circle' : state.icon;
+
+                if (listNumber) {
+                    if(state.is_completed) {
+                        listNumber.innerHTML = '<i class="fas fa-check"></i>';
+                    }
+                }
+
+                if (button) {
+                    button.textContent = state.mission_button_text;
+                    button.disabled = !state.is_unlocked;
+                }
+            });
+
+            const total = Object.keys(server_states).length;
+            const completedCount = Object.values(server_states).filter(s => s.is_completed).length;
+            const percentage = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+            const progressText = pathContainer.querySelector('.psych-progress-text');
+            const progressPercentage = pathContainer.querySelector('.psych-progress-percentage');
+            const progressFill = pathContainer.querySelector('.psych-progress-fill');
+
+            if(progressText) progressText.textContent = `پیشرفت: ${completedCount} از ${total} ایستگاه`;
+            if(progressPercentage) progressPercentage.textContent = `${percentage}%`;
+            if(progressFill) progressFill.style.width = `${percentage}%`;
+        }
+
+        // --- MODIFIED: Modal Opening with Resilient GForm Init ---
         window.psych_open_station_modal = function(button) {
             if (button.disabled) return;
-
             const stationItem = findClosest(button, '[data-station-node-id]');
             if (!stationItem) return;
-
             const stationDetails = JSON.parse(stationItem.getAttribute('data-station-details'));
             if (!stationDetails) return;
 
@@ -3152,11 +3299,6 @@ private function render_station_modal_javascript() {
             modalContent.innerHTML = '<div class="psych-loading-spinner"></div>';
             modal.style.display = 'flex';
             document.body.classList.add('modal-open');
-            document.body.style.overflow = 'hidden';
-
-            // Store details for the completion button inside the modal
-            modal.setAttribute('data-current-station-details', JSON.stringify(stationDetails));
-            modal.setAttribute('data-current-path-id', findClosest(button, '.psych-path-container').id);
 
             const formData = new FormData();
             formData.append('action', 'psych_path_get_station_content');
@@ -3170,23 +3312,27 @@ private function render_station_modal_javascript() {
                     if (res.success && stationDetails.mission_type === 'gform') {
                         const formId = parseInt(stationDetails.mission_target.replace('form_id:', ''), 10);
                         if (formId > 0 && typeof jQuery !== 'undefined') {
-                            // Trigger the Gravity Forms render event to initialize the form.
-                            jQuery(document).trigger('gform_post_render', [formId, 1]);
+                            let attempts = 0;
+                            const maxAttempts = 20;
+                            const interval = setInterval(function() {
+                                const formWrapper = jQuery('#gform_wrapper_' + formId);
+                                if (formWrapper.length > 0 || attempts >= maxAttempts) {
+                                    clearInterval(interval);
+                                    jQuery(document).trigger('gform_post_render', [formId, 1]);
+                                }
+                                attempts++;
+                            }, 100);
                         }
                     }
-                })
-                .catch(() => {
-                    modalContent.innerHTML = '<div class="psych-alert psych-alert-danger">خطای سرور.</div>';
                 });
         };
 
+        // --- MODIFIED: Mission Completion to use new state update ---
         window.psych_complete_mission_inline = function(button) {
             if (button.disabled) return;
-
             const stationItem = findClosest(button, '[data-station-node-id]');
             const pathContainer = findClosest(button, '.psych-path-container');
             if (!stationItem || !pathContainer) return;
-
             const stationDetails = JSON.parse(stationItem.getAttribute('data-station-details'));
             if (!stationDetails) return;
 
@@ -3201,55 +3347,18 @@ private function render_station_modal_javascript() {
             formData.append('node_id', stationDetails.station_node_id);
             formData.append('station_data', JSON.stringify(stationDetails));
 
-            // New: Add custom rewards from button if it exists
-            if (button.hasAttribute('data-rewards')) {
-                formData.append('custom_rewards', button.getAttribute('data-rewards'));
-            }
-
             fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
                 .then(response => response.json())
                 .then(response => {
                     if (response.success) {
-                        // If a station was revealed, the simplest way to show it is to reload.
-                        if (response.data.full_path_refresh) {
-                            psych_show_rewards_notification(response.data.rewards);
-                            // Wait for the user to close the rewards popup before reloading.
-                            document.addEventListener('psych_rewards_closed', function() {
-                                location.reload();
-                            }, { once: true });
-                            return;
-                        }
-
-                        const modal = document.getElementById('psych-station-modal');
-                        if (modal.style.display !== 'none') psych_close_station_modal();
-
-                        if (response.data.new_html) {
-                            const missionContent = stationItem.querySelector('.psych-accordion-mission-content');
-                            if(missionContent) missionContent.innerHTML = response.data.new_html;
-                        }
-
-                        stationItem.classList.add('completed');
-                        psych_update_all_ui(pathContainer);
+                        psych_close_station_modal();
                         psych_show_rewards_notification(response.data.rewards);
-
-                        // Unlock next sequential station
-                        psych_refresh_next_station(stationItem);
-
-                        // Unlock a specific station if defined in rewards
-                        if (response.data.rewards && response.data.rewards.unlocked_station_id) {
-                            psych_force_unlock_station(response.data.rewards.unlocked_station_id);
-                        }
-
+                        psych_update_path_state(pathContainer);
                     } else {
                         button.disabled = false;
                         button.innerHTML = originalHtml;
                         alert(response.data.message || 'خطا در تکمیل ماموریت.');
                     }
-                })
-                .catch(() => {
-                    button.disabled = false;
-                    button.innerHTML = originalHtml;
-                    alert('خطا در ارتباط با سرور.');
                 });
         };
 
@@ -3257,7 +3366,6 @@ private function render_station_modal_javascript() {
             const modal = document.getElementById('psych-station-modal');
             modal.style.display = 'none';
             document.body.classList.remove('modal-open');
-            document.body.style.overflow = '';
         };
 
         function psych_show_rewards_notification(rewards) {
@@ -3278,151 +3386,16 @@ private function render_station_modal_javascript() {
             notification.addEventListener('click', function(e) {
                 if (e.target.matches('.psych-rewards-close, .psych-rewards-overlay')) {
                     notification.style.opacity = '0';
-                    setTimeout(() => {
-                        notification.remove();
-                        // Dispatch a custom event that can be listened for.
-                        document.dispatchEvent(new CustomEvent('psych_rewards_closed'));
-                    }, 300);
+                    setTimeout(() => notification.remove(), 300);
                 }
             });
         }
 
-        function psych_update_all_ui(pathContainer) {
-            if (!pathContainer) return;
-
-            const userCompletedStations = {};
-            pathContainer.querySelectorAll('.completed[data-station-node-id]').forEach(el => {
-                userCompletedStations[el.getAttribute('data-station-node-id')] = true;
-            });
-
-            let previousStationCompleted = true;
-
-            pathContainer.querySelectorAll('[data-station-node-id]').forEach(station => {
-                const details = JSON.parse(station.getAttribute('data-station-details')) || {};
-                const nodeId = details.station_node_id;
-                let isUnlocked = details.unlock_trigger === 'independent' || previousStationCompleted;
-
-                // Find elements within the station card/item
-                const badge = station.querySelector('.psych-status-badge');
-                const icon = station.querySelector('.psych-timeline-icon i, .psych-accordion-icon i, .psych-card-icon i');
-                const listNumber = station.querySelector('.psych-list-number');
-                const button = station.querySelector('.psych-station-action-btn, .psych-accordion-action-btn, .psych-card-action-btn, .psych-list-action-btn');
-
-                if (userCompletedStations[nodeId]) {
-                    station.className = station.className.replace(/ open | locked /g, ' ').trim() + ' completed';
-                    if (badge) {
-                        badge.className = badge.className.replace(/ open | locked /g, ' ').trim() + ' completed';
-                        badge.innerHTML = '<i class="fas fa-check"></i> تکمیل شده';
-                    }
-                    if (icon) icon.className = 'fas fa-check-circle';
-                    if (listNumber) listNumber.innerHTML = '<i class="fas fa-check"></i>';
-                    if (button) {
-                        button.textContent = 'مشاهده نتیجه';
-                        button.disabled = false;
-                    }
-                } else if (isUnlocked) {
-                    station.className = station.className.replace(/ locked | completed /g, ' ').trim() + ' open';
-                    if (badge) {
-                        badge.className = badge.className.replace(/ locked | completed /g, ' ').trim() + ' open';
-                        badge.innerHTML = '<i class="fas fa-unlock"></i> باز';
-                    }
-                    if (icon) icon.className = details.icon || 'fas fa-door-open';
-                    if (button) {
-                        button.textContent = details.mission_button_text || 'مشاهده ماموریت';
-                        button.disabled = false;
-                    }
-                } else {
-                    station.className = station.className.replace(/ open | completed /g, ' ').trim() + ' locked';
-                    if (badge) {
-                        badge.className = badge.className.replace(/ open | completed /g, ' ').trim() + ' locked';
-                        badge.innerHTML = '<i class="fas fa-lock"></i> قفل';
-                    }
-                    if (icon) icon.className = details.icon || 'fas fa-lock';
-                    if (button) {
-                        button.textContent = 'قفل';
-                        button.disabled = true;
-                    }
-                }
-
-                if (details.unlock_trigger === 'sequential') {
-                    previousStationCompleted = userCompletedStations[nodeId] || false;
-                }
-            });
-
-            // Update progress bar
-            const total = pathContainer.querySelectorAll('[data-station-node-id]').length;
-            const completedCount = Object.keys(userCompletedStations).length;
-            const percentage = total > 0 ? Math.round((completedCount / total) * 100) : 0;
-            const progressText = pathContainer.querySelector('.psych-progress-text');
-            const progressPercentage = pathContainer.querySelector('.psych-progress-percentage');
-            const progressFill = pathContainer.querySelector('.psych-progress-fill');
-
-            if(progressText) progressText.textContent = `پیشرفت: ${completedCount} از ${total} ایستگاه`;
-            if(progressPercentage) progressPercentage.textContent = `${percentage}%`;
-            if(progressFill) progressFill.style.width = `${percentage}%`;
-        }
-
-        function psych_refresh_next_station(stationItem) {
-            if (!stationItem) return;
-            const nextStation = stationItem.nextElementSibling;
-
-            if (nextStation && nextStation.matches('.psych-accordion-item') && nextStation.classList.contains('locked')) {
-                const stationData = nextStation.getAttribute('data-station-details');
-
-                const formData = new FormData();
-                formData.append('action', 'psych_path_get_inline_station_content');
-                formData.append('nonce', '<?php echo wp_create_nonce(PSYCH_PATH_AJAX_NONCE); ?>');
-                formData.append('station_data', stationData);
-
-                fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
-                    .then(response => response.json())
-                    .then(res => {
-                        if (res.success) {
-                            nextStation.setAttribute('data-station-details', JSON.stringify(res.data.station_data));
-                            nextStation.querySelector('.psych-accordion-mission-content').innerHTML = res.data.html;
-                            nextStation.classList.remove('locked');
-                            nextStation.classList.add(res.data.status);
-                            nextStation.querySelector('.psych-status-badge').outerHTML = res.data.html.match(/<span class="psych-status-badge[^>]*>.*?<\/span>/)[0] || '';
-                        }
-                    });
-            }
-        }
-
-        function psych_force_unlock_station(stationId) {
-            if (!stationId) return;
-            const stationToUnlock = document.querySelector(`[data-station-node-id="${stationId}"]`);
-
-            if (stationToUnlock && stationToUnlock.matches('.psych-accordion-item') && stationToUnlock.classList.contains('locked')) {
-                const stationData = stationToUnlock.getAttribute('data-station-details');
-
-                const formData = new FormData();
-                formData.append('action', 'psych_path_get_inline_station_content');
-                formData.append('nonce', '<?php echo wp_create_nonce(PSYCH_PATH_AJAX_NONCE); ?>');
-                formData.append('station_data', stationData);
-
-                fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
-                    .then(response => response.json())
-                    .then(res => {
-                        if (res.success) {
-                            stationToUnlock.setAttribute('data-station-details', JSON.stringify(res.data.station_data));
-                            const contentArea = stationToUnlock.querySelector('.psych-accordion-mission-content');
-                            if(contentArea) contentArea.innerHTML = res.data.html;
-                            stationToUnlock.classList.remove('locked');
-                            stationToUnlock.classList.add(res.data.status);
-                             const statusBadge = stationToUnlock.querySelector('.psych-status-badge');
-                            if(statusBadge) statusBadge.outerHTML = res.data.html.match(/<span class="psych-status-badge[^>]*>.*?<\/span>/)[0] || '';
-                        }
-                    });
-            }
-        }
-
-        // Attach listeners for modal close and accordion toggle using vanilla JS
+        // --- Event Listeners ---
         document.addEventListener('click', function(e) {
-            // Close modal
             if (e.target.matches('.psych-modal-close, .psych-modal-overlay')) {
                 psych_close_station_modal();
             }
-            // Accordion toggle
             const header = findClosest(e.target, '.psych-accordion-header');
             if (header && !e.target.matches('button, a')) {
                 const content = header.nextElementSibling;
@@ -3437,6 +3410,20 @@ private function render_station_modal_javascript() {
                 psych_close_station_modal();
             }
         });
+
+        // NEW: Listener for GForm submissions
+        if (typeof jQuery !== 'undefined') {
+            jQuery(document).on('psych_gform_mission_submitted', function() {
+                psych_close_station_modal();
+                const pathContainer = document.querySelector('.psych-path-container');
+                if (pathContainer) {
+                    setTimeout(function() {
+                        psych_update_path_state(pathContainer);
+                        psych_show_rewards_notification({});
+                    }, 1000);
+                }
+            });
+        }
 
     })();
     </script>
